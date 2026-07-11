@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=@papes-confort/backend",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
