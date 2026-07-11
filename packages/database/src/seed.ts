@@ -4,7 +4,7 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
   // 1. Admin user
   const passwordHash = await hash('admin123', 12);
@@ -18,7 +18,7 @@ async function main() {
       role: 'ADMIN',
     },
   });
-  console.log(`  ` + `✅ Admin user: ${admin.email}`);
+  console.log(`  ` + `Admin user: ${admin.email}`);
 
   // 2. Product families (CORREGIDO: usa prisma.productFamily)
   const productFamiliesData = [
@@ -34,7 +34,7 @@ async function main() {
       update: {},
       create: pf,
     });
-    console.log(`  ` + `✅ Product family: ${created.name}`);
+    console.log(`  ` + `Product family: ${created.name}`);
   }
 
   // 3. Default settings
@@ -52,7 +52,7 @@ async function main() {
       update: { value: s.value },
       create: s,
     });
-    console.log(`  ` + `✅ Setting: ${s.key} = ${s.value}`);
+    console.log(`  ` + `Setting: ${s.key} = ${s.value}`);
   }
 
   // 4. Placeholder bank account
@@ -70,15 +70,15 @@ async function main() {
         isActive: true,
       },
     });
-    console.log('  ' + '✅ Bank account: PAPESCONFORT (placeholder)');
+    console.log('  ' + 'Bank account: PAPESCONFORT (placeholder)');
   }
 
-  console.log('🎉 Seed completed successfully');
+  console.log('Seed completed successfully');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

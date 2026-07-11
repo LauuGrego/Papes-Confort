@@ -6,7 +6,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('❌ Error caught by global handler:', err);
+  console.error('Error caught by global handler:', err);
 
   const status = err.status || err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
