@@ -1,65 +1,99 @@
 import { Router } from 'express';
-import { prisma } from '@papes-confort/database';
-import { compare } from 'bcryptjs';
+import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
-import { ApiResponse, LoginPayload, LoginResponseDto } from '@papes-confort/shared';
+import { generateAccessToken, generateRefreshToken } from '../utils/tokens';
+import { ApiResponse, LoginResponseDto, UserPayload } from '@papes-confort/shared';
 
 const router = Router();
 
-router.post('/login', async (req, res, next) => {
-  try {
-    const { email, password } = req.body as LoginPayload;
-
-    if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        error: 'Email and password are required',
-      } as ApiResponse);
-      return;
+// POST /api/auth/login
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', { session: false }, (err: any, user: any, info: any) => {
+    if (err) {
+      return next(err);
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user || !user.isActive || user.deletedAt) {
+    if (!user) {
       res.status(401).json({
         success: false,
-        error: 'Invalid credentials',
+        error: info?.message || 'Invalid credentials',
       } as ApiResponse);
       return;
     }
 
-    const isMatch = await compare(password, user.password);
-    if (!isMatch) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid credentials',
-      } as ApiResponse);
-      return;
-    }
+    const payload: UserPayload = user;
 
-    const payload = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
+    // Generate tokens
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
-    const token = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: '7d',
+    // Save refresh token in HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.json({
       success: true,
       data: {
         user: payload,
-        token,
+        token: accessToken,
       },
     } as ApiResponse<LoginResponseDto>);
-  } catch (error) {
-    next(error);
+  })(req, res, next);
+});
+
+// POST /api/auth/refresh
+router.post('/refresh', (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    res.status(401).json({
+      success: false,
+      error: 'Refresh token missing',
+    } as ApiResponse);
+    return;
   }
+
+  try {
+    const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as UserPayload;
+    
+    const payload: UserPayload = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+    };
+
+    const newAccessToken = generateAccessToken(payload);
+
+    res.json({
+      success: true,
+      data: {
+        token: newAccessToken,
+        user: payload,
+      },
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      error: 'Invalid or expired refresh token',
+    } as ApiResponse);
+  }
+});
+
+// POST /api/auth/logout
+router.post('/logout', (_req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.json({
+    success: true,
+  } as ApiResponse);
 });
 
 export default router;

@@ -1,16 +1,95 @@
-import { ChevronRight, Grid, Filter } from 'lucide-react';
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { ChevronRight, Grid, Search, Loader2 } from 'lucide-react';
+import { fetchApi } from '../../lib/api';
+import { BrandDto, ProductDto, PaginatedResponse } from '@papes-confort/shared';
+import ProductCard from '../../components/products/ProductCard';
+import ProductFilters from '../../components/products/ProductFilters';
 
 export default function CatalogoPage() {
+  const [loading, setLoading] = useState(true);
+  const [productsData, setProductsData] = useState<PaginatedResponse<ProductDto> | null>(null);
+  const [families, setFamilies] = useState<any[]>([]);
+  const [brands, setBrands] = useState<BrandDto[]>([]);
+
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    async function loadMetadata() {
+      const [categoriesRes, brandsRes] = await Promise.all([
+        fetchApi<any[]>('/api/categories'),
+        fetchApi<BrandDto[]>('/api/brands'),
+      ]);
+
+      if (categoriesRes.success && categoriesRes.data) {
+        setFamilies(categoriesRes.data);
+      }
+      if (brandsRes.success && brandsRes.data) {
+        setBrands(brandsRes.data);
+      }
+    }
+    loadMetadata();
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', '9');
+
+    if (search) params.set('search', search);
+    if (selectedFamily) params.set('type', selectedFamily);
+    if (selectedCategory) params.set('categoryId', selectedCategory);
+    if (selectedBrand) params.set('brandId', selectedBrand);
+    if (selectedProductType) params.set('productType', selectedProductType);
+
+    const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/products?${params.toString()}`);
+    if (res.success && res.data) {
+      setProductsData(res.data);
+    }
+    setLoading(false);
+  }, [page, search, selectedFamily, selectedCategory, selectedBrand, selectedProductType]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const handleFilterChange = (filters: {
+    family?: string | null;
+    category?: string | null;
+    brand?: string | null;
+    productType?: string | null;
+  }) => {
+    if (filters.family !== undefined) setSelectedFamily(filters.family);
+    if (filters.category !== undefined) setSelectedCategory(filters.category);
+    if (filters.brand !== undefined) setSelectedBrand(filters.brand);
+    if (filters.productType !== undefined) setSelectedProductType(filters.productType);
+    setPage(1);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
-      {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
-        <span>Inicio</span>
+        <span className="cursor-pointer hover:text-slate-600">Inicio</span>
         <ChevronRight className="h-3 w-3 shrink-0" />
         <span className="text-slate-600 font-semibold">Catálogo</span>
       </nav>
 
-      {/* Main catalog title */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-10">
         <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">
@@ -20,73 +99,95 @@ export default function CatalogoPage() {
             Explorá nuestra gama de artículos de confort y tecnología para tu hogar.
           </p>
         </div>
-        {/* Skeleton counter */}
-        <div className="h-8 w-28 rounded-lg bg-slate-100 animate-pulse" />
+        <div className="text-sm font-semibold text-slate-500 bg-slate-50 border border-slate-100 py-1.5 px-4 rounded-xl">
+          {productsData ? `${productsData.total} Productos` : 'Cargando...'}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        {/* Sidebar Filters Skeleton */}
-        <aside className="hidden lg:block space-y-8">
-          <div className="flex items-center justify-between">
-            <span className="font-display font-bold text-sm tracking-wider uppercase text-slate-700 flex items-center gap-2">
-              <Filter className="h-4 w-4 text-brand-red" />
-              Filtros
-            </span>
+        <aside className="space-y-8">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar por SKU, nombre..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/30 focus:bg-white transition-all shadow-[0_5px_15px_rgba(0,0,0,0.01)]"
+            />
+            <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
           </div>
 
-          <div className="space-y-6">
-            {/* Filter section skeleton */}
-            {[1, 2, 3].map((section) => (
-              <div key={section} className="space-y-3 border-b border-slate-100 pb-6">
-                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
-                <div className="space-y-2">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded border border-slate-200" />
-                      <div className="h-3.5 w-32 rounded bg-slate-100 animate-pulse" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <ProductFilters
+            families={families}
+            brands={brands}
+            selectedFamily={selectedFamily}
+            selectedCategory={selectedCategory}
+            selectedBrand={selectedBrand}
+            selectedProductType={selectedProductType}
+            onFilterChange={handleFilterChange}
+          />
         </aside>
 
-        {/* Product Catalog Grid Skeletons */}
         <main className="lg:col-span-3 space-y-12">
-          {/* Main loader notice */}
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-slate-100 text-brand-red shadow-sm">
-              <Grid className="h-6 w-6" />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="h-10 w-10 text-brand-red animate-spin" />
+              <span className="text-sm font-semibold text-slate-400">Buscando productos...</span>
             </div>
-            <div className="space-y-2 max-w-sm mx-auto">
-              <h3 className="font-display font-bold text-lg">Catálogo en Sincronización</h3>
+          ) : productsData && productsData.items.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {productsData.items.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
             </div>
-          </div>
-
-          {/* Skeletons block */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="rounded-3xl border border-slate-100 p-5 space-y-4 shadow-[0_5px_15px_rgba(0,0,0,0.01)]">
-                {/* Image placeholder */}
-                <div className="h-40 rounded-2xl bg-slate-100 animate-pulse w-full" />
-                <div className="space-y-2">
-                  {/* Category placeholder */}
-                  <div className="h-3 w-16 rounded bg-slate-200 animate-pulse" />
-                  {/* Title placeholder */}
-                  <div className="h-4 w-4/5 rounded bg-slate-100 animate-pulse" />
-                  {/* Rating placeholder */}
-                  <div className="h-3 w-12 rounded bg-slate-100 animate-pulse" />
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  {/* Price placeholder */}
-                  <div className="h-6 w-20 rounded bg-slate-200 animate-pulse" />
-                  {/* Button placeholder */}
-                  <div className="h-8 w-8 rounded-full bg-slate-100 animate-pulse" />
-                </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 shadow-sm">
+                <Grid className="h-6 w-6" />
               </div>
-            ))}
-          </div>
+              <div className="space-y-2 max-w-sm mx-auto">
+                <h3 className="font-display font-bold text-lg">No encontramos productos</h3>
+                <p className="text-sm text-slate-400">
+                  Prueba cambiando los filtros o la búsqueda seleccionada.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {productsData && productsData.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-6">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="px-4 py-2 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
+              >
+                Anterior
+              </button>
+              {Array.from({ length: productsData.totalPages }).map((_, idx) => {
+                const pNum = idx + 1;
+                return (
+                  <button
+                    key={pNum}
+                    onClick={() => setPage(pNum)}
+                    className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
+                      page === pNum
+                        ? 'bg-brand-red text-white shadow-md'
+                        : 'border border-slate-100 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pNum}
+                  </button>
+                );
+              })}
+              <button
+                disabled={page === productsData.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="px-4 py-2 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </div>

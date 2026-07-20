@@ -83,6 +83,7 @@ export interface ProductDto {
   productCategory: ProductCategoryDto;
   images: ProductImageDto[];
   isOutlet: boolean;
+  isActive: boolean;
   warrantyMonths: number;
   weightKg: number | null;
   dimensions: string | null; // e.g. "120x80x40"

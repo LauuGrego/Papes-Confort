@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70" fill="none">
+  <rect width="120" height="70" rx="10" fill="#0F172A"/>
+  <path d="M60 15L35 30H85L60 15Z" fill="#38BDF8"/>
+  <rect x="40" y="32" width="6" height="15" fill="#38BDF8"/>
+  <rect x="52" y="32" width="6" height="15" fill="#38BDF8"/>
+  <rect x="64" y="32" width="6" height="15" fill="#38BDF8"/>
+  <rect x="76" y="32" width="6" height="15" fill="#38BDF8"/>
+  <rect x="35" y="48" width="50" height="4" fill="#38BDF8"/>
+  <text x="60" y="62" font-family="Arial, sans-serif" font-weight="bold" font-size="8" fill="#FFFFFF" text-anchor="middle">TRANSFERENCIA</text>
+</svg>

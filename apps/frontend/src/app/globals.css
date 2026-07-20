@@ -3,9 +3,12 @@
 @theme {
   --color-brand-black: #131313;
   --color-brand-grey: #f5f5f5;
+  --color-brand-bg-light: #f8fafc;
   --color-brand-red: #e41414;
   --color-brand-red-dark: #a60404;
   --color-brand-navy: #1f2c4f;
+  --color-brand-blue: #003a6c;
+  --color-brand-lila: #cfb7e1;
   --color-brand-bg: #ffffff;
   
   --font-sans: 'Open Sans', 'Inter', sans-serif;

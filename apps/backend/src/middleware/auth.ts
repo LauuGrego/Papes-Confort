@@ -1,21 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
-import { UserPayload } from '@papes-confort/shared';
+import passport from 'passport';
+import { UserPayload, UserRole } from '@papes-confort/shared';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, error: 'Unauthorized: Missing token' });
-    return;
-  }
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as UserPayload;
-    req.user = decoded;
+  passport.authenticate('jwt', { session: false }, (err: any, user: any) => {
+    if (err || !user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+    req.user = user;
     next();
-  } catch (error) {
-    res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
-  }
+  })(req, res, next);
+}
+
+export function requireRole(allowedRoles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = req.user as UserPayload | undefined;
+    if (!user || !allowedRoles.includes(user.role)) {
+      res.status(403).json({ success: false, error: 'Forbidden: Insufficient permissions' });
+      return;
+    }
+    next();
+  };
 }

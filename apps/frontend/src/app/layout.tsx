@@ -11,7 +11,7 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Papes Confort | Servicio y Calidad de Siempre',
+  title: 'Papes Confort | Servicio y Calidad Asegurados',
   description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
 };
 

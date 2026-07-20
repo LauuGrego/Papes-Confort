@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70" fill="none">
+  <rect width="120" height="70" rx="10" fill="#009EE3"/>
+  <rect x="25" y="15" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="28" y="18" width="14" height="14" fill="#009EE3"/>
+  <rect x="31" y="21" width="8" height="8" fill="#FFFFFF"/>
+  <rect x="75" y="15" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="78" y="18" width="14" height="14" fill="#009EE3"/>
+  <rect x="81" y="21" width="8" height="8" fill="#FFFFFF"/>
+  <rect x="25" y="40" width="12" height="12" fill="#FFFFFF"/>
+  <rect x="45" y="40" width="15" height="15" fill="#FFFFFF"/>
+  <rect x="68" y="40" width="12" height="12" fill="#FFFFFF"/>
+  <rect x="85" y="40" width="10" height="15" fill="#FFFFFF"/>
+  <text x="60" y="63" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#FFFFFF" text-anchor="middle">PAGO CON QR</text>
+</svg>

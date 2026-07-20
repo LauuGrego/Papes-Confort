@@ -1,4 +1,5 @@
 import { ApiResponse } from '@papes-confort/shared';
+import { useAuthStore } from '../stores/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -13,9 +14,15 @@ export async function fetchApi<T>(
     headers.set('Content-Type', 'application/json');
   }
 
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const config: RequestInit = {
     ...options,
     headers,
+    credentials: 'include',
   };
 
   try {
