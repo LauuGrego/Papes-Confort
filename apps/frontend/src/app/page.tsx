@@ -8,14 +8,14 @@ const CATEGORIES = [
     slug: 'linea-blanca',
     description: 'Heladeras, lavarropas, cocinas y equipamiento para tu hogar.',
     icon: Refrigerator,
-    image: '/images/cat_linea_blanca.png',
+    image: '/images/cat_linea_blanca_v2.png',
   },
   {
     name: 'Pequeños Electrodomésticos',
     slug: 'pequenos-electrodomesticos',
     description: 'Cafeteras, licuadoras y productos para tu día a día.',
     icon: Coffee,
-    image: '/images/cat_pequenos_electro.png',
+    image: '/images/cat_pequenos_electro_v2.png',
   },
   {
     name: 'Climatización',

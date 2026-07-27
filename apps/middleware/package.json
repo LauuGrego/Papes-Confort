@@ -1,0 +1,27 @@
+{
+  "name": "@papes-confort/middleware",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "recon": "tsx src/scripts/recon.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.0",
+    "node-cron": "^3.0.3",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/chokidar": "^2.1.3",
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.16.2",
+    "typescript": "^5.7.0"
+  }
+}

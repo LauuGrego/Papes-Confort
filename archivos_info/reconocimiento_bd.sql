@@ -1,0 +1,26 @@
+-- REPORTE DE RECONOCIMIENTO (SOLO LECTURA)
+-- Base de Datos: agc_sql_datosges
+-- 1. INVENTARIO DE TABLAS EXISTENTES
+SELECT TABLE_NAME AS `Tabla`,
+  ENGINE AS `Motor (Engine)`,
+  TABLE_ROWS AS `Filas Estimadas`
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA = 'agc_sql_datosges'
+  AND TABLE_TYPE = 'BASE TABLE'
+ORDER BY TABLE_NAME;
+-- 2. DICCIONARIO DE DATOS (Estructura de Columnas de cada Tabla)
+SELECT TABLE_NAME AS `Tabla`,
+  COLUMN_NAME AS `Columna`,
+  ORDINAL_POSITION AS `Posicion`,
+  COLUMN_TYPE AS `Tipo Detallado`,
+  IS_NULLABLE AS `Acepta Nulo`,
+  COLUMN_KEY AS `Key`,
+  IFNULL(COLUMN_DEFAULT, 'NULL') AS `Valor por Defecto`
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'agc_sql_datosges'
+ORDER BY TABLE_NAME,
+  ORDINAL_POSITION;
+-- 3. MUESTRA DE DATOS REALES (Primeras 5 filas de Stock_Articulo)
+SELECT *
+FROM Stock_Articulo
+LIMIT 5;

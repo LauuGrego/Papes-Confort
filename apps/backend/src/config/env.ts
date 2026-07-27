@@ -9,4 +9,5 @@ export const env = {
   DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/papes_confort',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
   NODE_ENV: process.env.NODE_ENV || 'development',
+  API_SYNC_KEY: process.env.API_SYNC_KEY || 'papes-confort-sync-secret-key',
 } as const;

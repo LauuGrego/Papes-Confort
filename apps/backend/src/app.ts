@@ -11,6 +11,8 @@ import brandsRouter from './routes/brands';
 import adminProductsRouter from './routes/admin/products';
 import adminSettingsRouter from './routes/admin/settings';
 import adminSyncLogsRouter from './routes/admin/sync-logs';
+import syncProductsRouter from './routes/sync/products';
+import syncImagesRouter from './routes/sync/images';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -34,6 +36,8 @@ app.use('/api/brands', brandsRouter);
 app.use('/api/admin/products', adminProductsRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/admin/sync-logs', adminSyncLogsRouter);
+app.use('/api/sync/products', syncProductsRouter);
+app.use('/api/sync/images', syncImagesRouter);
 
 // Global Error Handler
 app.use(errorHandler);
