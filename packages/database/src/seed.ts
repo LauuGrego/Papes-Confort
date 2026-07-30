@@ -41,7 +41,7 @@ async function main() {
   const settingsData = [
     { key: 'free_shipping_threshold', value: '50000' },
     { key: 'safety_stock', value: '1' },
-    { key: 'whatsapp_number', value: '' },
+    { key: 'whatsapp_number', value: '5493445454261' },
     { key: 'gescom_images_path', value: '' },
     { key: 'gateway_reservation_minutes', value: '15' },
   ];

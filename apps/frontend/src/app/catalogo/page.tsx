@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, Grid, Search, Loader2 } from 'lucide-react';
+import { ChevronRight, Grid, Search, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
 import { BrandDto, ProductDto, PaginatedResponse } from '@papes-confort/shared';
 import ProductCard from '../../components/products/ProductCard';
@@ -20,6 +20,7 @@ export default function CatalogoPage() {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     async function loadMetadata() {
@@ -42,7 +43,7 @@ export default function CatalogoPage() {
     setLoading(true);
     const params = new URLSearchParams();
     params.set('page', String(page));
-    params.set('limit', '9');
+    params.set('limit', '18');
 
     if (search) params.set('search', search);
     if (selectedFamily) params.set('type', selectedFamily);
@@ -105,7 +106,8 @@ export default function CatalogoPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        <aside className="space-y-8">
+        {/* Sidebar (Desktop only) */}
+        <aside className="hidden lg:block space-y-8">
           <div className="relative">
             <input
               type="text"
@@ -128,14 +130,36 @@ export default function CatalogoPage() {
           />
         </aside>
 
+        {/* Main Column */}
         <main className="lg:col-span-3 space-y-12">
+          {/* Mobile search & filters bar */}
+          <div className="flex gap-4 lg:hidden mb-6">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Buscar por SKU, nombre..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+              />
+              <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
+            </div>
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-3 text-sm font-semibold text-brand-black hover:bg-slate-100 transition-all active:scale-95 shadow-[0_5px_15px_rgba(0,0,0,0.01)]"
+            >
+              <SlidersHorizontal className="h-4.5 w-4.5 text-slate-500" />
+              Filtros
+            </button>
+          </div>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="h-10 w-10 text-brand-red animate-spin" />
               <span className="text-sm font-semibold text-slate-400">Buscando productos...</span>
             </div>
           ) : productsData && productsData.items.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 md:grid-cols-3 gap-2.5 md:gap-6">
               {productsData.items.map((prod) => (
                 <ProductCard key={prod.id} product={prod} />
               ))}
@@ -190,6 +214,52 @@ export default function CatalogoPage() {
           )}
         </main>
       </div>
+
+      {/* Mobile Filters Drawer Overlay */}
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowMobileFilters(false)}
+          />
+
+          {/* Drawer sheet */}
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xs bg-white p-6 shadow-2xl flex flex-col gap-6 overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="font-display font-bold text-lg text-brand-black flex items-center gap-2">
+                <SlidersHorizontal className="h-5 w-5 text-brand-red" />
+                Filtros
+              </h2>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1">
+              <ProductFilters
+                families={families}
+                brands={brands}
+                selectedFamily={selectedFamily}
+                selectedCategory={selectedCategory}
+                selectedBrand={selectedBrand}
+                selectedProductType={selectedProductType}
+                onFilterChange={handleFilterChange}
+              />
+            </div>
+
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="w-full py-3.5 bg-brand-red hover:bg-brand-red-dark text-white rounded-2xl text-sm font-semibold transition-all shadow-md active:scale-95 text-center mt-auto"
+            >
+              Aplicar y Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

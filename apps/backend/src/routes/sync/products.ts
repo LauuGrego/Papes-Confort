@@ -62,7 +62,19 @@ router.post('/', async (req, res, next) => {
 
     for (const item of products) {
       try {
-        const { sku, gescomName, basePrice, stock, brandName } = item;
+        const {
+          sku,
+          gescomName,
+          basePrice,
+          stock,
+          brandName,
+          gescomId,
+          barcode,
+          ivaPercent,
+          unit,
+          rubro,
+          subrubro,
+        } = item;
 
         if (!sku || gescomName === undefined || basePrice === undefined || stock === undefined) {
           errors++;
@@ -102,6 +114,15 @@ router.post('/', async (req, res, next) => {
         });
 
         if (existing) {
+          const currentSpecs = (existing.specs as Record<string, any>) || {};
+          const updatedSpecs = {
+            ...currentSpecs,
+            ...(ivaPercent !== undefined && { ivaPercent }),
+            ...(unit !== undefined && { unit }),
+            ...(rubro !== undefined && { rubro }),
+            ...(subrubro !== undefined && { subrubro }),
+          };
+
           await prisma.product.update({
             where: { id: existing.id },
             data: {
@@ -109,14 +130,25 @@ router.post('/', async (req, res, next) => {
               basePrice: numericPrice,
               stock: numericStock,
               brandId,
+              gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
+              barcode: barcode !== undefined ? barcode : undefined,
+              specs: updatedSpecs,
               lastSyncAt: new Date(),
             },
           });
           productsUpdated++;
         } else {
+          const newSpecs: Record<string, any> = {};
+          if (ivaPercent !== undefined) newSpecs.ivaPercent = ivaPercent;
+          if (unit !== undefined) newSpecs.unit = unit;
+          if (rubro !== undefined) newSpecs.rubro = rubro;
+          if (subrubro !== undefined) newSpecs.subrubro = subrubro;
+
           await prisma.product.create({
             data: {
               sku: String(sku),
+              gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
+              barcode: barcode !== undefined ? barcode : undefined,
               gescomName: String(gescomName),
               name: String(gescomName),
               slug: finalSlug,
@@ -124,6 +156,7 @@ router.post('/', async (req, res, next) => {
               stock: numericStock,
               brandId,
               productFamilyId: defaultFamily.id,
+              specs: newSpecs,
               lastSyncAt: new Date(),
             },
           });

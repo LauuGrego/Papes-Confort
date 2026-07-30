@@ -69,6 +69,8 @@ export interface ProductImageDto {
 export interface ProductDto {
   id: string;
   sku: string;
+  gescomId?: number | null;
+  barcode?: string | null;
   gescomName: string;
   name: string;
   slug: string;

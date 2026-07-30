@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ==========================================
@@ -128,6 +129,7 @@ model Product {
   id                String           @id @default(uuid())
   gescomId          Int?             @unique @map("gescom_id")
   sku               String           @unique
+  barcode           String?          @map("barcode")
   gescomName        String           @db.Text @map("gescom_name")
   name              String           @db.Text
   slug              String           @unique

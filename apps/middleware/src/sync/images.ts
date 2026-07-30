@@ -3,6 +3,7 @@ import path from 'path';
 import chokidar from 'chokidar';
 import { config } from '../config';
 import { sendImageSyncNotification } from '../api/client';
+import { uploadToCloudinary } from '../utils/cloudinary';
 import { logger } from '../utils/logger';
 
 export function extractSkuFromFilename(filename: string): string {
@@ -39,7 +40,12 @@ export function startImageWatcher() {
       if (!sku) return;
 
       logger.info(`New image detected for SKU "${sku}": ${filename}`);
-      await sendImageSyncNotification(sku, filename);
+      
+      const ext = path.extname(filename);
+      const publicId = path.basename(filename, ext).trim();
+      const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
+
+      await sendImageSyncNotification(sku, filename, cloudinaryUrl || undefined);
     } catch (error: any) {
       logger.error(`Error processing added image: ${filePath}`, { error: error.message });
     }
@@ -53,7 +59,12 @@ export function startImageWatcher() {
       if (!sku) return;
 
       logger.info(`Image modified for SKU "${sku}": ${filename}`);
-      await sendImageSyncNotification(sku, filename);
+      
+      const ext = path.extname(filename);
+      const publicId = path.basename(filename, ext).trim();
+      const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
+
+      await sendImageSyncNotification(sku, filename, cloudinaryUrl || undefined);
     } catch (error: any) {
       logger.error(`Error processing changed image: ${filePath}`, { error: error.message });
     }

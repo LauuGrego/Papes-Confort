@@ -54,6 +54,8 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
   return {
     id: product.id,
     sku: product.sku,
+    gescomId: product.gescomId,
+    barcode: product.barcode,
     gescomName: product.gescomName,
     name: product.name,
     slug: product.slug,

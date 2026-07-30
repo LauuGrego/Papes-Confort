@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth';
-import { getAdminProducts, getAdminProductById, updateProduct } from '../../services/product.service';
+import { getAdminProducts, getAdminProductById } from '../../services/product.service';
 import { ApiResponse } from '@papes-confort/shared';
 
 const router = Router();
@@ -45,17 +45,11 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-router.put('/:id', async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const updated = await updateProduct(id, req.body);
-    res.json({
-      success: true,
-      data: updated,
-    } as ApiResponse);
-  } catch (error) {
-    next(error);
-  }
+router.put('/:id', async (_req, res, _next) => {
+  res.status(400).json({
+    success: false,
+    error: 'La edición manual de productos está deshabilitada. Los productos se administran exclusivamente mediante la sincronización con GesCom.',
+  } as ApiResponse);
 });
 
 export default router;

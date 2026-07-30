@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, ArrowLeft, MessageCircle, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { ChevronRight, Loader2, ArrowLeft, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
 
   useEffect(() => {
     async function loadProduct() {
@@ -29,6 +30,16 @@ export default function ProductDetailPage() {
       loadProduct();
     }
   }, [slug]);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const res = await fetchApi<{ whatsapp_number: string }>('/api/settings/public');
+      if (res.success && res.data?.whatsapp_number) {
+        setWhatsappNumber(res.data.whatsapp_number);
+      }
+    }
+    loadSettings();
+  }, []);
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -70,9 +81,8 @@ export default function ProductDetailPage() {
   const hasDiscount = product.discountPercent > 0;
 
   // Build WhatsApp link
-  const defaultWhatsAppNumber = '5493445431872'; // Fallback default
   const whatsappMsg = `¡Hola! Estoy interesado en el producto *${product.name}* (SKU: ${product.sku}) con un precio de ${formatPrice(product.finalPrice)} que vi en su sitio web. ¿Tienen stock disponible?`;
-  const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(whatsappMsg)}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMsg)}`;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
@@ -173,7 +183,14 @@ export default function ProductDetailPage() {
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-3 rounded-full bg-emerald-500 hover:bg-emerald-600 px-8 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)] transform hover:-translate-y-0.5"
               >
-                <MessageCircle className="h-5 w-5 fill-white text-emerald-500" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-5 w-5 shrink-0"
+                >
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.97C16.48 2.016 14.01 1 11.397 1 5.966 1 1.54 5.372 1.537 10.8c-.001 1.777.469 3.511 1.361 5.048l-.91 3.325 3.42-.897c1.517.828 3.086 1.258 4.649 1.258zm9.324-7.098c-.28-.14-1.657-.818-1.914-.911-.257-.093-.443-.14-.63.14-.186.28-.72.911-.883 1.097-.163.186-.327.21-.607.07-.28-.14-1.182-.436-2.25-1.39-.831-.742-1.391-1.658-1.554-1.938-.163-.28-.017-.431.123-.57.126-.125.28-.327.42-.49.14-.163.187-.28.28-.467.094-.187.047-.35-.023-.49-.07-.14-.63-1.517-.863-2.078-.228-.549-.46-.474-.63-.482-.163-.008-.35-.01-.537-.01-.186 0-.49.07-.747.35-.257.28-.98 0.958-.98 2.336 0 1.378 1.003 2.707 1.143 2.894.14.187 1.975 3.017 4.785 4.225.668.288 1.19.46 1.597.59.67.213 1.28.183 1.761.11.537-.08 1.657-.677 1.89-1.332.233-.655.233-1.216.163-1.332-.07-.116-.257-.186-.537-.327z" />
+                </svg>
                 Consultar por WhatsApp
               </a>
             </div>
@@ -217,7 +234,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Specs Table */}
-          {product.specs && Object.keys(product.specs).length > 0 && (
+          {product.specs && Object.keys(product.specs).filter(k => !['ivaPercent', 'unit', 'rubro', 'subrubro'].includes(k)).length > 0 && (
             <div className="space-y-4">
               <h3 className="font-display font-bold text-sm uppercase tracking-wider text-slate-700">
                 Especificaciones Técnicas
@@ -225,19 +242,21 @@ export default function ProductDetailPage() {
               <div className="overflow-hidden rounded-2xl border border-slate-100">
                 <table className="w-full text-left text-xs border-collapse">
                   <tbody>
-                    {Object.entries(product.specs).map(([key, val], idx) => (
-                      <tr
-                        key={key}
-                        className={idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}
-                      >
-                        <td className="px-4 py-3 font-semibold text-slate-500 w-1/3 border-b border-slate-100 capitalize">
-                          {key.replace(/_/g, ' ')}
-                        </td>
-                        <td className="px-4 py-3 text-brand-black border-b border-slate-100">
-                          {String(val)}
-                        </td>
-                      </tr>
-                    ))}
+                    {Object.entries(product.specs)
+                      .filter(([key]) => !['ivaPercent', 'unit', 'rubro', 'subrubro'].includes(key))
+                      .map(([key, val], idx) => (
+                        <tr
+                          key={key}
+                          className={idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}
+                        >
+                          <td className="px-4 py-3 font-semibold text-slate-500 w-1/3 border-b border-slate-100 capitalize">
+                            {key.replace(/_/g, ' ')}
+                          </td>
+                          <td className="px-4 py-3 text-brand-black border-b border-slate-100">
+                            {String(val)}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>

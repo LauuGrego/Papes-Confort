@@ -48,7 +48,7 @@ export default function HomePage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red to-brand-red-dark">Llevamos el confort</span> que tu hogar merece
             </h1>
             <p className="text-slate-600 text-base md:text-lg leading-relaxed max-w-xl">
-              Asesoramiento personalizado y servicio posventa que nos caracteriza
+              El asesoramiento personalizado y el servicio posventa que nos caracteriza
             </p>
             <div className="pt-2 flex flex-wrap gap-4">
               <Link

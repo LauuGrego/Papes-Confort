@@ -13,6 +13,7 @@ import adminSettingsRouter from './routes/admin/settings';
 import adminSyncLogsRouter from './routes/admin/sync-logs';
 import syncProductsRouter from './routes/sync/products';
 import syncImagesRouter from './routes/sync/images';
+import settingsRouter from './routes/settings';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/brands', brandsRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api/admin/products', adminProductsRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/admin/sync-logs', adminSyncLogsRouter);

@@ -15,6 +15,11 @@ export const config = {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001',
     syncKey: process.env.API_SYNC_KEY || 'papes-confort-sync-secret-key',
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  },
   imagesPath: process.env.IMAGES_PATH || 'D:\\GESCOM28\\Datos G\\GESCOM\\Imagenes',
   cronSchedule: process.env.PRODUCTS_SYNC_CRON || '*/1 * * * *',
   safetyStock: parseInt(process.env.SAFETY_STOCK || '0', 10),

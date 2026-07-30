@@ -106,7 +106,7 @@ export default function AdminConfiguracionPage() {
             <h3 className="text-sm font-bold text-slate-700">WhatsApp de Consultas</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
               Número de teléfono celular para recibir consultas de compras y financiación.
-              Usa el formato internacional sin símbolos (ej: 5493445431872).
+              Usa el formato internacional sin símbolos (ej: 5493445454261).
             </p>
             <input
               type="text"
