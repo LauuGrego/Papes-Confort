@@ -96,6 +96,7 @@ export async function getProducts(params: {
   const where: any = {
     isActive: true,
     deletedAt: null,
+    stock: { gt: 0 },
   };
 
   if (params.brandId) {
@@ -165,6 +166,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDto | null>
       slug,
       isActive: true,
       deletedAt: null,
+      stock: { gt: 0 },
     },
     include: {
       brand: true,

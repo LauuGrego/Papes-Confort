@@ -25,7 +25,7 @@ export function startImageWatcher() {
   const watcher = chokidar.watch(imagesDir, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true,
-    ignoreInitial: false,
+    ignoreInitial: true,
     awaitWriteFinish: {
       stabilityThreshold: 2000,
       pollInterval: 100,
