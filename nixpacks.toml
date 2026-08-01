@@ -1,2 +1,5 @@
 [phases.setup]
 nixPkgs = ["...", "postgresql"]
+
+[variables]
+HOSTNAME = "0.0.0.0"
