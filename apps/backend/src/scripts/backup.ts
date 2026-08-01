@@ -1,4 +1,8 @@
 import { PrismaClient } from '@papes-confort/database';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execPromise = promisify(exec);
 
 async function runBackup() {
   console.log('Starting programmatic database backup from primary (Supabase) to backup (Railway)...');
@@ -26,6 +30,18 @@ async function runBackup() {
   });
 
   try {
+    console.log('  Ensuring database schema exists on backup database...');
+    // We execute prisma db push using backupUrl as the database connection URL
+    const { stdout, stderr } = await execPromise('npx prisma db push --accept-data-loss --skip-generate', {
+      env: {
+        ...process.env,
+        DATABASE_URL: backupUrl,
+        DIRECT_URL: backupUrl,
+      }
+    });
+    if (stdout) console.log(`    Prisma DB Push: ${stdout.trim()}`);
+    if (stderr) console.warn(`    Prisma DB Push warnings:\n${stderr}`);
+
     console.log('  Connecting to databases...');
     await primaryPrisma.$connect();
     await backupPrisma.$connect();
