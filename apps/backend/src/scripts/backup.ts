@@ -32,7 +32,7 @@ async function runBackup() {
   try {
     console.log('  Ensuring database schema exists on backup database...');
     // We execute prisma db push using backupUrl as the database connection URL
-    const { stdout, stderr } = await execPromise('npx prisma db push --accept-data-loss --skip-generate', {
+    const { stdout, stderr } = await execPromise('npx prisma db push --accept-data-loss --skip-generate --schema ../../packages/database/prisma/schema.prisma', {
       env: {
         ...process.env,
         DATABASE_URL: backupUrl,
