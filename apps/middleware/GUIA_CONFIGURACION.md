@@ -7,6 +7,7 @@ Esta guía detalla paso a paso todo lo necesario para configurar y poner en marc
 ## 📋 Requisitos Previos
 
 Para que el middleware funcione correctamente en la PC, se necesita:
+
 1. **Sistema Operativo**: Windows 10, Windows 11 o Windows Server.
 2. **Acceso Local**:
    - Conexión a la base de datos MySQL de GesCom (usualmente llamada `agc_sql_datosges`).
@@ -21,7 +22,7 @@ El middleware está desarrollado en TypeScript/Node.js, por lo que requiere el e
 
 1. Descarga el instalador de **Node.js LTS** desde el sitio oficial: [https://nodejs.org/](https://nodejs.org/) (se recomienda la versión 20 o superior).
 2. Ejecuta el instalador `.msi` descargado.
-3. Sigue las instrucciones del asistente de instalación. **Asegúrate** de dejar marcada la opción que añade Node a las variables de entorno (*Add to PATH*).
+3. Sigue las instrucciones del asistente de instalación. **Asegúrate** de dejar marcada la opción que añade Node a las variables de entorno (_Add to PATH_).
 4. Al finalizar, puedes verificar la instalación abriendo una consola (`cmd` o `PowerShell`) y ejecutando:
    ```cmd
    node -v
@@ -34,7 +35,8 @@ El middleware está desarrollado en TypeScript/Node.js, por lo que requiere el e
 ## 📁 Paso 2: Ubicación del Código del Middleware
 
 Coloca la carpeta del middleware en una ruta persistente del disco local de la PC.
-* Ejemplo recomendado: `C:\PapesConfort`
+
+- Ejemplo recomendado: `C:\PapesConfort`
 
 Dentro de este directorio, la carpeta específica del middleware se encuentra en `C:\PapesConfort\apps\middleware`.
 
@@ -74,7 +76,7 @@ CLOUDINARY_API_SECRET=dxD8oLE73v6EYbyPT9yGfyhD5sE
 # 5. Ajustes de Sincronización
 # Expresión cron para la frecuencia. */1 * * * * significa cada 1 minuto.
 PRODUCTS_SYNC_CRON=*/1 * * * *
-# Cantidad de stock que se descuenta para seguridad en el backend. 
+# Cantidad de stock que se descuenta para seguridad en el backend.
 # Si el producto tiene stock 2 en GesCom y SAFETY_STOCK=1, el e-commerce mostrará stock 1.
 SAFETY_STOCK=0
 ```
@@ -88,8 +90,8 @@ SAFETY_STOCK=0
 
 El archivo `start.bat` simplifica la instalación e inicio del servicio en Windows.
 
-* Está ubicado en: `apps/middleware/start.bat`
-* **¿Qué hace?**
+- Está ubicado en: `apps/middleware/start.bat`
+- **¿Qué hace?**
   1. Instala automáticamente las dependencias de Node.js la primera vez que se ejecuta (mediante `npm install`).
   2. Inicia el servidor de sincronización (`npm start`), el cual conecta a la BD de GesCom, realiza la primera sincronización de productos, y se queda escuchando cambios de imágenes en tiempo real.
 
@@ -102,6 +104,7 @@ Para probar que todo funciona, simplemente **haz doble clic en `start.bat`**. De
 Para garantizar que el middleware empiece a funcionar de manera continua e independiente de reinicios del sistema, puedes automatizar su arranque de dos formas:
 
 ### Método A: Carpeta de Inicio de Windows (Fácil)
+
 Este método inicia el middleware de forma automática cada vez que Ale inicia sesión en su cuenta de Windows:
 
 1. Presiona las teclas `Win + R` en tu teclado para abrir el cuadro de diálogo "Ejecutar".
@@ -111,6 +114,7 @@ Este método inicia el middleware de forma automática cada vez que Ale inicia s
 5. ¡Listo! Cada vez que inicie la PC y el usuario ingrese a su sesión, la ventana negra del middleware se ejecutará automáticamente.
 
 ### Método B: Programador de Tareas de Windows (Recomendado para Servidores)
+
 Este método ejecuta el middleware de forma oculta en segundo plano ni bien arranca la PC, sin necesidad de que haya un usuario con la sesión iniciada:
 
 1. Presiona `Win`, escribe **Programador de Tareas** y ábrelo.
@@ -119,7 +123,7 @@ Este método ejecuta el middleware de forma oculta en segundo plano ni bien arra
 4. En el desencadenador, selecciona **Al iniciar el equipo** y presiona Siguiente.
 5. En acción, selecciona **Iniciar un programa**.
 6. En "Programa o script", haz clic en Examinar y selecciona el archivo `start.bat` (ej: `C:\PapesConfort\apps\middleware\start.bat`).
-7. **Muy importante**: En el campo **Iniciar en (opcional)**, escribe la ruta completa del directorio donde está el archivo `.bat` (ej: `C:\PapesConfort\apps\middleware\`). *Si omites esto, el script fallará al intentar buscar los archivos locales.*
+7. **Muy importante**: En el campo **Iniciar en (opcional)**, escribe la ruta completa del directorio donde está el archivo `.bat` (ej: `C:\PapesConfort\apps\middleware\`). _Si omites esto, el script fallará al intentar buscar los archivos locales._
 8. Haz clic en Siguiente y luego en Finalizar.
 9. Busca tu nueva tarea en la lista del centro, hazle clic derecho y selecciona **Propiedades**.
 10. En la pestaña "General", selecciona la opción **Ejecutar tanto si el usuario inició sesión como si no** y activa la casilla **Ejecutar con los privilegios más altos**.
@@ -136,10 +140,10 @@ Sigue estos pasos para obtener las credenciales de Cloudinary y configurar la su
 2. **Ir al Panel de Control (Dashboard)**:
    - Una vez dentro, haz clic en **Console** (o ve directamente a [https://console.cloudinary.com/](https://console.cloudinary.com/)).
 3. **Copiar las Credenciales del API**:
-   - En la pantalla principal del Dashboard (sección *Product Environment Details*), verás tres campos clave:
-     * **Cloud Name**
-     * **API Key**
-     * **API Secret** (haz clic en el botón de revelar/ojo para ver la clave completa).
+   - En la pantalla principal del Dashboard (sección _Product Environment Details_), verás tres campos clave:
+     - **Cloud Name**
+     - **API Key**
+     - **API Secret** (haz clic en el botón de revelar/ojo para ver la clave completa).
 4. **Pegar en el archivo `.env` del Middleware**:
    - Abre tu archivo `.env` (`apps/middleware/.env`) y pega los valores correspondientes:
      ```ini
@@ -149,15 +153,13 @@ Sigue estos pasos para obtener las credenciales de Cloudinary y configurar la su
      ```
 5. **Preparar las imágenes en GesCom**:
    - Asegúrate de que los archivos de imágenes en tu carpeta local (ej: `D:\GESCOM28\Datos G\GESCOM\Imagenes`) tengan como nombre **exactamente el SKU del producto** en GesCom.
-   - *Ejemplo*: Para el producto con SKU `10025`, la imagen debe guardarse como `10025.jpg` o `10025.png`.
-
----
+   - _Ejemplo_: Para el producto con SKU `10025`, la imagen debe guardarse como `10025.jpg` o `10025.png`.
 
 ## 🔍 Monitoreo y Solución de Problemas
 
-* **Logs**: El middleware escribe automáticamente un historial detallado en la carpeta `apps/middleware/logs/`. Si algo falla o no se sincroniza un producto, revisa estos archivos de texto para ver la causa exacta.
-* **Historial de cambios (`sync-state.json`)**: El middleware crea un archivo `sync-state.json` en la carpeta `apps/middleware`. Este archivo guarda un hash criptográfico del estado de cada producto. Si el producto no ha cambiado de precio o stock en GesCom, el middleware lo ignora para no sobrecargar el servidor de internet. Si alguna vez necesitas forzar la sincronización completa de todos los productos desde cero, simplemente borra el archivo `sync-state.json` y vuelve a correr el middleware.
-* **Carga Inicial de Imágenes**: Si necesitas subir por primera vez todas las imágenes existentes de GesCom a Cloudinary en lote, puedes abrir una terminal en la carpeta `apps/middleware` y ejecutar:
+- **Logs**: El middleware escribe automáticamente un historial detallado en la carpeta `apps/middleware/logs/`. Si algo falla o no se sincroniza un producto, revisa estos archivos de texto para ver la causa exacta.
+- **Historial de cambios (`sync-state.json`)**: El middleware crea un archivo `sync-state.json` en la carpeta `apps/middleware`. Este archivo guarda un hash criptográfico del estado de cada producto. Si el producto no ha cambiado de precio o stock en GesCom, el middleware lo ignora para no sobrecargar el servidor de internet. Si alguna vez necesitas forzar la sincronización completa de todos los productos desde cero, simplemente borra el archivo `sync-state.json` y vuelve a correr el middleware.
+- **Carga Inicial de Imágenes**: Si necesitas subir por primera vez todas las imágenes existentes de GesCom a Cloudinary en lote, puedes abrir una terminal en la carpeta `apps/middleware` y ejecutar:
   ```cmd
   npm run upload-images
   ```
