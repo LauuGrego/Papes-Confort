@@ -20,32 +20,7 @@ interface GescomStockRow extends RowDataPacket {
   ASub: string | number | null;
 }
 
-interface SyncState {
-  products: Record<string, string>;
-  lastSyncAt: string | null;
-}
-
-const stateFilePath = path.resolve(__dirname, '../../sync-state.json');
-
-function loadSyncState(): SyncState {
-  try {
-    if (fs.existsSync(stateFilePath)) {
-      const data = fs.readFileSync(stateFilePath, 'utf-8');
-      return JSON.parse(data) as SyncState;
-    }
-  } catch (error: any) {
-    logger.error('Failed to load sync state, resetting state', { error: error.message });
-  }
-  return { products: {}, lastSyncAt: null };
-}
-
-function saveSyncState(state: SyncState) {
-  try {
-    fs.writeFileSync(stateFilePath, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (error: any) {
-    logger.error('Failed to save sync state', { error: error.message });
-  }
-}
+import { loadSyncState, saveSyncState } from './state';
 
 function computeProductHash(row: GescomStockRow): string {
   const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}`;

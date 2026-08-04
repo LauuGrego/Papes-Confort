@@ -53,7 +53,7 @@ export async function sendProductsSyncBatch(products: SyncProductItem[]) {
   });
 }
 
-export async function sendImageSyncNotification(sku: string, filename: string, url?: string, isPrimary?: boolean) {
+export async function sendImageSyncNotification(sku: string, filename: string, url?: string, isPrimary?: boolean, sortOrder?: number) {
   return withRetry(async () => {
     try {
       const response = await apiClient.post('/api/sync/images', {
@@ -61,6 +61,7 @@ export async function sendImageSyncNotification(sku: string, filename: string, u
         filename,
         url,
         isPrimary,
+        sortOrder,
       });
       return response.data;
     } catch (error: any) {

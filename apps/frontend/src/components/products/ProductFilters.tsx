@@ -1,4 +1,4 @@
-import { BrandDto, ProductCategoryDto } from '@papes-confort/shared';
+import { ProductCategoryDto } from '@papes-confort/shared';
 
 interface FamilyWithCategories {
   id: string;
@@ -10,35 +10,29 @@ interface FamilyWithCategories {
 
 interface ProductFiltersProps {
   families: FamilyWithCategories[];
-  brands: BrandDto[];
   selectedFamily: string | null;
   selectedCategory: string | null;
-  selectedBrand: string | null;
   selectedProductType: string | null;
   onFilterChange: (filters: {
     family?: string | null;
     category?: string | null;
-    brand?: string | null;
     productType?: string | null;
   }) => void;
 }
 
 export default function ProductFilters({
   families,
-  brands,
   selectedFamily,
   selectedCategory,
-  selectedBrand,
   selectedProductType,
   onFilterChange,
 }: ProductFiltersProps) {
-  const hasActiveFilters = selectedFamily || selectedCategory || selectedBrand || selectedProductType;
+  const hasActiveFilters = selectedFamily || selectedCategory || selectedProductType;
 
   const handleReset = () => {
     onFilterChange({
       family: null,
       category: null,
-      brand: null,
       productType: null,
     });
   };
@@ -112,38 +106,6 @@ export default function ProductFilters({
                   </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Brands */}
-      <div className="space-y-4">
-        <h4 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400">
-          Marcas
-        </h4>
-        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-          {brands.map((brand) => {
-            const isBrandActive = selectedBrand === brand.id;
-            return (
-              <button
-                key={brand.id}
-                onClick={() =>
-                  onFilterChange({
-                    brand: isBrandActive ? null : brand.id,
-                  })
-                }
-                className={`w-full flex items-center justify-between text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${
-                  isBrandActive
-                    ? 'bg-brand-red/10 text-brand-red font-bold'
-                    : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span>{brand.name}</span>
-                {brand.productCount !== undefined && (
-                  <span className="text-[10px] opacity-60">({brand.productCount})</span>
-                )}
-              </button>
             );
           })}
         </div>

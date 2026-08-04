@@ -5,31 +5,51 @@ import { config } from '../config';
 import { sendImageSyncNotification } from '../api/client';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import { logger } from '../utils/logger';
+import { loadSyncState, saveSyncState } from './state';
 
 export function extractSkuFromFilename(filename: string): string {
   const ext = path.extname(filename);
-  const nameWithoutExt = path.basename(filename, ext).trim();
+  let name = path.basename(filename, ext).trim();
 
-  // Si empieza con "Art_" o "art_"
-  if (nameWithoutExt.toLowerCase().startsWith('art_')) {
-    const rest = nameWithoutExt.substring(4);
-    // Si tiene un sufijo como "_01", tomamos la parte del SKU
-    if (rest.includes('_')) {
-      return rest.split('_')[0].trim();
-    }
-    return rest.trim();
+  // Strip "art_" or "Art_" prefix
+  if (name.toLowerCase().startsWith('art_')) {
+    name = name.substring(4).trim();
   }
 
-  // Si no empieza con "Art_" pero tiene un sufijo como "_01" (ej: "01500301_01")
-  if (nameWithoutExt.includes('_')) {
-    return nameWithoutExt.split('_')[0].trim();
-  }
+  // Strip trailing suffixes like _01, _1, -1, -02,  01, etc.
+  name = name.replace(/[-_\s]+0*[1-9]\d*$/, '').trim();
 
-  return nameWithoutExt;
+  // Also fallback split if there is any other underscore left
+  if (name.includes('_')) {
+    name = name.split('_')[0].trim();
+  }
+  
+  return name;
 }
 
+export function isPrimaryImage(filename: string): boolean {
+  const ext = path.extname(filename);
+  const nameWithoutExt = path.basename(filename, ext).trim();
 
-export function startImageWatcher() {
+  // If filename ends with any suffix ending with a number >= 2 (e.g. _02, _2, -2, etc.), it is not primary.
+  const nonPrimarySuffixRegex = /[-_\s]+0*[2-9]\d*$/;
+  return !nonPrimarySuffixRegex.test(nameWithoutExt);
+}
+
+export function extractSuffixNumber(filename: string): number {
+  const ext = path.extname(filename);
+  const nameWithoutExt = path.basename(filename, ext).trim();
+
+  // Match a trailing number preceded by - or _ or space
+  const match = nameWithoutExt.match(/[-_\s]+(\d+)$/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  // Default to 1 if no suffix is found
+  return 1;
+}
+
+export async function startImageWatcher() {
   const imagesDir = config.imagesPath;
 
   if (!fs.existsSync(imagesDir)) {
@@ -37,12 +57,79 @@ export function startImageWatcher() {
     return;
   }
 
-  logger.info(`Starting real-time image watcher on: ${imagesDir}`);
+  logger.info(`Scanning and starting real-time image watcher on: ${imagesDir}`);
 
+  // 1. Initial scan & synchronization (Self-Healing)
+  try {
+    const files = fs.readdirSync(imagesDir);
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif'];
+    const imageFiles = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return imageExtensions.includes(ext);
+    });
+
+    if (imageFiles.length > 0) {
+      logger.info(`Found ${imageFiles.length} image files locally. Verifying database and Cloudinary sync...`);
+      const state = loadSyncState();
+      let stateChanged = false;
+
+      for (const filename of imageFiles) {
+        const filePath = path.join(imagesDir, filename);
+        const stats = fs.statSync(filePath);
+        const sku = extractSkuFromFilename(filename);
+
+        if (!sku) {
+          logger.warn(`[Startup Sync] Skipped "${filename}" because SKU could not be extracted.`);
+          continue;
+        }
+
+        const size = stats.size;
+        const mtime = stats.mtimeMs;
+        const existing = state.images[filename];
+        const isPrimary = isPrimaryImage(filename);
+        const sortOrder = extractSuffixNumber(filename);
+
+        if (existing && existing.size === size && existing.mtime === mtime && existing.url) {
+          // Already uploaded to Cloudinary, but send backend notification to heal the database link just in case
+          logger.info(`[Startup Sync] "${filename}" already in local state. Healing/notifying backend...`);
+          try {
+            await sendImageSyncNotification(sku, filename, existing.url, isPrimary, sortOrder);
+          } catch (backendErr: any) {
+            logger.warn(`[Startup Sync] Backend notification failed for "${filename}" (SKU: ${sku}): ${backendErr.message}`);
+          }
+        } else {
+          // Upload or re-upload
+          logger.info(`[Startup Sync] Uploading "${filename}" (SKU: "${sku}") to Cloudinary...`);
+          try {
+            const ext = path.extname(filename);
+            const publicId = path.basename(filename, ext).trim();
+            const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
+
+            if (cloudinaryUrl) {
+              logger.info(`[Startup Sync] Uploaded. Notifying backend...`);
+              await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
+              state.images[filename] = { mtime, size, url: cloudinaryUrl };
+              stateChanged = true;
+            }
+          } catch (uploadErr: any) {
+            logger.error(`[Startup Sync] Failed to sync "${filename}": ${uploadErr.message}`);
+          }
+        }
+      }
+
+      if (stateChanged) {
+        saveSyncState(state);
+      }
+    }
+  } catch (scanError: any) {
+    logger.error('Error during initial image folder scan:', { error: scanError.message });
+  }
+
+  // 2. Start realtime watcher for new additions/changes
   const watcher = chokidar.watch(imagesDir, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true,
-    ignoreInitial: true,
+    ignoreInitial: true, // We already scanned initially
     awaitWriteFinish: {
       stabilityThreshold: 2000,
       pollInterval: 100,
@@ -56,15 +143,24 @@ export function startImageWatcher() {
 
       if (!sku) return;
 
-      logger.info(`New image detected for SKU "${sku}": ${filename}`);
+      const stats = fs.statSync(filePath);
+      const isPrimary = isPrimaryImage(filename);
+      const sortOrder = extractSuffixNumber(filename);
+      logger.info(`[Realtime Watcher] New image detected for SKU "${sku}": ${filename}`);
       
       const ext = path.extname(filename);
       const publicId = path.basename(filename, ext).trim();
       const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
 
-      await sendImageSyncNotification(sku, filename, cloudinaryUrl || undefined);
+      if (cloudinaryUrl) {
+        await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
+        const state = loadSyncState();
+        state.images[filename] = { mtime: stats.mtimeMs, size: stats.size, url: cloudinaryUrl };
+        saveSyncState(state);
+        logger.info(`[Realtime Watcher] Successfully synced and saved "${filename}"`);
+      }
     } catch (error: any) {
-      logger.error(`Error processing added image: ${filePath}`, { error: error.message });
+      logger.error(`[Realtime Watcher] Error processing added image: ${filePath}`, { error: error.message });
     }
   });
 
@@ -75,15 +171,24 @@ export function startImageWatcher() {
 
       if (!sku) return;
 
-      logger.info(`Image modified for SKU "${sku}": ${filename}`);
+      const stats = fs.statSync(filePath);
+      const isPrimary = isPrimaryImage(filename);
+      const sortOrder = extractSuffixNumber(filename);
+      logger.info(`[Realtime Watcher] Image modified for SKU "${sku}": ${filename}`);
       
       const ext = path.extname(filename);
       const publicId = path.basename(filename, ext).trim();
       const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
 
-      await sendImageSyncNotification(sku, filename, cloudinaryUrl || undefined);
+      if (cloudinaryUrl) {
+        await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
+        const state = loadSyncState();
+        state.images[filename] = { mtime: stats.mtimeMs, size: stats.size, url: cloudinaryUrl };
+        saveSyncState(state);
+        logger.info(`[Realtime Watcher] Successfully updated and saved "${filename}"`);
+      }
     } catch (error: any) {
-      logger.error(`Error processing changed image: ${filePath}`, { error: error.message });
+      logger.error(`[Realtime Watcher] Error processing changed image: ${filePath}`, { error: error.message });
     }
   });
 }

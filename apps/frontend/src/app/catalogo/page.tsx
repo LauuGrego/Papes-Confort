@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, Grid, Search, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
-import { BrandDto, ProductDto, PaginatedResponse } from '@papes-confort/shared';
+import { ProductDto, PaginatedResponse } from '@papes-confort/shared';
 import ProductCard from '../../components/products/ProductCard';
 import ProductFilters from '../../components/products/ProductFilters';
 import Pagination from '../../components/Pagination';
@@ -12,34 +12,50 @@ export default function CatalogoPage() {
   const [loading, setLoading] = useState(true);
   const [productsData, setProductsData] = useState<PaginatedResponse<ProductDto> | null>(null);
   const [families, setFamilies] = useState<any[]>([]);
-  const [brands, setBrands] = useState<BrandDto[]>([]);
 
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
+  // 1. Read initial search/filter/page parameters from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    
+    const pageParam = params.get('page');
+    const searchParam = params.get('search');
+    const familyParam = params.get('type');
+    const categoryParam = params.get('categoryId');
+    const productTypeParam = params.get('productType');
+
+    if (pageParam) setPage(Number(pageParam));
+    if (familyParam) setSelectedFamily(familyParam);
+    if (categoryParam) setSelectedCategory(categoryParam);
+    if (productTypeParam) setSelectedProductType(productTypeParam);
+    if (searchParam) {
+      setSearch(searchParam);
+      setSearchInput(searchParam);
+    }
+    
+    setInitialLoaded(true);
+  }, []);
+
+  // 2. Load metadata (categories)
   useEffect(() => {
     async function loadMetadata() {
-      const [categoriesRes, brandsRes] = await Promise.all([
-        fetchApi<any[]>('/api/categories'),
-        fetchApi<BrandDto[]>('/api/brands'),
-      ]);
-
-      if (categoriesRes.success && categoriesRes.data) {
-        setFamilies(categoriesRes.data);
-      }
-      if (brandsRes.success && brandsRes.data) {
-        setBrands(brandsRes.data);
+      const res = await fetchApi<any[]>('/api/categories');
+      if (res.success && res.data) {
+        setFamilies(res.data);
       }
     }
     loadMetadata();
   }, []);
 
+  // 3. Fetch products function
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
@@ -49,7 +65,6 @@ export default function CatalogoPage() {
     if (search) params.set('search', search);
     if (selectedFamily) params.set('type', selectedFamily);
     if (selectedCategory) params.set('categoryId', selectedCategory);
-    if (selectedBrand) params.set('brandId', selectedBrand);
     if (selectedProductType) params.set('productType', selectedProductType);
 
     const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/products?${params.toString()}`);
@@ -57,29 +72,53 @@ export default function CatalogoPage() {
       setProductsData(res.data);
     }
     setLoading(false);
-  }, [page, search, selectedFamily, selectedCategory, selectedBrand, selectedProductType]);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType]);
 
+  // 4. Trigger fetch when parameters or loading ready state changes
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (initialLoaded) {
+      fetchProducts();
+    }
+  }, [fetchProducts, initialLoaded]);
 
+  // 5. Update URL parameters when states change
   useEffect(() => {
+    if (!initialLoaded) return;
+    const params = new URLSearchParams();
+    
+    if (page > 1) params.set('page', String(page));
+    if (search) params.set('search', search);
+    if (selectedFamily) params.set('type', selectedFamily);
+    if (selectedCategory) params.set('categoryId', selectedCategory);
+    if (selectedProductType) params.set('productType', selectedProductType);
+
+    const qs = params.toString();
+    const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    
+    window.history.replaceState(null, '', newUrl);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType, initialLoaded]);
+
+  // 6. Debounce search input and reset page to 1 on actual search query changes
+  useEffect(() => {
+    if (!initialLoaded) return;
+    
+    // Only reset page & update search if searchInput actually changed
+    if (searchInput === search) return;
+
     const timer = setTimeout(() => {
       setSearch(searchInput);
       setPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, search, initialLoaded]);
 
   const handleFilterChange = (filters: {
     family?: string | null;
     category?: string | null;
-    brand?: string | null;
     productType?: string | null;
   }) => {
     if (filters.family !== undefined) setSelectedFamily(filters.family);
     if (filters.category !== undefined) setSelectedCategory(filters.category);
-    if (filters.brand !== undefined) setSelectedBrand(filters.brand);
     if (filters.productType !== undefined) setSelectedProductType(filters.productType);
     setPage(1);
   };
@@ -122,10 +161,8 @@ export default function CatalogoPage() {
 
           <ProductFilters
             families={families}
-            brands={brands}
             selectedFamily={selectedFamily}
             selectedCategory={selectedCategory}
-            selectedBrand={selectedBrand}
             selectedProductType={selectedProductType}
             onFilterChange={handleFilterChange}
           />
@@ -216,10 +253,8 @@ export default function CatalogoPage() {
             <div className="flex-1">
               <ProductFilters
                 families={families}
-                brands={brands}
                 selectedFamily={selectedFamily}
                 selectedCategory={selectedCategory}
-                selectedBrand={selectedBrand}
                 selectedProductType={selectedProductType}
                 onFilterChange={handleFilterChange}
               />

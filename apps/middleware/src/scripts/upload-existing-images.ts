@@ -4,7 +4,7 @@ import { config } from '../config';
 import { sendImageSyncNotification } from '../api/client';
 import { uploadToCloudinary, isCloudinaryConfigured } from '../utils/cloudinary';
 import { logger } from '../utils/logger';
-import { extractSkuFromFilename } from '../sync/images';
+import { extractSkuFromFilename, isPrimaryImage, extractSuffixNumber } from '../sync/images';
 
 async function uploadExistingImages() {
   logger.info('Starting batch upload of existing local images to Cloudinary...');
@@ -57,7 +57,9 @@ async function uploadExistingImages() {
         if (cloudinaryUrl) {
           logger.info(`  Uploaded. URL: ${cloudinaryUrl}`);
           logger.info(`  Notifying backend...`);
-          await sendImageSyncNotification(sku, filename, cloudinaryUrl);
+          const isPrimary = isPrimaryImage(filename);
+          const sortOrder = extractSuffixNumber(filename);
+          await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
           logger.info(`  Successfully synced ${filename}`);
           succeeded++;
         } else {

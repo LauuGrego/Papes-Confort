@@ -8,7 +8,7 @@ router.use(requireSyncAuth);
 
 router.post('/', async (req, res, next) => {
   try {
-    const { sku, filename, url, isPrimary } = req.body;
+    const { sku, filename, url, isPrimary, sortOrder } = req.body;
 
     if (!sku || !filename) {
       res.status(400).json({
@@ -18,9 +18,48 @@ router.post('/', async (req, res, next) => {
       return;
     }
 
-    const product = await prisma.product.findUnique({
-      where: { sku: String(sku) },
+    const targetSku = String(sku).trim();
+    const targetSkuClean = targetSku.replace(/^0+/, '');
+
+    let product = await prisma.product.findUnique({
+      where: { sku: targetSku },
     });
+
+    if (!product) {
+      product = await prisma.product.findFirst({
+        where: {
+          sku: {
+            equals: targetSku,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
+
+    if (!product) {
+      product = await prisma.product.findFirst({
+        where: {
+          sku: {
+            equals: targetSkuClean,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
+
+    if (!product) {
+      const potentialProducts = await prisma.product.findMany({
+        where: {
+          sku: {
+            contains: targetSkuClean,
+            mode: 'insensitive',
+          },
+        },
+      });
+      product = potentialProducts.find(
+        (p) => p.sku.replace(/^0+/, '').toLowerCase() === targetSkuClean.toLowerCase()
+      ) || null;
+    }
 
     if (!product) {
       res.status(404).json({
@@ -39,27 +78,43 @@ router.post('/', async (req, res, next) => {
       },
     });
 
+    const imageCount = await prisma.productImage.count({
+      where: { productId: product.id },
+    });
+
+    const isPrimaryBool = isPrimary !== undefined 
+      ? Boolean(isPrimary) 
+      : (existingImage ? existingImage.isPrimary : (imageCount === 0));
+
+    if (isPrimaryBool) {
+      // Reset isPrimary flag on other images of this product to ensure only one is primary
+      await prisma.productImage.updateMany({
+        where: {
+          productId: product.id,
+          NOT: existingImage ? { id: existingImage.id } : undefined,
+        },
+        data: { isPrimary: false },
+      });
+    }
+
     let image;
     if (existingImage) {
       image = await prisma.productImage.update({
         where: { id: existingImage.id },
         data: {
           url: imageUrl,
-          isPrimary: isPrimary !== undefined ? Boolean(isPrimary) : existingImage.isPrimary,
+          isPrimary: isPrimaryBool,
+          sortOrder: sortOrder !== undefined ? Number(sortOrder) : existingImage.sortOrder,
         },
       });
     } else {
-      const imageCount = await prisma.productImage.count({
-        where: { productId: product.id },
-      });
-
       image = await prisma.productImage.create({
         data: {
           productId: product.id,
           url: imageUrl,
           gescomFilename: String(filename),
-          isPrimary: isPrimary !== undefined ? Boolean(isPrimary) : imageCount === 0,
-          sortOrder: imageCount,
+          isPrimary: isPrimaryBool,
+          sortOrder: sortOrder !== undefined ? Number(sortOrder) : imageCount,
         },
       });
     }

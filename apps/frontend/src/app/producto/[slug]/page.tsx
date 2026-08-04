@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, ArrowLeft, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -198,13 +198,6 @@ export default function ProductDetailPage() {
 
           {/* Key details checklist */}
           <div className="space-y-4 text-sm border-t border-b border-slate-100 py-6">
-            <div className="flex gap-4">
-              <ShieldCheck className="h-5 w-5 text-brand-red shrink-0" />
-              <div>
-                <h4 className="font-bold text-brand-black">Garantía Asegurada</h4>
-                <p className="text-xs text-slate-400">{product.warrantyMonths} Meses de garantía oficial de fábrica.</p>
-              </div>
-            </div>
             <div className="flex gap-4">
               <Truck className="h-5 w-5 text-brand-red shrink-0" />
               <div>
