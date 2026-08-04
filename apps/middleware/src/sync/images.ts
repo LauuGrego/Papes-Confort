@@ -8,9 +8,26 @@ import { logger } from '../utils/logger';
 
 export function extractSkuFromFilename(filename: string): string {
   const ext = path.extname(filename);
-  const nameWithoutExt = path.basename(filename, ext);
-  return nameWithoutExt.trim();
+  const nameWithoutExt = path.basename(filename, ext).trim();
+
+  // Si empieza con "Art_" o "art_"
+  if (nameWithoutExt.toLowerCase().startsWith('art_')) {
+    const rest = nameWithoutExt.substring(4);
+    // Si tiene un sufijo como "_01", tomamos la parte del SKU
+    if (rest.includes('_')) {
+      return rest.split('_')[0].trim();
+    }
+    return rest.trim();
+  }
+
+  // Si no empieza con "Art_" pero tiene un sufijo como "_01" (ej: "01500301_01")
+  if (nameWithoutExt.includes('_')) {
+    return nameWithoutExt.split('_')[0].trim();
+  }
+
+  return nameWithoutExt;
 }
+
 
 export function startImageWatcher() {
   const imagesDir = config.imagesPath;
