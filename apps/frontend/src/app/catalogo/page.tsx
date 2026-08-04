@@ -6,6 +6,7 @@ import { fetchApi } from '../../lib/api';
 import { BrandDto, ProductDto, PaginatedResponse } from '@papes-confort/shared';
 import ProductCard from '../../components/products/ProductCard';
 import ProductFilters from '../../components/products/ProductFilters';
+import Pagination from '../../components/Pagination';
 
 export default function CatalogoPage() {
   const [loading, setLoading] = useState(true);
@@ -178,39 +179,12 @@ export default function CatalogoPage() {
             </div>
           )}
 
-          {productsData && productsData.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="px-4 py-2 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-              >
-                Anterior
-              </button>
-              {Array.from({ length: productsData.totalPages }).map((_, idx) => {
-                const pNum = idx + 1;
-                return (
-                  <button
-                    key={pNum}
-                    onClick={() => setPage(pNum)}
-                    className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
-                      page === pNum
-                        ? 'bg-brand-red text-white shadow-md'
-                        : 'border border-slate-100 hover:bg-slate-50'
-                    }`}
-                  >
-                    {pNum}
-                  </button>
-                );
-              })}
-              <button
-                disabled={page === productsData.totalPages}
-                onClick={() => setPage(page + 1)}
-                className="px-4 py-2 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-              >
-                Siguiente
-              </button>
-            </div>
+          {productsData && (
+            <Pagination
+              currentPage={page}
+              totalPages={productsData.totalPages}
+              onPageChange={setPage}
+            />
           )}
         </main>
       </div>

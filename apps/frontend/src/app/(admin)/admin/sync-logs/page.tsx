@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { fetchApi } from '../../../../lib/api';
 import { Loader2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import Pagination from '../../../../components/Pagination';
 
 export default function AdminSyncLogsPage() {
   const [loading, setLoading] = useState(true);
@@ -110,29 +111,13 @@ export default function AdminSyncLogsPage() {
           </div>
 
           {/* Pagination */}
-          {logsData.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-50 p-6">
-              <span className="text-slate-400 text-xs">
-                Página {logsData.page} de {logsData.totalPages} ({logsData.total} Corridas)
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                  className="px-4 py-1.5 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  disabled={page === logsData.totalPages}
-                  onClick={() => setPage(page + 1)}
-                  className="px-4 py-1.5 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={page}
+            totalPages={logsData.totalPages}
+            onPageChange={setPage}
+            totalItems={logsData.total}
+            itemLabel="Corridas"
+          />
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 shadow-[0_5px_20px_rgba(0,0,0,0.01)]">

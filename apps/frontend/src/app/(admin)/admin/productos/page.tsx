@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { fetchApi } from '../../../../lib/api';
 import { ProductDto, PaginatedResponse } from '@papes-confort/shared';
 import { Loader2, Search, Edit2, X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import Pagination from '../../../../components/Pagination';
 
 export default function AdminProductosPage() {
   const [loading, setLoading] = useState(true);
@@ -225,29 +226,13 @@ export default function AdminProductosPage() {
           </div>
 
           {/* Pagination */}
-          {productsData.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-50 p-6">
-              <span className="text-slate-400 text-xs">
-                Página {productsData.page} de {productsData.totalPages} ({productsData.total} Productos)
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                  className="px-4 py-1.5 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  disabled={page === productsData.totalPages}
-                  onClick={() => setPage(page + 1)}
-                  className="px-4 py-1.5 text-xs font-bold uppercase rounded-xl border border-slate-100 disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition-colors"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={page}
+            totalPages={productsData.totalPages}
+            onPageChange={setPage}
+            totalItems={productsData.total}
+            itemLabel="Productos"
+          />
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 shadow-[0_5px_20px_rgba(0,0,0,0.01)]">
