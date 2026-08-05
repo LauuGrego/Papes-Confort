@@ -56,9 +56,20 @@ export default function ProductCard({ product }: ProductCardProps) {
         <h3 className="font-display text-xs md:text-base font-bold text-brand-black mb-1 md:mb-2 line-clamp-2 leading-tight group-hover:text-brand-red transition-colors duration-200">
           {product.name}
         </h3>
-        <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed hidden md:block">
-          {product.description || 'Sin descripción adicional.'}
-        </p>
+        
+        {/* Stock Badge */}
+        <div className="mb-2">
+          {product.stockVisible > 0 ? (
+            <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-emerald-700">
+              {product.stockVisible} disponible{product.stockVisible > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-rose-700">
+              Sin stock
+            </span>
+          )}
+        </div>
+
       </div>
 
       <div className="border-t border-slate-50 pt-2 md:pt-4 mt-auto">

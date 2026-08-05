@@ -14,6 +14,8 @@ export const apiClient = axios.create({
 export interface SyncProductItem {
   sku: string;
   gescomName: string;
+  name?: string;
+  description?: string;
   basePrice: number;
   stock: number;
   brandName?: string;
@@ -23,6 +25,7 @@ export interface SyncProductItem {
   unit?: string;
   rubro?: string;
   subrubro?: string;
+  isActive?: boolean;
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {

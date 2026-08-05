@@ -13,10 +13,13 @@ interface ProductFiltersProps {
   selectedFamily: string | null;
   selectedCategory: string | null;
   selectedProductType: string | null;
+  brands: { id: string; name: string; slug: string; productCount: number }[];
+  selectedBrand: string | null;
   onFilterChange: (filters: {
     family?: string | null;
     category?: string | null;
     productType?: string | null;
+    brand?: string | null;
   }) => void;
 }
 
@@ -25,15 +28,18 @@ export default function ProductFilters({
   selectedFamily,
   selectedCategory,
   selectedProductType,
+  brands = [],
+  selectedBrand,
   onFilterChange,
 }: ProductFiltersProps) {
-  const hasActiveFilters = selectedFamily || selectedCategory || selectedProductType;
+  const hasActiveFilters = selectedFamily || selectedCategory || selectedProductType || selectedBrand;
 
   const handleReset = () => {
     onFilterChange({
       family: null,
       category: null,
       productType: null,
+      brand: null,
     });
   };
 
@@ -53,10 +59,10 @@ export default function ProductFilters({
         )}
       </div>
 
-      {/* Product Families */}
+      {/* Product Families (Rubros y Subrubros) */}
       <div className="space-y-4">
         <h4 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400">
-          Categorías
+          Rubros y Subrubros
         </h4>
         <div className="space-y-2">
           {families.map((fam) => {
@@ -110,6 +116,38 @@ export default function ProductFilters({
           })}
         </div>
       </div>
+
+      {/* Brands (Marcas) */}
+      {brands.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400">
+            Marcas
+          </h4>
+          <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+            {brands.map((b) => {
+              const isBrandActive = selectedBrand === b.id;
+              return (
+                <button
+                  key={b.id}
+                  onClick={() =>
+                    onFilterChange({
+                      brand: isBrandActive ? null : b.id,
+                    })
+                  }
+                  className={`w-full flex items-center justify-between text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${
+                    isBrandActive
+                      ? 'bg-brand-red/10 text-brand-red font-bold'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{b.name}</span>
+                  <span className="text-[10px] opacity-60">({b.productCount})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pricing/Outlet Type */}
       <div className="space-y-4">

@@ -65,6 +65,8 @@ router.post('/', async (req, res, next) => {
         const {
           sku,
           gescomName,
+          name,
+          description,
           basePrice,
           stock,
           brandName,
@@ -74,6 +76,7 @@ router.post('/', async (req, res, next) => {
           unit,
           rubro,
           subrubro,
+          isActive,
         } = item;
 
         if (!sku || gescomName === undefined || basePrice === undefined || stock === undefined) {
@@ -104,6 +107,50 @@ router.post('/', async (req, res, next) => {
           brandId = brand.id;
         }
 
+        // Handle family and category (taxonomy)
+        let productFamilyId = defaultFamily.id;
+        let productCategoryId: string | undefined = undefined;
+
+        if (rubro && String(rubro).trim()) {
+          const trimmedRubro = String(rubro).trim();
+          const familyName = `Rubro ${trimmedRubro}`;
+          const familySlug = slugify(familyName);
+          let family = await prisma.productFamily.findUnique({
+            where: { slug: familySlug },
+          });
+
+          if (!family) {
+            family = await prisma.productFamily.create({
+              data: {
+                name: familyName,
+                slug: familySlug || `family-${Date.now()}-${trimmedRubro}`,
+              },
+            });
+          }
+          productFamilyId = family.id;
+
+          if (subrubro && String(subrubro).trim()) {
+            const trimmedSubrubro = String(subrubro).trim();
+            const categoryName = `Subrubro ${trimmedSubrubro}`;
+            // Avoid collisions between identical subrubro codes belonging to different rubros
+            const categorySlug = slugify(`rubro-${trimmedRubro}-subrubro-${trimmedSubrubro}`);
+            let category = await prisma.productCategory.findUnique({
+              where: { slug: categorySlug },
+            });
+
+            if (!category) {
+              category = await prisma.productCategory.create({
+                data: {
+                  name: categoryName,
+                  slug: categorySlug || `category-${Date.now()}-${trimmedSubrubro}`,
+                  productFamilyId: family.id,
+                },
+              });
+            }
+            productCategoryId = category.id;
+          }
+        }
+
         const numericPrice = Number(basePrice);
         const numericStock = Number(stock);
         const baseSlug = slugify(gescomName) || `prod-${sku}`;
@@ -127,9 +174,14 @@ router.post('/', async (req, res, next) => {
             where: { id: existing.id },
             data: {
               gescomName: String(gescomName),
+              name: name || String(gescomName),
+              ...(description !== undefined && { description: String(description) }),
+              ...(isActive !== undefined && { isActive: Boolean(isActive) }),
               basePrice: numericPrice,
               stock: numericStock,
               brandId,
+              productFamilyId,
+              productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
               gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
               barcode: barcode !== undefined ? barcode : undefined,
               specs: updatedSpecs,
@@ -150,12 +202,15 @@ router.post('/', async (req, res, next) => {
               gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
               barcode: barcode !== undefined ? barcode : undefined,
               gescomName: String(gescomName),
-              name: String(gescomName),
+              name: name || String(gescomName),
               slug: finalSlug,
+              description: description !== undefined ? String(description) : undefined,
+              isActive: isActive !== undefined ? Boolean(isActive) : true,
               basePrice: numericPrice,
               stock: numericStock,
               brandId,
-              productFamilyId: defaultFamily.id,
+              productFamilyId,
+              productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
               specs: newSpecs,
               lastSyncAt: new Date(),
             },

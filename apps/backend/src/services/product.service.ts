@@ -93,10 +93,13 @@ export async function getProducts(params: {
   const limit = params.limit || 10;
   const skip = (page - 1) * limit;
 
+  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
+  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
+
   const where: any = {
     isActive: true,
     deletedAt: null,
-    stock: { gt: 0 },
+    stock: { gt: safetyStock },
   };
 
   if (params.brandId) {
@@ -146,9 +149,6 @@ export async function getProducts(params: {
     prisma.product.count({ where }),
   ]);
 
-  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
-
   const dtos = await Promise.all(items.map(item => mapProductToDto(item, safetyStock)));
 
   return {
@@ -161,12 +161,15 @@ export async function getProducts(params: {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDto | null> {
+  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
+  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
+
   const product = await prisma.product.findFirst({
     where: {
       slug,
       isActive: true,
       deletedAt: null,
-      stock: { gt: 0 },
+      stock: { gt: safetyStock },
     },
     include: {
       brand: true,
@@ -179,7 +182,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDto | null>
   });
 
   if (!product) return null;
-  return mapProductToDto(product);
+  return mapProductToDto(product, safetyStock);
 }
 
 export async function getAdminProducts(params: {

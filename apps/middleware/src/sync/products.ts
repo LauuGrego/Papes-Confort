@@ -18,20 +18,18 @@ interface GescomStockRow extends RowDataPacket {
   AUNI: string | null;
   ARub: string | number | null;
   ASub: string | number | null;
+  AMar: string | number | null;
+  ANOVENTA: number | null;
+  ADESACT: number | null;
 }
 
 import { loadSyncState, saveSyncState } from './state';
 
 function computeProductHash(row: GescomStockRow): string {
-  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}`;
+  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
-function extractBrand(description: string): string | undefined {
-  const firstWord = description.trim().split(/\s+/)[0];
-  if (!firstWord || firstWord.length < 2) return undefined;
-  return firstWord.toUpperCase();
-}
 
 export async function syncProductsFromGescom() {
   const startTime = Date.now();
@@ -39,7 +37,7 @@ export async function syncProductsFromGescom() {
 
   try {
     const [rows] = await gescomPool.query<GescomStockRow[]>(
-      'SELECT KeyID, ACod, ADes, AVenta, AExis, ABarra, AIVA, AUNI, ARub, ASub FROM Stock_Articulo'
+      'SELECT KeyID, ACod, ADes, AVenta, AExis, ABarra, AIVA, AUNI, ARub, ASub, AMar, ANOVENTA, ADESACT FROM Stock_Articulo'
     );
 
     if (!rows || rows.length === 0) {
@@ -64,7 +62,6 @@ export async function syncProductsFromGescom() {
       }
 
       const rawStock = Number(row.AExis) || 0;
-      const effectiveStock = Math.max(0, rawStock - config.safetyStock);
       const name = String(row.ADes || '').trim();
 
       const barcode = row.ABarra && String(row.ABarra).trim() ? String(row.ABarra).trim() : undefined;
@@ -72,19 +69,24 @@ export async function syncProductsFromGescom() {
       const unit = row.AUNI && String(row.AUNI).trim() ? String(row.AUNI).trim() : undefined;
       const rubro = row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined;
       const subrubro = row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined;
+      const brandName = row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined;
+      const isActive = Number(row.ANOVENTA) !== 1 && Number(row.ADESACT) !== 1;
 
       changedProducts.push({
         sku,
         gescomName: name,
+        name,
+        description: undefined,
         basePrice: Number(row.AVenta) || 0,
-        stock: effectiveStock,
+        stock: rawStock,
         gescomId: Number(row.KeyID),
         barcode,
         ivaPercent,
         unit,
         rubro,
         subrubro,
-        brandName: extractBrand(name),
+        brandName,
+        isActive,
       });
 
       nextStateProducts[sku] = currentHash;

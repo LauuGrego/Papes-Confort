@@ -175,6 +175,26 @@ export default function ProductDetailPage() {
               </p>
             )}
 
+            {/* Stock Availability Indicator */}
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-100/50">
+              {product.stockVisible > 3 ? (
+                <>
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-emerald-700">Stock disponible ({product.stockVisible} unidades)</span>
+                </>
+              ) : product.stockVisible > 0 ? (
+                <>
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-amber-700">Últimas {product.stockVisible} unidades disponibles</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                  <span className="text-xs font-semibold text-rose-700">Sin stock disponible</span>
+                </>
+              )}
+            </div>
+
             {/* CTA Buttons */}
             <div className="pt-2">
               <a
@@ -215,19 +235,17 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Description */}
-          {product.description && (
-            <div className="space-y-3">
-              <h3 className="font-display font-bold text-sm uppercase tracking-wider text-slate-700">
-                Descripción
-              </h3>
-              <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-line">
-                {product.description}
-              </p>
-            </div>
-          )}
+          <div className="space-y-3">
+            <h3 className="font-display font-bold text-sm uppercase tracking-wider text-slate-700">
+              Descripción
+            </h3>
+            <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-line">
+              {product.description || product.name}
+            </p>
+          </div>
 
           {/* Specs Table */}
-          {product.specs && Object.keys(product.specs).filter(k => !['ivaPercent', 'unit', 'rubro', 'subrubro'].includes(k)).length > 0 && (
+          {product.specs && Object.keys(product.specs).filter(k => k !== 'ivaPercent').length > 0 && (
             <div className="space-y-4">
               <h3 className="font-display font-bold text-sm uppercase tracking-wider text-slate-700">
                 Especificaciones Técnicas
@@ -236,20 +254,30 @@ export default function ProductDetailPage() {
                 <table className="w-full text-left text-xs border-collapse">
                   <tbody>
                     {Object.entries(product.specs)
-                      .filter(([key]) => !['ivaPercent', 'unit', 'rubro', 'subrubro'].includes(key))
-                      .map(([key, val], idx) => (
-                        <tr
-                          key={key}
-                          className={idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}
-                        >
-                          <td className="px-4 py-3 font-semibold text-slate-500 w-1/3 border-b border-slate-100 capitalize">
-                            {key.replace(/_/g, ' ')}
-                          </td>
-                          <td className="px-4 py-3 text-brand-black border-b border-slate-100">
-                            {String(val)}
-                          </td>
-                        </tr>
-                      ))}
+                      .filter(([key]) => key !== 'ivaPercent')
+                      .map(([key, val], idx) => {
+                        const specLabels: Record<string, string> = {
+                          unit: 'Unidad de Medida',
+                          rubro: 'Código de Rubro',
+                          subrubro: 'Código de Subrubro',
+                        };
+                        const label = specLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                        const displayValue = String(val);
+
+                        return (
+                          <tr
+                            key={key}
+                            className={idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}
+                          >
+                            <td className="px-4 py-3 font-semibold text-slate-500 w-1/3 border-b border-slate-100">
+                              {label}
+                            </td>
+                            <td className="px-4 py-3 text-brand-black border-b border-slate-100 font-medium">
+                              {displayValue}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>

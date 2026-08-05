@@ -20,22 +20,7 @@ async function main() {
   });
   console.log(`  ` + `Admin user: ${admin.email}`);
 
-  // 2. Product families (CORREGIDO: usa prisma.productFamily)
-  const productFamiliesData = [
-    { name: 'Línea Blanca', slug: 'linea-blanca' },
-    { name: 'Pequeños Electrodomésticos', slug: 'pequenos-electrodomesticos' },
-    { name: 'Climatización', slug: 'climatizacion' },
-    { name: 'TV/Audio', slug: 'tv-audio' },
-  ];
-
-  for (const pf of productFamiliesData) {
-    const created = await prisma.productFamily.upsert({
-      where: { slug: pf.slug },
-      update: {},
-      create: pf,
-    });
-    console.log(`  ` + `Product family: ${created.name}`);
-  }
+  // 2. Product families (Static families removed)
 
   // 3. Default settings
   const settingsData = [

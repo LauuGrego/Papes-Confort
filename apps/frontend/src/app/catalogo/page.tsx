@@ -12,12 +12,14 @@ export default function CatalogoPage() {
   const [loading, setLoading] = useState(true);
   const [productsData, setProductsData] = useState<PaginatedResponse<ProductDto> | null>(null);
   const [families, setFamilies] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
 
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -31,11 +33,13 @@ export default function CatalogoPage() {
     const familyParam = params.get('type');
     const categoryParam = params.get('categoryId');
     const productTypeParam = params.get('productType');
+    const brandParam = params.get('brandId');
 
     if (pageParam) setPage(Number(pageParam));
     if (familyParam) setSelectedFamily(familyParam);
     if (categoryParam) setSelectedCategory(categoryParam);
     if (productTypeParam) setSelectedProductType(productTypeParam);
+    if (brandParam) setSelectedBrand(brandParam);
     if (searchParam) {
       setSearch(searchParam);
       setSearchInput(searchParam);
@@ -44,12 +48,18 @@ export default function CatalogoPage() {
     setInitialLoaded(true);
   }, []);
 
-  // 2. Load metadata (categories)
+  // 2. Load metadata (categories and brands)
   useEffect(() => {
     async function loadMetadata() {
-      const res = await fetchApi<any[]>('/api/categories');
-      if (res.success && res.data) {
-        setFamilies(res.data);
+      const [categoriesRes, brandsRes] = await Promise.all([
+        fetchApi<any[]>('/api/categories'),
+        fetchApi<any[]>('/api/brands'),
+      ]);
+      if (categoriesRes.success && categoriesRes.data) {
+        setFamilies(categoriesRes.data);
+      }
+      if (brandsRes.success && brandsRes.data) {
+        setBrands(brandsRes.data);
       }
     }
     loadMetadata();
@@ -66,13 +76,14 @@ export default function CatalogoPage() {
     if (selectedFamily) params.set('type', selectedFamily);
     if (selectedCategory) params.set('categoryId', selectedCategory);
     if (selectedProductType) params.set('productType', selectedProductType);
+    if (selectedBrand) params.set('brandId', selectedBrand);
 
     const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/products?${params.toString()}`);
     if (res.success && res.data) {
       setProductsData(res.data);
     }
     setLoading(false);
-  }, [page, search, selectedFamily, selectedCategory, selectedProductType]);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand]);
 
   // 4. Trigger fetch when parameters or loading ready state changes
   useEffect(() => {
@@ -91,12 +102,13 @@ export default function CatalogoPage() {
     if (selectedFamily) params.set('type', selectedFamily);
     if (selectedCategory) params.set('categoryId', selectedCategory);
     if (selectedProductType) params.set('productType', selectedProductType);
+    if (selectedBrand) params.set('brandId', selectedBrand);
 
     const qs = params.toString();
     const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
     
     window.history.replaceState(null, '', newUrl);
-  }, [page, search, selectedFamily, selectedCategory, selectedProductType, initialLoaded]);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand, initialLoaded]);
 
   // 6. Debounce search input and reset page to 1 on actual search query changes
   useEffect(() => {
@@ -116,10 +128,12 @@ export default function CatalogoPage() {
     family?: string | null;
     category?: string | null;
     productType?: string | null;
+    brand?: string | null;
   }) => {
     if (filters.family !== undefined) setSelectedFamily(filters.family);
     if (filters.category !== undefined) setSelectedCategory(filters.category);
     if (filters.productType !== undefined) setSelectedProductType(filters.productType);
+    if (filters.brand !== undefined) setSelectedBrand(filters.brand);
     setPage(1);
   };
 
@@ -164,6 +178,8 @@ export default function CatalogoPage() {
             selectedFamily={selectedFamily}
             selectedCategory={selectedCategory}
             selectedProductType={selectedProductType}
+            brands={brands}
+            selectedBrand={selectedBrand}
             onFilterChange={handleFilterChange}
           />
         </aside>
@@ -256,6 +272,8 @@ export default function CatalogoPage() {
                 selectedFamily={selectedFamily}
                 selectedCategory={selectedCategory}
                 selectedProductType={selectedProductType}
+                brands={brands}
+                selectedBrand={selectedBrand}
                 onFilterChange={handleFilterChange}
               />
             </div>
