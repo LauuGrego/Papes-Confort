@@ -74,21 +74,19 @@ describe('CartService', () => {
       );
     });
 
-    it('debería lanzar un error si no hay stock visible suficiente', async () => {
+    it('debería lanzar un error si no hay stock disponible suficiente', async () => {
       const mockCart = { id: 'cart-1', sessionId: 'session-123' };
       const mockProduct = {
         id: 'prod-1',
-        stock: 5,
+        stock: 3,
         isActive: true,
         deletedAt: null,
       };
-      const mockSafetyStockSetting = { key: 'safety_stock', value: '2' }; // stock visible = 5 - 2 = 3
 
       vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCart as any);
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
-      vi.mocked(prisma.setting.findUnique).mockResolvedValue(mockSafetyStockSetting as any);
       
-      // Item ya existente en el carrito con cantidad 2. Sumado a la cantidad a agregar 2 = 4 (supera el stock visible de 3)
+      // Item ya existente en el carrito con cantidad 2. Sumado a la cantidad a agregar 2 = 4 (supera el stock real de 3)
       vi.mocked(prisma.cartItem.findUnique).mockResolvedValue({ quantity: 2 } as any);
 
       await expect(cartService.addItem('session-123', 'prod-1', 2)).rejects.toThrow(
@@ -110,11 +108,8 @@ describe('CartService', () => {
         brand: { name: 'Papes' },
         images: [],
       };
-      const mockSafetyStockSetting = { key: 'safety_stock', value: '1' }; // stock visible = 9
-
       vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCart as any);
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
-      vi.mocked(prisma.setting.findUnique).mockResolvedValue(mockSafetyStockSetting as any);
       vi.mocked(prisma.cartItem.findUnique).mockResolvedValue(null); // No existía el item previamente
       vi.mocked(prisma.cartItem.findMany).mockResolvedValue([]); // Mock de retorno para getCartDto
 

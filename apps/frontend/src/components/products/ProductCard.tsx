@@ -79,8 +79,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </h3>
         
-        {/* Stock Badge */}
-        <div className="mb-2">
+        {/* Stock Badge & Availability Note */}
+        <div className="mb-2 flex items-center gap-1.5 flex-wrap">
           {product.stockVisible > 0 ? (
             <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-emerald-700">
               {product.stockVisible} disponible{product.stockVisible > 1 ? 's' : ''}
@@ -90,6 +90,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               Sin stock
             </span>
           )}
+          <span className="inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-amber-700 border border-amber-100/50">
+            Consultar disponibilidad
+          </span>
         </div>
 
       </div>

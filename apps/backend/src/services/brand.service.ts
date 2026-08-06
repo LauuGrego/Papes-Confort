@@ -1,8 +1,7 @@
 import { prisma } from '@papes-confort/database';
 
 export async function getBrandsList() {
-  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
+  const safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
   const brands = await prisma.brand.findMany({
     include: {

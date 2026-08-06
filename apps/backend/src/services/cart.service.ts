@@ -2,8 +2,7 @@ import { prisma } from '@papes-confort/database';
 import { CartDto, CartItemDto } from '@papes-confort/shared';
 
 async function getSafetyStock(): Promise<number> {
-  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-  return setting ? parseInt(setting.value, 10) : 1;
+  return 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 }
 
 export async function getOrCreateCart(sessionId: string) {

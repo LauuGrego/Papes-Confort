@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '../../../stores/auth';
 import { fetchApi } from '../../../lib/api';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, Settings, RefreshCw, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Settings, RefreshCw, LogOut, Loader2, Menu, X } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -14,35 +14,27 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, setAuth, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, clearAuth } = useAuthStore();
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    async function verifySession() {
-      if (pathname === '/admin/login') {
-        setCheckingAuth(false);
-        return;
-      }
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
-      if (!isAuthenticated) {
-        // Try silent refresh
-        const res = await fetchApi<{ token: string; user: any }>('/api/auth/refresh', {
-          method: 'POST',
-        });
-
-        if (res.success && res.data) {
-          setAuth(res.data.user, res.data.token);
-          setCheckingAuth(false);
-        } else {
-          clearAuth();
-          router.push('/admin/login');
-        }
-      } else {
-        setCheckingAuth(false);
-      }
+  useEffect(() => {
+    if (pathname === '/admin/login') {
+      setCheckingAuth(false);
+      return;
     }
-    verifySession();
-  }, [isAuthenticated, pathname, router, setAuth, clearAuth]);
+
+    if (!isAuthenticated) {
+      clearAuth();
+      router.push('/admin/login');
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [isAuthenticated, pathname, router, clearAuth]);
 
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });
@@ -72,21 +64,40 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-slate-50/50">
+      {/* Backdrop for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-100 bg-white flex flex-col justify-between shrink-0">
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-100 bg-white flex flex-col justify-between shrink-0 transform transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div>
           {/* Logo container */}
-          <div className="p-6 border-b border-slate-50 flex justify-center">
-            <Link href="/admin">
+          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+            <Link href="/admin" onClick={() => setIsSidebarOpen(false)}>
               <img
                 src="/images/logo/logo-slogan-negro.svg"
                 alt="Logo Papes Confort"
-                className="h-12 w-auto"
+                className="h-10 w-auto"
               />
             </Link>
+            <button
+              className="md:hidden p-1.5 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Cerrar menú"
+            >
+              <X className="h-4 w-4 text-slate-500" />
+            </button>
           </div>
-
+ 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1.5">
             {menuItems.map((item) => {
@@ -96,6 +107,7 @@ export default function AdminLayout({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold tracking-wide transition-all ${
                     isActive
                       ? 'bg-brand-red/10 text-brand-red'
@@ -109,7 +121,7 @@ export default function AdminLayout({
             })}
           </nav>
         </div>
-
+ 
         {/* Footer info (User & Logout) */}
         <div className="p-4 border-t border-slate-50 space-y-4">
           {user && (
@@ -119,21 +131,45 @@ export default function AdminLayout({
             </div>
           )}
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all text-left"
+            onClick={() => {
+              setIsSidebarOpen(false);
+              handleLogout();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all text-left cursor-pointer"
           >
             <LogOut className="h-5 w-5" />
             Cerrar sesión
           </button>
         </div>
       </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-grow p-10 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
-          {children}
+ 
+      {/* Main Content Container with Mobile Header */}
+      <div className="flex-grow flex flex-col min-w-0">
+        {/* Mobile Admin Header Bar */}
+        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 md:hidden sticky top-0 z-30">
+          <Link href="/admin">
+            <img
+              src="/images/logo/logo-slogan-negro.svg"
+              alt="Logo Papes Confort"
+              className="h-8 w-auto"
+            />
+          </Link>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-xl border border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 cursor-pointer"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
-      </main>
+
+        {/* Main Scrollable Area */}
+        <main className="flex-grow p-6 md:p-10 overflow-y-auto">
+          <div className="max-w-5xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

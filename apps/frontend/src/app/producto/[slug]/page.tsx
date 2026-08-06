@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw } from 'lucide-react';
+import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -199,23 +199,33 @@ export default function ProductDetailPage() {
             )}
 
             {/* Stock Availability Indicator */}
-            <div className="flex items-center gap-2 pt-1 border-t border-slate-100/50">
-              {product.stockVisible > 3 ? (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-emerald-700">Stock disponible ({product.stockVisible} unidades)</span>
-                </>
-              ) : product.stockVisible > 0 ? (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-amber-700">Últimas {product.stockVisible} unidades disponibles</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                  <span className="text-xs font-semibold text-rose-700">Sin stock disponible</span>
-                </>
-              )}
+            <div className="space-y-3 pt-1 border-t border-slate-100/50">
+              <div className="flex items-center gap-2">
+                {product.stockVisible > 3 ? (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-emerald-700">Stock disponible ({product.stockVisible} unidades)</span>
+                  </>
+                ) : product.stockVisible > 0 ? (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-amber-700">Últimas {product.stockVisible} unidades disponibles</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                    <span className="text-xs font-semibold text-rose-700">Sin stock disponible</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50/70 border border-amber-100 p-3.5 text-xs text-amber-800">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">Consultar Disponibilidad</p>
+                  <p className="text-amber-700/90 leading-relaxed">Recomendamos confirmar la disponibilidad de stock y las opciones de financiación con nuestros asesores antes de realizar tu compra.</p>
+                </div>
+              </div>
             </div>
 
             {/* CTA Buttons */}

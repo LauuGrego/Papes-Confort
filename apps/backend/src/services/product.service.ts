@@ -2,10 +2,7 @@ import { prisma } from '@papes-confort/database';
 import { ProductDto, BrandDto, ProductTypeDto, ProductCategoryDto, ProductImageDto } from '@papes-confort/shared';
 
 export async function mapProductToDto(product: any, safetyStock?: number): Promise<ProductDto> {
-  if (safetyStock === undefined) {
-    const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-    safetyStock = setting ? parseInt(setting.value, 10) : 1;
-  }
+  safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
   const basePriceNum = Number(product.basePrice);
   const discountPercentNum = Number(product.discountPercent);
@@ -93,8 +90,7 @@ export async function getProducts(params: {
   const limit = params.limit || 10;
   const skip = (page - 1) * limit;
 
-  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
+  const safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
   const where: any = {
     isActive: true,
@@ -161,8 +157,7 @@ export async function getProducts(params: {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDto | null> {
-  const setting = await prisma.setting.findUnique({ where: { key: 'safety_stock' } });
-  const safetyStock = setting ? parseInt(setting.value, 10) : 1;
+  const safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
   const product = await prisma.product.findFirst({
     where: {
@@ -189,6 +184,7 @@ export async function getAdminProducts(params: {
   page?: number;
   limit?: number;
   search?: string;
+  isActive?: boolean;
 }) {
   const page = params.page || 1;
   const limit = params.limit || 15;
@@ -197,6 +193,10 @@ export async function getAdminProducts(params: {
   const where: any = {
     deletedAt: null,
   };
+
+  if (params.isActive !== undefined) {
+    where.isActive = params.isActive;
+  }
 
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
@@ -267,7 +267,9 @@ export async function updateProduct(id: string, data: {
 }): Promise<ProductDto> {
   // Convert dimensions to JSON if string "alto x ancho x prof" is passed in
   let dimensionsJson: any = undefined;
-  if (data.dimensions) {
+  if (data.dimensions === null) {
+    dimensionsJson = null;
+  } else if (data.dimensions) {
     if (typeof data.dimensions === 'string') {
       const parts = data.dimensions.split('x');
       if (parts.length === 3) {
@@ -291,8 +293,8 @@ export async function updateProduct(id: string, data: {
       productType: data.productType,
       discountPercent: data.discountPercent !== undefined ? Number(data.discountPercent) : undefined,
       warrantyMonths: data.warrantyMonths,
-      weightKg: data.weightKg !== undefined ? Number(data.weightKg) : undefined,
-      dimensions: dimensionsJson,
+      weightKg: data.weightKg === null ? null : (data.weightKg !== undefined ? Number(data.weightKg) : undefined),
+      dimensions: dimensionsJson !== undefined ? dimensionsJson : undefined,
       specs: data.specs,
       isActive: data.isActive,
     },
