@@ -6,6 +6,7 @@ import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw } from 'lucide-react
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
+import { useCartStore } from '../../../stores/cart';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -16,6 +17,28 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
+
+  const { addItem } = useCartStore();
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setIsAdding(true);
+    setAddError(null);
+    setAddSuccess(false);
+    try {
+      await addItem(product.id, 1);
+      setAddSuccess(true);
+      setTimeout(() => setAddSuccess(false), 3000);
+    } catch (err: any) {
+      setAddError(err.message || 'No se pudo agregar al carrito');
+      setTimeout(() => setAddError(null), 4000);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   useEffect(() => {
     async function loadProduct() {
@@ -196,7 +219,39 @@ export default function ProductDetailPage() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
+              {addError && (
+                <p className="text-xs font-semibold text-rose-600 animate-pulse text-center">
+                  {addError}
+                </p>
+              )}
+              {addSuccess && (
+                <p className="text-xs font-semibold text-emerald-600 text-center">
+                  ¡Producto agregado al carrito con éxito!
+                </p>
+              )}
+
+              <button
+                disabled={product.stockVisible <= 0 || isAdding}
+                onClick={handleAddToCart}
+                className={`w-full inline-flex items-center justify-center gap-3 rounded-full px-8 py-4 text-sm font-bold text-white transition-all transform hover:-translate-y-0.5 active:scale-[0.98] ${
+                  product.stockVisible <= 0
+                    ? 'bg-slate-300 cursor-not-allowed transform-none'
+                    : 'bg-brand-red hover:bg-brand-red-dark shadow-[0_4px_20px_rgba(228,20,20,0.3)]'
+                }`}
+              >
+                {isAdding ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+                    Agregando...
+                  </>
+                ) : product.stockVisible <= 0 ? (
+                  'Sin stock disponible'
+                ) : (
+                  'Agregar al Carrito'
+                )}
+              </button>
+
               <a
                 href={whatsappUrl}
                 target="_blank"

@@ -1,9 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { ShoppingBag } from 'lucide-react';
+import { useCartStore } from '../stores/cart';
 
 export default function Header() {
+  const { totalItems, load } = useCartStore();
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
@@ -36,16 +44,18 @@ export default function Header() {
 
         {/* Action icons (Cart) */}
         <div className="flex items-center gap-4">
-          <button
-            type="button"
+          <Link
+            href="/carrito"
             className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100"
             aria-label="Carrito de compras"
           >
             <ShoppingBag className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white">
-              0
-            </span>
-          </button>
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
+                {totalItems}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </header>

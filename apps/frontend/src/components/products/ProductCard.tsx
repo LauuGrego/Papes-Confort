@@ -1,6 +1,10 @@
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Plus, Loader2 } from 'lucide-react';
+import { useCartStore } from '../../stores/cart';
 
 interface ProductCardProps {
   product: ProductDto;
@@ -10,6 +14,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discountPercent > 0;
   const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
   const imageUrl = primaryImage ? primaryImage.url : '/images/logo/isotipo.svg';
+  
+  const { addItem } = useCartStore();
+  const [isAdding, setIsAdding] = React.useState(false);
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -17,6 +24,21 @@ export default function ProductCard({ product }: ProductCardProps) {
       currency: 'ARS',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (product.stockVisible <= 0 || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      await addItem(product.id, 1);
+    } catch (err) {
+      console.error('Error al agregar rápido al carrito:', err);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -73,14 +95,32 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="border-t border-slate-50 pt-2 md:pt-4 mt-auto">
-        <div className="flex flex-wrap items-baseline gap-1 md:gap-2 mb-1 md:mb-3">
-          <span className="text-xs md:text-lg font-extrabold text-brand-black">
-            {formatPrice(product.finalPrice)}
-          </span>
-          {hasDiscount && (
-            <span className="text-[9px] md:text-xs text-slate-400 line-through">
-              {formatPrice(product.basePrice)}
+        <div className="flex items-center justify-between gap-2 mb-1 md:mb-3">
+          <div className="flex flex-wrap items-baseline gap-1 md:gap-2">
+            <span className="text-xs md:text-lg font-extrabold text-brand-black">
+              {formatPrice(product.finalPrice)}
             </span>
+            {hasDiscount && (
+              <span className="text-[9px] md:text-xs text-slate-400 line-through">
+                {formatPrice(product.basePrice)}
+              </span>
+            )}
+          </div>
+          
+          {/* Botón rápido Agregar al Carrito */}
+          {product.stockVisible > 0 && (
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-brand-red hover:bg-brand-red-dark text-white flex items-center justify-center shadow-md hover:shadow-brand-red/20 active:scale-95 transition-all"
+              aria-label="Agregar al carrito rápidamente"
+            >
+              {isAdding ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <Plus className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              )}
+            </button>
           )}
         </div>
 

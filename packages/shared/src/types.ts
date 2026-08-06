@@ -308,3 +308,14 @@ export type UpdatePromotionPayload = Partial<CreatePromotionPayload>;
 export interface UpdateSettingsPayload {
   settings: Partial<SettingsMap>;
 }
+
+// Carrito
+export interface AddCartItemPayload {
+  productId: string;
+  quantity: number;
+}
+
+export interface UpdateCartItemPayload {
+  quantity: number;
+}
+

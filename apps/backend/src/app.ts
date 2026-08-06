@@ -14,9 +14,12 @@ import adminSyncLogsRouter from './routes/admin/sync-logs';
 import syncProductsRouter from './routes/sync/products';
 import syncImagesRouter from './routes/sync/images';
 import settingsRouter from './routes/settings';
+import cartRouter from './routes/cart';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
+
+app.set('trust proxy', 1);
 
 app.use(
   cors({
@@ -35,6 +38,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/brands', brandsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/cart', cartRouter);
 app.use('/api/admin/products', adminProductsRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/admin/sync-logs', adminSyncLogsRouter);
