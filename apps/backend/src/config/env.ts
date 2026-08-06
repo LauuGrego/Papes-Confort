@@ -2,12 +2,12 @@ import 'dotenv/config';
 
 export const env = {
   PORT: parseInt(process.env.PORT || '3001', 10),
-  JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production',
+  JWT_SECRET: process.env.JWT_SECRET || '',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
   ACCESS_TOKEN_EXPIRY: '15m',
   REFRESH_TOKEN_EXPIRY: '7d',
-  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/papes_confort',
+  DATABASE_URL: process.env.DATABASE_URL || '',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
   NODE_ENV: process.env.NODE_ENV || 'development',
-  API_SYNC_KEY: process.env.API_SYNC_KEY || 'papes-confort-sync-secret-key',
+  API_SYNC_KEY: process.env.API_SYNC_KEY || '',
 } as const;
