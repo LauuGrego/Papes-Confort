@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, Sparkles, Plus, Loader2 } from 'lucide-react';
+import { ArrowRight, Sparkles, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCartStore } from '../../stores/cart';
 
 interface ProductCardProps {
@@ -12,8 +12,8 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discountPercent > 0;
-  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-  const imageUrl = primaryImage ? primaryImage.url : '/images/logo/isotipo.svg';
+  const images = product.images.length > 0 ? product.images : [{ url: '/images/logo/isotipo.svg', isPrimary: true }];
+  const [currentImgIdx, setCurrentImgIdx] = React.useState(0);
   
   const { addItem } = useCartStore();
   const [isAdding, setIsAdding] = React.useState(false);
@@ -60,15 +60,54 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
 
-      <div className="relative mb-2 md:mb-4 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl md:rounded-2xl bg-slate-50 p-1 md:p-2">
+      <div className="relative mb-2 md:mb-4 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl md:rounded-2xl bg-slate-50 p-1 md:p-2 group/image">
         <img
-          src={imageUrl}
+          src={images[currentImgIdx]?.url}
           alt={product.name}
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
           }}
         />
+
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setCurrentImgIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+              }}
+              className="absolute left-1.5 md:left-2.5 top-1/2 -translate-y-1/2 flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/60 text-slate-600 shadow-sm opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200 cursor-pointer"
+              aria-label="Imagen anterior"
+            >
+              <ChevronLeft className="h-3.5 w-3.5 md:h-5 md:w-5 text-slate-600" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setCurrentImgIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+              }}
+              className="absolute right-1.5 md:right-2.5 top-1/2 -translate-y-1/2 flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/60 text-slate-600 shadow-sm opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200 cursor-pointer"
+              aria-label="Imagen siguiente"
+            >
+              <ChevronRight className="h-3.5 w-3.5 md:h-5 md:w-5 text-slate-600" />
+            </button>
+
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-black/10 backdrop-blur-xs px-2 py-1 rounded-full opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200">
+              {images.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentImgIdx ? 'bg-brand-red w-2.5 md:w-3' : 'bg-white/80'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex flex-col flex-grow">

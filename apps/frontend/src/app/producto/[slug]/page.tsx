@@ -122,8 +122,8 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         
         {/* Left column: Images Gallery */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-square w-full items-center justify-center overflow-hidden rounded-3xl bg-slate-50 border border-slate-100 p-8 flex">
+        <div className="lg:col-span-5 space-y-4 w-full">
+          <div className="relative aspect-square w-full max-w-md mx-auto items-center justify-center overflow-hidden rounded-3xl bg-slate-50/50 border border-slate-100 p-6 md:p-8 flex">
             <img
               src={imageUrl}
               alt={product.name}
@@ -169,7 +169,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Right column: Purchase Info */}
-        <div className="lg:col-span-5 space-y-8">
+        <div className="lg:col-span-7 space-y-8">
           <div>
             <span className="text-xs font-bold text-brand-red uppercase tracking-widest mb-1.5 block">
               {product.brand.name}
