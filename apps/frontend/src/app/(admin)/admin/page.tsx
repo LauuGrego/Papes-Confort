@@ -9,7 +9,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [productCount, setProductCount] = useState<number | null>(null);
   const [lastSync, setLastSync] = useState<any>(null);
-  const [safetyStock, setSafetyStock] = useState<string>('');
+  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
         setProductCount(productsRes.data.total);
       }
       if (settingsRes.success && settingsRes.data) {
-        setSafetyStock(settingsRes.data.safety_stock || '1');
+        setWhatsappNumber(settingsRes.data.whatsapp_number || '');
       }
       if (syncRes.success && syncRes.data && syncRes.data.items.length > 0) {
         setLastSync(syncRes.data.items[0]);
@@ -73,9 +73,11 @@ export default function AdminDashboardPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy shrink-0">
             <Settings className="h-6 w-6" />
           </div>
-          <div className="space-y-1 flex-grow">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Stock de Seguridad</p>
-            <h2 className="text-2xl font-black text-brand-black">{safetyStock} Unidades</h2>
+          <div className="space-y-1 flex-grow min-w-0">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">WhatsApp de Consultas</p>
+            <h2 className="text-lg font-black text-brand-black truncate mt-1">
+              {whatsappNumber ? `+${whatsappNumber}` : 'No configurado'}
+            </h2>
             <Link href="/admin/configuracion" className="text-xs font-semibold text-brand-red hover:underline block pt-1">
               Editar configuración &rarr;
             </Link>

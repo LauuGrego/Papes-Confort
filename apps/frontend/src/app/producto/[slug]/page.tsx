@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw } from 'lucide-react';
+import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
+import { useCartStore } from '../../../stores/cart';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -16,6 +17,28 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
+
+  const { addItem } = useCartStore();
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setIsAdding(true);
+    setAddError(null);
+    setAddSuccess(false);
+    try {
+      await addItem(product.id, 1);
+      setAddSuccess(true);
+      setTimeout(() => setAddSuccess(false), 3000);
+    } catch (err: any) {
+      setAddError(err.message || 'No se pudo agregar al carrito');
+      setTimeout(() => setAddError(null), 4000);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   useEffect(() => {
     async function loadProduct() {
@@ -99,8 +122,8 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         
         {/* Left column: Images Gallery */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-square w-full items-center justify-center overflow-hidden rounded-3xl bg-slate-50 border border-slate-100 p-8 flex">
+        <div className="lg:col-span-5 space-y-4 w-full">
+          <div className="relative aspect-square w-full max-w-md mx-auto items-center justify-center overflow-hidden rounded-3xl bg-slate-50/50 border border-slate-100 p-6 md:p-8 flex">
             <img
               src={imageUrl}
               alt={product.name}
@@ -146,7 +169,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Right column: Purchase Info */}
-        <div className="lg:col-span-5 space-y-8">
+        <div className="lg:col-span-7 space-y-8">
           <div>
             <span className="text-xs font-bold text-brand-red uppercase tracking-widest mb-1.5 block">
               {product.brand.name}
@@ -176,27 +199,69 @@ export default function ProductDetailPage() {
             )}
 
             {/* Stock Availability Indicator */}
-            <div className="flex items-center gap-2 pt-1 border-t border-slate-100/50">
-              {product.stockVisible > 3 ? (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-emerald-700">Stock disponible ({product.stockVisible} unidades)</span>
-                </>
-              ) : product.stockVisible > 0 ? (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-amber-700">Últimas {product.stockVisible} unidades disponibles</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                  <span className="text-xs font-semibold text-rose-700">Sin stock disponible</span>
-                </>
-              )}
+            <div className="space-y-3 pt-1 border-t border-slate-100/50">
+              <div className="flex items-center gap-2">
+                {product.stockVisible > 3 ? (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-emerald-700">Stock disponible ({product.stockVisible} unidades)</span>
+                  </>
+                ) : product.stockVisible > 0 ? (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-amber-700">Últimas {product.stockVisible} unidades disponibles</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                    <span className="text-xs font-semibold text-rose-700">Sin stock disponible</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50/70 border border-amber-100 p-3.5 text-xs text-amber-800">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">Consultar Disponibilidad</p>
+                  <p className="text-amber-700/90 leading-relaxed">Recomendamos confirmar la disponibilidad de stock y las opciones de financiación con nuestros asesores antes de realizar tu compra.</p>
+                </div>
+              </div>
             </div>
 
             {/* CTA Buttons */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
+              {addError && (
+                <p className="text-xs font-semibold text-rose-600 animate-pulse text-center">
+                  {addError}
+                </p>
+              )}
+              {addSuccess && (
+                <p className="text-xs font-semibold text-emerald-600 text-center">
+                  ¡Producto agregado al carrito con éxito!
+                </p>
+              )}
+
+              <button
+                disabled={product.stockVisible <= 0 || isAdding}
+                onClick={handleAddToCart}
+                className={`w-full inline-flex items-center justify-center gap-3 rounded-full px-8 py-4 text-sm font-bold text-white transition-all transform hover:-translate-y-0.5 active:scale-[0.98] ${
+                  product.stockVisible <= 0
+                    ? 'bg-slate-300 cursor-not-allowed transform-none'
+                    : 'bg-brand-red hover:bg-brand-red-dark shadow-[0_4px_20px_rgba(228,20,20,0.3)]'
+                }`}
+              >
+                {isAdding ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+                    Agregando...
+                  </>
+                ) : product.stockVisible <= 0 ? (
+                  'Sin stock disponible'
+                ) : (
+                  'Agregar al Carrito'
+                )}
+              </button>
+
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -258,8 +323,8 @@ export default function ProductDetailPage() {
                       .map(([key, val], idx) => {
                         const specLabels: Record<string, string> = {
                           unit: 'Unidad de Medida',
-                          rubro: 'Código de Rubro',
-                          subrubro: 'Código de Subrubro',
+                          rubro: 'Rubro',
+                          subrubro: 'Subrubro',
                         };
                         const label = specLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                         const displayValue = String(val);

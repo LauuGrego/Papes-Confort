@@ -6,7 +6,8 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@papes-confort/shared": "*",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^18.3.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^4.0.0-alpha.18",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
   }
 }

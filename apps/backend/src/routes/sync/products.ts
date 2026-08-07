@@ -113,7 +113,7 @@ router.post('/', async (req, res, next) => {
 
         if (rubro && String(rubro).trim()) {
           const trimmedRubro = String(rubro).trim();
-          const familyName = `Rubro ${trimmedRubro}`;
+          const familyName = trimmedRubro;
           const familySlug = slugify(familyName);
           let family = await prisma.productFamily.findUnique({
             where: { slug: familySlug },
@@ -131,7 +131,7 @@ router.post('/', async (req, res, next) => {
 
           if (subrubro && String(subrubro).trim()) {
             const trimmedSubrubro = String(subrubro).trim();
-            const categoryName = `Subrubro ${trimmedSubrubro}`;
+            const categoryName = trimmedSubrubro;
             // Avoid collisions between identical subrubro codes belonging to different rubros
             const categorySlug = slugify(`rubro-${trimmedRubro}-subrubro-${trimmedSubrubro}`);
             let category = await prisma.productCategory.findUnique({
@@ -221,6 +221,24 @@ router.post('/', async (req, res, next) => {
         errors++;
         errorDetails.push({ sku: item.sku, error: err.message || 'Error processing product' });
       }
+    }
+
+    // Clean up orphaned categories and families (those with 0 products or subcategories)
+    try {
+      await prisma.productCategory.deleteMany({
+        where: {
+          products: { none: {} }
+        }
+      });
+      await prisma.productFamily.deleteMany({
+        where: {
+          id: { not: defaultFamily.id },
+          products: { none: {} },
+          categories: { none: {} }
+        }
+      });
+    } catch (cleanupErr) {
+      console.error('Error cleaning up orphaned categories/families:', cleanupErr);
     }
 
     const finishedAt = new Date();

@@ -12,6 +12,7 @@ export default function AdminProductosPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,19 +27,16 @@ export default function AdminProductosPage() {
   const [warrantyMonths, setWarrantyMonths] = useState(12);
   const [weightKg, setWeightKg] = useState<number | ''>('');
   const [dimensions, setDimensions] = useState('');
-  const [isActive, setIsActive] = useState(true);
   const [specs, setSpecs] = useState<{ key: string; val: string }[]>([]);
 
-  // Metadata
-  const [families, setFamilies] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
-
-  const fetchProducts = async (pNum: number, searchVal: string) => {
+  const fetchProducts = async (pNum: number, searchVal: string, statusVal: string) => {
     setLoading(true);
     const params = new URLSearchParams();
     params.set('page', String(pNum));
     params.set('limit', '10');
     if (searchVal) params.set('search', searchVal);
+    if (statusVal === 'ACTIVE') params.set('isActive', 'true');
+    if (statusVal === 'INACTIVE') params.set('isActive', 'false');
 
     const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/admin/products?${params.toString()}`);
     if (res.success && res.data) {
@@ -48,8 +46,8 @@ export default function AdminProductosPage() {
   };
 
   useEffect(() => {
-    fetchProducts(page, search);
-  }, [page, search]);
+    fetchProducts(page, search, statusFilter);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -59,15 +57,7 @@ export default function AdminProductosPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
-    async function loadMetadata() {
-      const res = await fetchApi<any[]>('/api/categories');
-      if (res.success && res.data) {
-        setFamilies(res.data);
-      }
-    }
-    loadMetadata();
-  }, []);
+
 
   const openEditModal = (product: ProductDto) => {
     setEditingProduct(product);
@@ -77,8 +67,6 @@ export default function AdminProductosPage() {
     setWarrantyMonths(product.warrantyMonths || 12);
     setWeightKg(product.weightKg !== null ? product.weightKg : '');
     setDimensions(product.dimensions || '');
-    setIsActive(product.isActive);
-    setSelectedCategoryId(product.productCategory?.id || '');
 
     // Map specs Record to array
     const mappedSpecs = Object.entries(product.specs || {}).map(([k, v]) => ({
@@ -121,14 +109,11 @@ export default function AdminProductosPage() {
     });
 
     const body = {
-      name,
       description,
       discountPercent: Number(discountPercent),
       warrantyMonths: Number(warrantyMonths),
       weightKg: weightKg === '' ? null : Number(weightKg),
       dimensions: dimensions.trim() || null,
-      isActive,
-      productCategoryId: selectedCategoryId || null,
       specs: specsRecord,
     };
 
@@ -140,7 +125,7 @@ export default function AdminProductosPage() {
     if (res.success) {
       setIsModalOpen(false);
       // Reload products list
-      fetchProducts(page, search);
+      fetchProducts(page, search, statusFilter);
     } else {
       setSaveError(res.error || 'Error al guardar los cambios.');
     }
@@ -158,15 +143,32 @@ export default function AdminProductosPage() {
             Enriquece y gestiona la visualización de tus artículos sincronizados.
           </p>
         </div>
-        <div className="relative w-full md:w-72">
-          <input
-            type="text"
-            placeholder="Buscar por SKU, nombre..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-100 bg-white text-sm text-brand-black outline-none focus:border-brand-red/30 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.01)]"
-          />
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* Filtro de Estado */}
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as any);
+              setPage(1);
+            }}
+            className="px-4 py-2.5 rounded-2xl border border-slate-100 bg-white text-sm text-brand-black outline-none focus:border-brand-red/30 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.01)] cursor-pointer"
+          >
+            <option value="ALL">Todos los estados</option>
+            <option value="ACTIVE">Activos</option>
+            <option value="INACTIVE">Inactivos</option>
+          </select>
+
+          {/* Buscador */}
+          <div className="relative w-full sm:w-72">
+            <input
+              type="text"
+              placeholder="Buscar por SKU, nombre..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-100 bg-white text-sm text-brand-black outline-none focus:border-brand-red/30 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.01)]"
+            />
+            <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+          </div>
         </div>
       </div>
 
@@ -272,33 +274,22 @@ export default function AdminProductosPage() {
               {/* Title & Category */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre Visible</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre (GesCom)</label>
                   <input
                     type="text"
-                    required
+                    readOnly
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-100 text-sm text-slate-500 outline-none cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría Web</label>
-                  <select
-                    value={selectedCategoryId}
-                    onChange={(e) => setSelectedCategoryId(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-                  >
-                    <option value="">Seleccionar Categoría</option>
-                    {families.map((fam) => (
-                      <optgroup key={fam.id} label={fam.name}>
-                        {fam.categories.map((cat: any) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría (GesCom)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={editingProduct.productCategory?.name || 'Sin Categoría'}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-100 text-sm text-slate-500 outline-none cursor-not-allowed"
+                  />
                 </div>
               </div>
 
@@ -358,18 +349,7 @@ export default function AdminProductosPage() {
                 </div>
               </div>
 
-              {/* Status and visibility */}
-              <div className="flex gap-6 border-t border-slate-50 pt-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                    className="rounded text-brand-red focus:ring-brand-red h-4 w-4"
-                  />
-                  <span className="text-sm font-semibold text-slate-700">Producto Activo en Web</span>
-                </label>
-              </div>
+
 
               {/* Key-Value Specifications */}
               <div className="space-y-3 border-t border-slate-50 pt-6">

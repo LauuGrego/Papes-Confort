@@ -213,7 +213,7 @@ export default function CatalogoPage() {
               <span className="text-sm font-semibold text-slate-400">Buscando productos...</span>
             </div>
           ) : productsData && productsData.items.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-3 gap-2.5 md:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-6">
               {productsData.items.map((prod) => (
                 <ProductCard key={prod.id} product={prod} />
               ))}
