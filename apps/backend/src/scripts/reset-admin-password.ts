@@ -1,3 +1,9 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+const envPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: envPath, override: true });
+
 import { prisma } from '@papes-confort/database';
 import { hash } from 'bcryptjs';
 

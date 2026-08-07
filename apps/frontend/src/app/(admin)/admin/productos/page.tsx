@@ -203,7 +203,7 @@ export default function AdminProductosPage() {
                     </td>
                     <td className="px-6 py-4 font-semibold">{prod.stock}</td>
                     <td className="px-6 py-4">
-                      {prod.isActive ? (
+                      {(prod.isActive && prod.stock > 0) ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">
                           <Eye className="h-3.5 w-3.5" /> Activo
                         </span>
