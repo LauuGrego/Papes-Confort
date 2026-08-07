@@ -62,7 +62,55 @@ export default function Header() {
 
         {/* Action icons (Cart & Auth) */}
         <div className="flex items-center gap-3">
-          <div className="relative">
+          
+          {/* VISTA ESCRITORIO: Botones individuales */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/carrito"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100"
+              aria-label="Carrito de compras"
+            >
+              <ShoppingBag className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                <Link
+                  href="/admin"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 group"
+                  title="Panel de Administración"
+                  aria-label="Panel de Administración"
+                >
+                  <LayoutDashboard className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 group cursor-pointer"
+                  title="Cerrar Sesión"
+                  aria-label="Cerrar Sesión"
+                >
+                  <LogOut className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="flex h-10 px-4 items-center justify-center gap-2 rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red bg-slate-50 hover:bg-slate-100 group"
+                aria-label="Ingresar al Panel de Control"
+              >
+                <User className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+                <span className="hidden sm:inline">Acceso Admin</span>
+              </Link>
+            )}
+          </div>
+
+          {/* VISTA MÓVIL: Botón de menú desplegable único */}
+          <div className="relative md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex h-10 px-4 items-center justify-center gap-2 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"

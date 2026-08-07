@@ -323,8 +323,8 @@ export default function ProductDetailPage() {
                       .map(([key, val], idx) => {
                         const specLabels: Record<string, string> = {
                           unit: 'Unidad de Medida',
-                          rubro: 'Código de Rubro',
-                          subrubro: 'Código de Subrubro',
+                          rubro: 'Rubro',
+                          subrubro: 'Subrubro',
                         };
                         const label = specLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                         const displayValue = String(val);

@@ -21,12 +21,15 @@ interface GescomStockRow extends RowDataPacket {
   AMar: string | number | null;
   ANOVENTA: number | null;
   ADESACT: number | null;
+  RubroName?: string | null;
+  SubrubroName?: string | null;
+  BrandName?: string | null;
 }
 
 import { loadSyncState, saveSyncState } from './state';
 
 function computeProductHash(row: GescomStockRow): string {
-  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}`;
+  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.RubroName || ''}|${row.SubrubroName || ''}|${row.BrandName || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -37,7 +40,27 @@ export async function syncProductsFromGescom() {
 
   try {
     const [rows] = await gescomPool.query<GescomStockRow[]>(
-      'SELECT KeyID, ACod, ADes, AVenta, AExis, ABarra, AIVA, AUNI, ARub, ASub, AMar, ANOVENTA, ADESACT FROM Stock_Articulo'
+      `SELECT 
+        sa.KeyID, 
+        sa.ACod, 
+        sa.ADes, 
+        sa.AVenta, 
+        sa.AExis, 
+        sa.ABarra, 
+        sa.AIVA, 
+        sa.AUNI, 
+        sa.ARub, 
+        sa.ASub, 
+        sa.AMar, 
+        sa.ANOVENTA, 
+        sa.ADESACT,
+        sr.RDes AS RubroName,
+        ss.SDes AS SubrubroName,
+        sm.MDes AS BrandName
+      FROM Stock_Articulo sa
+      LEFT JOIN Stock_Rubros sr ON sa.ARub = sr.RCod
+      LEFT JOIN Stock_SubRubro ss ON sa.ASub = ss.SCod
+      LEFT JOIN Stock_Marcas sm ON sa.AMar = sm.MCod`
     );
 
     if (!rows || rows.length === 0) {
@@ -45,7 +68,7 @@ export async function syncProductsFromGescom() {
       return;
     }
 
-    logger.info(`Fetched ${rows.length} records from Stock_Articulo`);
+    logger.info(`Fetched ${rows.length} records from Stock_Articulo (with Rubro/SubRubro/Marca descriptions)`);
 
     const syncState = loadSyncState();
     const nextStateProducts: Record<string, string> = {};
@@ -67,9 +90,20 @@ export async function syncProductsFromGescom() {
       const barcode = row.ABarra && String(row.ABarra).trim() ? String(row.ABarra).trim() : undefined;
       const ivaPercent = row.AIVA !== null && row.AIVA !== undefined ? Number(row.AIVA) : undefined;
       const unit = row.AUNI && String(row.AUNI).trim() ? String(row.AUNI).trim() : undefined;
-      const rubro = row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined;
-      const subrubro = row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined;
-      const brandName = row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined;
+
+      // Extract descriptive names with fallbacks to code strings
+      const rubro = row.RubroName && String(row.RubroName).trim() 
+        ? String(row.RubroName).trim() 
+        : (row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined);
+
+      const subrubro = row.SubrubroName && String(row.SubrubroName).trim() 
+        ? String(row.SubrubroName).trim() 
+        : (row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined);
+
+      const brandName = row.BrandName && String(row.BrandName).trim() 
+        ? String(row.BrandName).trim() 
+        : (row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined);
+
       const isActive = Number(row.ANOVENTA) !== 1 && Number(row.ADESACT) !== 1;
 
       changedProducts.push({

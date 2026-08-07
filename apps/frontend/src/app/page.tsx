@@ -1,39 +1,34 @@
-import Link from 'next/link';
-import { ArrowRight, MapPin, Refrigerator, Coffee, Wind, Tv } from 'lucide-react';
-import PaymentMethods from '../components/PaymentMethods';
+'use client';
 
-const CATEGORIES = [
-  {
-    name: 'Línea Blanca',
-    slug: 'linea-blanca',
-    description: 'Heladeras, lavarropas, cocinas y equipamiento para tu hogar.',
-    icon: Refrigerator,
-    image: '/images/cat_linea_blanca_v2.png',
-  },
-  {
-    name: 'Pequeños Electrodomésticos',
-    slug: 'pequenos-electrodomesticos',
-    description: 'Cafeteras, licuadoras y productos para tu día a día.',
-    icon: Coffee,
-    image: '/images/cat_pequenos_electro_v2.png',
-  },
-  {
-    name: 'Climatización',
-    slug: 'climatizacion',
-    description: 'Aires acondicionados Split y calefacción frío/calor.',
-    icon: Wind,
-    image: '/images/cat_climatizacion.png',
-  },
-  {
-    name: 'TV / Audio',
-    slug: 'tv-audio',
-    description: 'Smart TVs 4K y sistemas de sonido de última generación.',
-    icon: Tv,
-    image: '/images/cat_tv_audio.png',
-  },
-];
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, MapPin, Tag, Loader2 } from 'lucide-react';
+import PaymentMethods from '../components/PaymentMethods';
+import { fetchApi } from '../lib/api';
+
+interface CategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  productCount: number;
+  imageUrl: string | null;
+}
 
 export default function HomePage() {
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const res = await fetchApi<CategoryItem[]>('/api/categories/top?limit=8');
+      if (res.success && res.data) {
+        setCategories(res.data);
+      }
+      setLoading(false);
+    }
+    loadCategories();
+  }, []);
+
   return (
     <div className="w-full bg-slate-50/50">
       {/* Hero Section */}
@@ -91,57 +86,71 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Grid Section (Smaller compact cards with product collages) */}
+      {/* Categories Grid Section */}
       <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
         <div className="text-center space-y-3 mb-12">
           <h2 className="font-display text-2xl md:text-3xl font-extrabold text-brand-black tracking-tight">
-            Nuestras Categorías
+            Algunas de nuestras categorías
           </h2>
           <p className="text-slate-500 max-w-md mx-auto text-sm md:text-base">
             Explorá nuestra variedad de productos de alta calidad para cada rincón de tu hogar.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <Link
-                key={cat.slug}
-                href="/catalogo"
-                className="group flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-red/30 hover:shadow-lg"
-              >
-                {/* Product Collage Thumbnail */}
-                <div className="h-44 w-full overflow-hidden bg-slate-100 relative">
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 backdrop-blur-md text-brand-red shadow-sm">
-                    <Icon className="h-4 w-4" />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
+            <span className="text-xs font-semibold text-slate-400">Cargando categorías...</span>
+          </div>
+        ) : categories.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {categories.map((cat) => {
+              const categoryImg = cat.imageUrl || '/images/logo/isotipo.svg';
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/catalogo?type=${cat.slug}`}
+                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-red/30 hover:shadow-lg"
+                >
+                  {/* Product Collage Thumbnail */}
+                  <div className="h-44 w-full overflow-hidden bg-slate-50 relative p-4 flex items-center justify-center border-b border-slate-100">
+                    <img
+                      src={categoryImg}
+                      alt={cat.name}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
+                      }}
+                    />
+                    <div className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 backdrop-blur-md text-brand-red shadow-sm">
+                      <Tag className="h-4 w-4" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Content */}
-                <div className="p-5 flex flex-col justify-between flex-grow">
-                  <div>
-                    <h3 className="font-display text-base font-bold text-brand-black mb-1 group-hover:text-brand-red transition-colors duration-200">
-                      {cat.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2">
-                      {cat.description}
-                    </p>
+                  {/* Content */}
+                  <div className="p-5 flex flex-col justify-between flex-grow">
+                    <div>
+                      <h3 className="font-display text-sm md:text-base font-bold text-brand-black mb-1 group-hover:text-brand-red transition-colors duration-200 line-clamp-2 leading-tight">
+                        {cat.name}
+                      </h3>
+                      <p className="text-xs text-slate-400 leading-relaxed mb-4 font-semibold">
+                        {cat.productCount} producto{cat.productCount > 1 ? 's' : ''} disponible{cat.productCount > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-red uppercase tracking-wider group-hover:gap-2 transition-all">
+                      Ver productos
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-red uppercase tracking-wider group-hover:gap-2 transition-all">
-                    Ver productos
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center text-slate-400">
+            <p>No se encontraron categorías activas con stock en este momento.</p>
+          </div>
+        )}
       </section>
 
       {/* Payment Methods & Financing Section */}
