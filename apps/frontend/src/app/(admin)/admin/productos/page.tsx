@@ -178,64 +178,133 @@ export default function AdminProductosPage() {
           <span className="text-sm font-semibold text-slate-400">Cargando catálogo...</span>
         </div>
       ) : productsData && productsData.items.length > 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_5px_20px_rgba(0,0,0,0.01)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 text-slate-400 uppercase tracking-wider font-bold text-[10px] border-b border-slate-100">
-                  <th className="px-6 py-4">SKU</th>
-                  <th className="px-6 py-4">Nombre original (GesCom)</th>
-                  <th className="px-6 py-4">Nombre visible</th>
-                  <th className="px-6 py-4">Precio final</th>
-                  <th className="px-6 py-4">Stock</th>
-                  <th className="px-6 py-4">Estado</th>
-                  <th className="px-6 py-4 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {productsData.items.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-50/30 text-slate-600 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-slate-800">{prod.sku}</td>
-                    <td className="px-6 py-4 max-w-xs truncate">{prod.gescomName}</td>
-                    <td className="px-6 py-4 max-w-xs truncate font-semibold text-slate-800">{prod.name}</td>
-                    <td className="px-6 py-4 font-bold text-slate-800">
-                      {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(prod.finalPrice)}
-                    </td>
-                    <td className="px-6 py-4 font-semibold">{prod.stock}</td>
-                    <td className="px-6 py-4">
-                      {(prod.isActive && prod.stock > 0) ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">
-                          <Eye className="h-3.5 w-3.5" /> Activo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase">
-                          <EyeOff className="h-3.5 w-3.5" /> Inactivo
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => openEditModal(prod)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-red hover:bg-brand-red/10 transition-all"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                    </td>
+        <>
+          {/* Vista Desktop (Tabla) */}
+          <div className="hidden md:block bg-white rounded-3xl border border-slate-100 shadow-[0_5px_20px_rgba(0,0,0,0.01)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-400 uppercase tracking-wider font-bold text-[10px] border-b border-slate-100">
+                    <th className="px-6 py-4">SKU</th>
+                    <th className="px-6 py-4">Nombre original (GesCom)</th>
+                    <th className="px-6 py-4">Nombre visible</th>
+                    <th className="px-6 py-4">Precio final</th>
+                    <th className="px-6 py-4">Stock</th>
+                    <th className="px-6 py-4">Estado</th>
+                    <th className="px-6 py-4 text-center">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {productsData.items.map((prod) => (
+                    <tr key={prod.id} className="hover:bg-slate-50/30 text-slate-600 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-slate-800">{prod.sku}</td>
+                      <td className="px-6 py-4 max-w-xs truncate">{prod.gescomName}</td>
+                      <td className="px-6 py-4 max-w-xs truncate font-semibold text-slate-800">{prod.name}</td>
+                      <td className="px-6 py-4 font-bold text-slate-800">
+                        {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(prod.finalPrice)}
+                      </td>
+                      <td className="px-6 py-4 font-semibold">{prod.stock}</td>
+                      <td className="px-6 py-4">
+                        {(prod.isActive && prod.stock > 0) ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">
+                            <Eye className="h-3.5 w-3.5" /> Activo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase">
+                            <EyeOff className="h-3.5 w-3.5" /> Inactivo
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => openEditModal(prod)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-red hover:bg-brand-red/10 transition-all"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Desktop */}
+            <Pagination
+              currentPage={page}
+              totalPages={productsData.totalPages}
+              onPageChange={setPage}
+              totalItems={productsData.total}
+              itemLabel="Productos"
+            />
           </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={page}
-            totalPages={productsData.totalPages}
-            onPageChange={setPage}
-            totalItems={productsData.total}
-            itemLabel="Productos"
-          />
-        </div>
+          {/* Vista Mobile (Tarjetas) */}
+          <div className="md:hidden space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {productsData.items.map((prod) => (
+                <div key={prod.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_5px_15px_rgba(0,0,0,0.01)] space-y-4">
+                  {/* SKU & Estado */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-slate-700 text-xs bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg">{prod.sku}</span>
+                    <div>
+                      {(prod.isActive && prod.stock > 0) ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-500 bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase">
+                          <Eye className="h-3 w-3" /> Activo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-full uppercase">
+                          <EyeOff className="h-3 w-3" /> Inactivo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Nombres */}
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-slate-800 text-sm leading-snug">{prod.name}</h4>
+                    <p className="text-[10px] text-slate-400 leading-normal">
+                      <span className="font-semibold">Original:</span> {prod.gescomName}
+                    </p>
+                  </div>
+
+                  {/* Detalles (Precio, Stock, Acciones) */}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Precio</span>
+                      <span className="text-sm font-extrabold text-slate-800 block">
+                        {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(prod.finalPrice)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Stock</span>
+                      <span className="text-sm font-bold text-slate-700 block text-center">{prod.stock}</span>
+                    </div>
+
+                    <div>
+                      <button
+                        onClick={() => openEditModal(prod)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-brand-red hover:bg-brand-red/10 active:scale-95 transition-all"
+                      >
+                        <Edit2 className="h-4.5 w-4.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Mobile */}
+            <Pagination
+              currentPage={page}
+              totalPages={productsData.totalPages}
+              onPageChange={setPage}
+              totalItems={productsData.total}
+              itemLabel="Productos"
+            />
+          </div>
+        </>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 shadow-[0_5px_20px_rgba(0,0,0,0.01)]">
           <p>No se encontraron productos en el catálogo.</p>
