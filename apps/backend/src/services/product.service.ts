@@ -194,17 +194,35 @@ export async function getAdminProducts(params: {
     deletedAt: null,
   };
 
+  const andConditions: any[] = [];
+
   if (params.isActive !== undefined) {
-    where.isActive = params.isActive;
+    if (params.isActive) {
+      andConditions.push({ isActive: true });
+      andConditions.push({ stock: { gt: 0 } });
+    } else {
+      andConditions.push({
+        OR: [
+          { isActive: false },
+          { stock: { lte: 0 } },
+        ],
+      });
+    }
   }
 
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
-    where.OR = [
-      { name: { contains: searchTerm, mode: 'insensitive' } },
-      { sku: { contains: searchTerm, mode: 'insensitive' } },
-      { gescomName: { contains: searchTerm, mode: 'insensitive' } },
-    ];
+    andConditions.push({
+      OR: [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { sku: { contains: searchTerm, mode: 'insensitive' } },
+        { gescomName: { contains: searchTerm, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   const [items, total] = await Promise.all([
