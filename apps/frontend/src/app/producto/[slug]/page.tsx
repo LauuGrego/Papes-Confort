@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -17,6 +17,56 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
+
+  // Zoom states
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  // Mobile Touch Swipe / Drag states
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomPos({ x, y });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsZoomed(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchStart) return;
+    const currentTouch = e.targetTouches[0].clientX;
+    setTouchEnd(currentTouch);
+
+    // Pan zoom dynamically with finger movement on touch
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.targetTouches[0].clientX - left) / width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.targetTouches[0].clientY - top) / height) * 100));
+    setZoomPos({ x, y });
+  };
+
+  const handleTouchEnd = () => {
+    setIsZoomed(false);
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 40;
+
+    if (distance > minSwipeDistance && product && product.images.length > 1) {
+      // Swiped left -> next image
+      setActiveImageIdx((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+    } else if (distance < -minSwipeDistance && product && product.images.length > 1) {
+      // Swiped right -> prev image
+      setActiveImageIdx((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
 
   const { addItem } = useCartStore();
   const [isAdding, setIsAdding] = useState(false);
@@ -123,14 +173,26 @@ export default function ProductDetailPage() {
         
         {/* Left column: Images Gallery */}
         <div className="lg:col-span-5 space-y-4 w-full">
-          <div className="relative aspect-square w-full max-w-md mx-auto items-center justify-center overflow-hidden rounded-3xl bg-slate-50/50 border border-slate-100 p-6 md:p-8 flex">
+          <div
+            className="relative aspect-square w-full max-w-md mx-auto items-center justify-center overflow-hidden rounded-3xl bg-slate-50/50 border border-slate-100 p-6 md:p-8 flex cursor-zoom-in group select-none touch-pan-y"
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsZoomed(true)}
+            onMouseLeave={() => setIsZoomed(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
               src={imageUrl}
               alt={product.name}
-              className="max-h-full max-w-full object-contain"
+              className="max-h-full max-w-full object-contain transition-transform duration-150 ease-out pointer-events-none"
+              style={{
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: isZoomed ? 'scale(2.5)' : 'scale(1)',
+              }}
             />
             {/* Badges overlay */}
-            <div className="absolute left-6 top-6 flex flex-col gap-2">
+            <div className="absolute left-6 top-6 flex flex-col gap-2 pointer-events-none z-10">
               {hasDiscount && (
                 <span className="inline-flex items-center rounded-full bg-brand-red px-4 py-1.5 text-xs font-bold text-white uppercase tracking-wider shadow-md">
                   {product.discountPercent}% OFF
@@ -141,6 +203,45 @@ export default function ProductDetailPage() {
                   Outlet
                 </span>
               )}
+            </div>
+
+            {/* Mobile swipe image counter */}
+            {product.images.length > 1 && (
+              <div className="absolute top-6 right-6 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold z-10 pointer-events-none md:hidden">
+                {activeImageIdx + 1} / {product.images.length}
+              </div>
+            )}
+
+            {/* Image navigation arrows for desktop & mobile */}
+            {product.images.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIdx((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIdx((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  aria-label="Imagen siguiente"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+
+            {/* Hint pill */}
+            <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium tracking-wide pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
+              <Search className="h-3 w-3" />
+              Pasá el cursor o deslizá para ampliar
             </div>
           </div>
 
@@ -171,10 +272,10 @@ export default function ProductDetailPage() {
         {/* Right column: Purchase Info */}
         <div className="lg:col-span-7 space-y-8">
           <div>
-            <span className="text-xs font-bold text-brand-red uppercase tracking-widest mb-1.5 block">
+            <span className="text-[17px] font-bold text-brand-red uppercase tracking-widest mb-1.5 block">
               {product.brand.name}
             </span>
-            <h1 className="font-display text-2xl md:text-3xl font-extrabold text-brand-black leading-tight">
+            <h1 className="font-display text-[21px] md:text-[27px] font-extrabold text-brand-black leading-tight">
               {product.name}
             </h1>
             <p className="text-xs text-slate-400 mt-2 font-mono">SKU: {product.sku}</p>
