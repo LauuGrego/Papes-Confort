@@ -85,6 +85,8 @@ export async function getProducts(params: {
   categoryId?: string;
   typeSlug?: string;
   productType?: string;
+  offerId?: string;
+  offerSlug?: string;
 }) {
   const page = params.page || 1;
   const limit = params.limit || 10;
@@ -114,6 +116,12 @@ export async function getProducts(params: {
 
   if (params.productType) {
     where.productType = params.productType;
+  }
+
+  if (params.offerId) {
+    where.offers = { some: { offerId: params.offerId } };
+  } else if (params.offerSlug) {
+    where.offers = { some: { offer: { slug: params.offerSlug } } };
   }
 
   if (params.search) {

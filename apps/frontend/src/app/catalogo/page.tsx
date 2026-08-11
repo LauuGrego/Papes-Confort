@@ -22,6 +22,7 @@ function CatalogoContent() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedOfferSlug, setSelectedOfferSlug] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
@@ -33,12 +34,14 @@ function CatalogoContent() {
     const categoryParam = searchParams.get('categoryId');
     const productTypeParam = searchParams.get('productType');
     const brandParam = searchParams.get('brandId');
+    const offerParam = searchParams.get('offer');
 
     setPage(pageParam ? Number(pageParam) : 1);
     setSelectedFamily(familyParam || null);
     setSelectedCategory(categoryParam || null);
     setSelectedProductType(productTypeParam || null);
     setSelectedBrand(brandParam || null);
+    setSelectedOfferSlug(offerParam || null);
     setSearch(searchParam || '');
     setSearchInput(searchParam || '');
     
@@ -74,13 +77,14 @@ function CatalogoContent() {
     if (selectedCategory) params.set('categoryId', selectedCategory);
     if (selectedProductType) params.set('productType', selectedProductType);
     if (selectedBrand) params.set('brandId', selectedBrand);
+    if (selectedOfferSlug) params.set('offer', selectedOfferSlug);
 
     const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/products?${params.toString()}`);
     if (res.success && res.data) {
       setProductsData(res.data);
     }
     setLoading(false);
-  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand]);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand, selectedOfferSlug]);
 
   // 4. Trigger fetch when parameters or loading ready state changes
   useEffect(() => {
@@ -100,12 +104,13 @@ function CatalogoContent() {
     if (selectedCategory) params.set('categoryId', selectedCategory);
     if (selectedProductType) params.set('productType', selectedProductType);
     if (selectedBrand) params.set('brandId', selectedBrand);
+    if (selectedOfferSlug) params.set('offer', selectedOfferSlug);
 
     const qs = params.toString();
     const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
     
     window.history.replaceState(null, '', newUrl);
-  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand, initialLoaded]);
+  }, [page, search, selectedFamily, selectedCategory, selectedProductType, selectedBrand, selectedOfferSlug, initialLoaded]);
 
   // 6. Debounce search input and reset page to 1 on actual search query changes
   useEffect(() => {
@@ -121,7 +126,7 @@ function CatalogoContent() {
     return () => clearTimeout(timer);
   }, [searchInput, search, initialLoaded]);
 
-  const hasActiveFilters = Boolean(selectedFamily || selectedCategory || selectedProductType || selectedBrand || search);
+  const hasActiveFilters = Boolean(selectedFamily || selectedCategory || selectedProductType || selectedBrand || selectedOfferSlug || search);
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
@@ -184,6 +189,11 @@ function CatalogoContent() {
               Tipo: {selectedProductType === 'OFFER' ? 'Oferta Especial' : selectedProductType === 'OUTLET' ? 'Outlet / Saldos' : 'Promo Bancaria'}
             </span>
           )}
+          {selectedOfferSlug && (
+            <span className="text-xs bg-brand-red text-white px-3 py-1 rounded-xl font-bold shadow-2xs">
+              Oferta: {selectedOfferSlug}
+            </span>
+          )}
           {search && (
             <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
               Búsqueda: "{search}"
@@ -195,6 +205,7 @@ function CatalogoContent() {
               setSelectedCategory(null);
               setSelectedProductType(null);
               setSelectedBrand(null);
+              setSelectedOfferSlug(null);
               setSearch('');
               setSearchInput('');
               window.history.replaceState(null, '', '/catalogo');

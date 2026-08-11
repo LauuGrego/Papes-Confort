@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '../../../stores/auth';
 import { fetchApi } from '../../../lib/api';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, Settings, RefreshCw, LogOut, Loader2, Menu, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Settings, RefreshCw, LogOut, Loader2, Menu, X, Tag } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -59,6 +59,7 @@ export default function AdminLayout({
   const menuItems = [
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
     { href: '/admin/productos', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin/ofertas', label: 'Ofertas', icon: Tag },
     { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
     { href: '/admin/sync-logs', label: 'Logs de Sincronización', icon: RefreshCw },
   ];

@@ -20,6 +20,7 @@ import {
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { fetchApi } from '../lib/api';
+import { OfferDto } from '@papes-confort/shared';
 
 interface Category {
   id: string;
@@ -51,6 +52,7 @@ export default function Header() {
 
   const [families, setFamilies] = useState<Family[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [offers, setOffers] = useState<OfferDto[]>([]);
 
   // Mobile accordion state
   const [mobileExpandedSection, setMobileExpandedSection] = useState<'ofertas' | 'rubros' | 'marcas' | null>(null);
@@ -68,9 +70,10 @@ export default function Header() {
 
   useEffect(() => {
     async function loadNavigationData() {
-      const [categoriesRes, brandsRes] = await Promise.all([
-        fetchApi<Family[]>('/api/categories'),
-        fetchApi<Brand[]>('/api/brands'),
+      const [categoriesRes, brandsRes, offersRes] = await Promise.all([
+        fetchApi<Family[]>('/api/categories', { cache: 'no-store' }),
+        fetchApi<Brand[]>('/api/brands', { cache: 'no-store' }),
+        fetchApi<OfferDto[]>('/api/offers', { cache: 'no-store' }),
       ]);
       if (categoriesRes.success && categoriesRes.data) {
         setFamilies(categoriesRes.data);
@@ -78,9 +81,21 @@ export default function Header() {
       if (brandsRes.success && brandsRes.data) {
         setBrands(brandsRes.data);
       }
+      if (offersRes.success && offersRes.data) {
+        setOffers(offersRes.data);
+      }
     }
     loadNavigationData();
-  }, []);
+
+    const handleOffersUpdated = () => {
+      loadNavigationData();
+    };
+
+    window.addEventListener('offers-updated', handleOffersUpdated);
+    return () => {
+      window.removeEventListener('offers-updated', handleOffersUpdated);
+    };
+  }, [pathname]);
 
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });
@@ -116,63 +131,44 @@ export default function Header() {
             Inicio
           </Link>
 
-          {/* DESPLEGABLE: Ofertas */}
-          <div className="relative group py-6">
-            <Link
-              href="/catalogo?productType=OFFER"
-              className="text-brand-red font-semibold hover:text-brand-red-dark transition-colors duration-200 flex items-center gap-1.5 bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/15 hover:bg-brand-red/10 cursor-pointer"
-            >
-              <Tag className="h-3.5 w-3.5" />
-              <span>Ofertas</span>
-              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
-            </Link>
+          {/* DESPLEGABLE: Ofertas (Solo ofertas dinámicas existentes) */}
+          {offers.length > 0 && (
+            <div className="relative group py-6">
+              <Link
+                href={`/catalogo?offer=${offers[0].slug}`}
+                className="text-brand-red font-semibold hover:text-brand-red-dark transition-colors duration-200 flex items-center gap-1.5 bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/15 hover:bg-brand-red/10 cursor-pointer"
+              >
+                <Tag className="h-3.5 w-3.5" />
+                <span>Ofertas</span>
+                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
+              </Link>
 
-            <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="w-64 rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 flex flex-col gap-1">
-                <Link
-                  href="/catalogo?productType=OFFER"
-                  className="flex items-center justify-between p-3 rounded-2xl hover:bg-brand-red/5 text-slate-700 hover:text-brand-red transition-colors group/item"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="h-4 w-4 text-brand-red" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Ofertas Especiales</span>
-                  </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform" />
-                </Link>
-
-                <Link
-                  href="/catalogo?productType=OUTLET"
-                  className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-brand-red transition-colors group/item"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Tag className="h-4 w-4 text-slate-400 group-hover/item:text-brand-red" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Outlet / Saldos</span>
-                  </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform" />
-                </Link>
-
-                <Link
-                  href="/catalogo?productType=BANK_PROMO"
-                  className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-brand-red transition-colors group/item"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Award className="h-4 w-4 text-slate-400 group-hover/item:text-brand-red" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Promos Bancarias</span>
-                  </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform" />
-                </Link>
-
-                <div className="border-t border-slate-100 mt-1 pt-1.5">
-                  <Link
-                    href="/catalogo?productType=OFFER"
-                    className="block text-center py-2 text-[11px] font-bold uppercase tracking-widest text-brand-red hover:underline"
-                  >
-                    Ver todas las ofertas
-                  </Link>
+              <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="w-64 rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 flex flex-col gap-1">
+                  {offers.map((offer) => (
+                    <Link
+                      key={offer.id}
+                      href={`/catalogo?offer=${offer.slug}`}
+                      className="flex items-center justify-between p-3 rounded-2xl hover:bg-brand-red/5 text-slate-700 hover:text-brand-red transition-colors group/item"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Sparkles className="h-4 w-4 text-brand-red shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold truncate">{offer.name}</span>
+                          {offer.discountPercent > 0 && (
+                            <span className="text-[10px] text-brand-red font-semibold">
+                              {offer.discountPercent}% OFF
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform shrink-0" />
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* DESPLEGABLE: Rubros y Subrubros */}
           <div className="relative group py-6">
@@ -383,53 +379,49 @@ export default function Header() {
                       <span>Inicio</span>
                     </Link>
 
-                    {/* Acordeón Móvil: Ofertas */}
-                    <div className="flex flex-col">
-                      <button
-                        onClick={() =>
-                          setMobileExpandedSection(
-                            mobileExpandedSection === 'ofertas' ? null : 'ofertas'
-                          )
-                        }
-                        className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-brand-red bg-brand-red/5 hover:bg-brand-red/10 transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4" />
-                          <span>Ofertas</span>
-                        </div>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform ${
-                            mobileExpandedSection === 'ofertas' ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
+                    {/* Acordeón Móvil: Ofertas (Solo si hay ofertas activas) */}
+                    {offers.length > 0 && (
+                      <div className="flex flex-col">
+                        <button
+                          onClick={() =>
+                            setMobileExpandedSection(
+                              mobileExpandedSection === 'ofertas' ? null : 'ofertas'
+                            )
+                          }
+                          className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-brand-red bg-brand-red/5 hover:bg-brand-red/10 transition-all"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4" />
+                            <span>Ofertas</span>
+                          </div>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                              mobileExpandedSection === 'ofertas' ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
 
-                      {mobileExpandedSection === 'ofertas' && (
-                        <div className="pl-6 pr-2 py-1 flex flex-col gap-1 border-l-2 border-brand-red/20 ml-4 my-1">
-                          <Link
-                            href="/catalogo?productType=OFFER"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-xs text-slate-700 hover:text-brand-red py-1.5 font-medium"
-                          >
-                            Ofertas Especiales
-                          </Link>
-                          <Link
-                            href="/catalogo?productType=OUTLET"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-xs text-slate-700 hover:text-brand-red py-1.5 font-medium"
-                          >
-                            Outlet / Saldos
-                          </Link>
-                          <Link
-                            href="/catalogo?productType=BANK_PROMO"
-                            onClick={() => setMenuOpen(false)}
-                            className="text-xs text-slate-700 hover:text-brand-red py-1.5 font-medium"
-                          >
-                            Promos Bancarias
-                          </Link>
-                        </div>
-                      )}
-                    </div>
+                        {mobileExpandedSection === 'ofertas' && (
+                          <div className="pl-6 pr-2 py-1 flex flex-col gap-1 border-l-2 border-brand-red/20 ml-4 my-1">
+                            {offers.map((offer) => (
+                              <Link
+                                key={offer.id}
+                                href={`/catalogo?offer=${offer.slug}`}
+                                onClick={() => setMenuOpen(false)}
+                                className="text-xs text-slate-700 hover:text-brand-red py-1.5 font-medium flex items-center justify-between"
+                              >
+                                <span>{offer.name}</span>
+                                {offer.discountPercent > 0 && (
+                                  <span className="text-[10px] text-brand-red font-bold">
+                                    {offer.discountPercent}%
+                                  </span>
+                                )}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Acordeón Móvil: Rubros */}
                     <div className="flex flex-col">
