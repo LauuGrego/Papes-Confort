@@ -111,10 +111,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="flex flex-col flex-grow">
-        <span className="text-[8px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">
+        <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">
           {product.brand.name}
         </span>
-        <h3 className="font-display text-xs md:text-base font-bold text-brand-black mb-1 md:mb-2 line-clamp-2 leading-tight group-hover:text-brand-red transition-colors duration-200">
+        <h3 className="font-display text-[11px] md:text-sm font-bold text-brand-black mb-1 md:mb-2 line-clamp-2 leading-tight group-hover:text-brand-red transition-colors duration-200">
           {product.name}
         </h3>
         

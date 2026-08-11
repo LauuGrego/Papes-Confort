@@ -63,7 +63,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-200 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-          <p className="text-slate-400">&copy; {new Date().getFullYear()} Papes Confort. Todos los derechos reservados.</p>
+          <p className="text-slate-400">&copy; {new Date().getFullYear()} Lautaro Gregoraschuk. Todos los derechos reservados.</p>
           <p className="text-slate-400">Servicio y calidad asegurados.</p>
         </div>
       </div>

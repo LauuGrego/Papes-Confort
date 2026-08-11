@@ -123,6 +123,7 @@ export async function getProducts(params: {
       { sku: { contains: searchTerm, mode: 'insensitive' } },
       { description: { contains: searchTerm, mode: 'insensitive' } },
       { brand: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      { productFamily: { name: { contains: searchTerm, mode: 'insensitive' } } },
       { productCategory: { name: { contains: searchTerm, mode: 'insensitive' } } },
     ];
   }
