@@ -94,6 +94,35 @@ export interface ProductDto {
   updatedAt: string;
 }
 
+export interface OfferDto {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  discountPercent: number;
+  isActive: boolean;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+  products?: ProductDto[];
+}
+
+export interface CreateOfferDto {
+  name: string;
+  slug?: string;
+  description?: string;
+  discountPercent?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateOfferDto {
+  name?: string;
+  slug?: string;
+  description?: string;
+  discountPercent?: number;
+  isActive?: boolean;
+}
+
 export interface BankAccountDto {
   id: string;
   alias: string;

@@ -1,33 +1,27 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Tag, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, MapPin, Search, X } from 'lucide-react';
 import PaymentMethods from '../components/PaymentMethods';
-import { fetchApi } from '../lib/api';
-
-interface CategoryItem {
-  id: string;
-  name: string;
-  slug: string;
-  productCount: number;
-  imageUrl: string | null;
-}
 
 export default function HomePage() {
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
-  useEffect(() => {
-    async function loadCategories() {
-      const res = await fetchApi<CategoryItem[]>('/api/categories/top?limit=8');
-      if (res.success && res.data) {
-        setCategories(res.data);
-      }
-      setLoading(false);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/catalogo?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/catalogo');
     }
-    loadCategories();
-  }, []);
+  };
+
+  const handleQuickSearch = (term: string) => {
+    router.push(`/catalogo?search=${encodeURIComponent(term)}`);
+  };
 
   return (
     <div className="w-full bg-slate-50/50">
@@ -45,12 +39,59 @@ export default function HomePage() {
             <p className="text-slate-600 text-base md:text-lg leading-relaxed max-w-xl">
               El asesoramiento personalizado y el servicio posventa que nos caracteriza
             </p>
+
+            {/* Search Bar Form for Landing Page */}
+            <form onSubmit={handleSearch} className="pt-2 max-w-xl space-y-3">
+              <div className="relative flex items-center group">
+                <input
+                  type="text"
+                  placeholder="Buscar por marca, rubro, nombre (ej. Heladera, Sommier)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-28 py-3.5 rounded-2xl border border-slate-200 bg-white text-sm text-brand-black placeholder-slate-400 outline-none shadow-sm focus:border-brand-red/50 focus:ring-4 focus:ring-brand-red/10 transition-all duration-200"
+                />
+                <Search className="absolute left-4 h-5 w-5 text-slate-400 group-focus-within:text-brand-red transition-colors" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-24 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="absolute right-1.5 px-5 py-2.5 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all duration-200 shadow-sm hover:shadow cursor-pointer flex items-center gap-1.5"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Buscar</span>
+                </button>
+              </div>
+
+              {/* Suggestions / Tags */}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-400">Popular:</span>
+                {['Colchones', 'Heladeras', 'Televisores', 'Lavarropas', 'Aires'].map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => handleQuickSearch(term)}
+                    className="bg-white/80 border border-slate-200/80 hover:border-brand-red/30 hover:bg-brand-red/5 hover:text-brand-red px-2.5 py-1 rounded-xl transition-all cursor-pointer text-slate-600 font-medium"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </form>
+
             <div className="pt-2 flex flex-wrap gap-4">
               <Link
                 href="/catalogo"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-8 py-4 text-sm font-semibold text-white hover:bg-brand-red-dark shadow-[0_4px_20px_rgba(228,20,20,0.25)] hover:shadow-[0_6px_25px_rgba(228,20,20,0.35)] transition-all duration-300 transform hover:-translate-y-0.5 group"
               >
-                Explorar catálogo
+                Explorar catálogo completo
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -86,75 +127,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Grid Section */}
-      <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-        <div className="text-center space-y-3 mb-12">
-          <h2 className="font-display text-2xl md:text-3xl font-extrabold text-brand-black tracking-tight">
-            Algunas de nuestras categorías
-          </h2>
-          <p className="text-slate-500 max-w-md mx-auto text-sm md:text-base">
-            Explorá nuestra variedad de productos de alta calidad para cada rincón de tu hogar.
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
-            <span className="text-xs font-semibold text-slate-400">Cargando categorías...</span>
-          </div>
-        ) : categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((cat) => {
-              const categoryImg = cat.imageUrl || '/images/logo/isotipo.svg';
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/catalogo?type=${cat.slug}`}
-                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-red/30 hover:shadow-lg"
-                >
-                  {/* Product Collage Thumbnail */}
-                  <div className="h-44 w-full overflow-hidden bg-slate-50 relative p-4 flex items-center justify-center border-b border-slate-100">
-                    <img
-                      src={categoryImg}
-                      alt={cat.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
-                      }}
-                    />
-                    <div className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 backdrop-blur-md text-brand-red shadow-sm">
-                      <Tag className="h-4 w-4" />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-5 flex flex-col justify-between flex-grow">
-                    <div>
-                      <h3 className="font-display text-sm md:text-base font-bold text-brand-black mb-1 group-hover:text-brand-red transition-colors duration-200 line-clamp-2 leading-tight">
-                        {cat.name}
-                      </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed mb-4 font-semibold">
-                        {cat.productCount} producto{cat.productCount > 1 ? 's' : ''} disponible{cat.productCount > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-red uppercase tracking-wider group-hover:gap-2 transition-all">
-                      Ver productos
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center text-slate-400">
-            <p>No se encontraron categorías activas con stock en este momento.</p>
-          </div>
-        )}
-      </section>
-
       {/* Payment Methods & Financing Section */}
       <PaymentMethods />
     </div>
   );
 }
+

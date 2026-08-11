@@ -85,6 +85,8 @@ export async function getProducts(params: {
   categoryId?: string;
   typeSlug?: string;
   productType?: string;
+  offerId?: string;
+  offerSlug?: string;
 }) {
   const page = params.page || 1;
   const limit = params.limit || 10;
@@ -116,6 +118,12 @@ export async function getProducts(params: {
     where.productType = params.productType;
   }
 
+  if (params.offerId) {
+    where.offers = { some: { offerId: params.offerId } };
+  } else if (params.offerSlug) {
+    where.offers = { some: { offer: { slug: params.offerSlug } } };
+  }
+
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
     where.OR = [
@@ -123,6 +131,7 @@ export async function getProducts(params: {
       { sku: { contains: searchTerm, mode: 'insensitive' } },
       { description: { contains: searchTerm, mode: 'insensitive' } },
       { brand: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      { productFamily: { name: { contains: searchTerm, mode: 'insensitive' } } },
       { productCategory: { name: { contains: searchTerm, mode: 'insensitive' } } },
     ];
   }

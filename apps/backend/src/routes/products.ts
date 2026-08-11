@@ -13,6 +13,8 @@ router.get('/', async (req, res, next) => {
     const categoryId = req.query.categoryId as string || undefined;
     const typeSlug = req.query.type as string || undefined;
     const productType = req.query.productType as string || undefined;
+    const offerSlug = (req.query.offer as string) || undefined;
+    const offerId = (req.query.offerId as string) || undefined;
 
     const data = await getProducts({
       page,
@@ -22,6 +24,8 @@ router.get('/', async (req, res, next) => {
       categoryId,
       typeSlug,
       productType,
+      offerSlug,
+      offerId,
     });
 
     res.json({

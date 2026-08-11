@@ -92,6 +92,8 @@ async function runBackup() {
       await copyTable('warranties', tx.warranty, primaryPrisma.warranty);
       await copyTable('settings', tx.setting, primaryPrisma.setting);
       await copyTable('sync_logs', tx.syncLog, primaryPrisma.syncLog);
+      await copyTable('offers', tx.offer, primaryPrisma.offer);
+      await copyTable('offer_products', tx.offerProduct, primaryPrisma.offerProduct);
 
       // Restore foreign keys and triggers
       console.log('    Restoring foreign key constraints...');

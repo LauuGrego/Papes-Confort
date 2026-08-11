@@ -1,12 +1,14 @@
 import { CreditCard, Percent, QrCode } from 'lucide-react';
 
 const PAYMENT_LOGOS = [
-  { name: 'Tarjeta Naranja X', src: '/images/payments/naranja.svg' },
-  { name: 'Visa', src: '/images/payments/visa.svg' },
-  { name: 'Mastercard', src: '/images/payments/mastercard.svg' },
-  { name: 'American Express', src: '/images/payments/amex.svg' },
-  { name: 'Pago con QR', src: '/images/payments/qr.svg' },
-  { name: 'Transferencia Bancaria', src: '/images/payments/transferencia.svg' },
+  { name: 'Naranja X', src: '/images/payments/logo_naranja.png' },
+  { name: 'Visa', src: '/images/payments/logo_visa.png' },
+  { name: 'Mastercard', src: '/images/payments/logo_mastercard.png' },
+  { name: 'American Express', src: '/images/payments/logo_amex.png' },
+  { name: 'MODO', src: '/images/payments/logo_modo.webp' },
+  { name: 'Cabal', src: '/images/payments/logo_cabal.png' },
+  { name: 'Crédito Argentino', src: '/images/payments/logo_creditoargentino.webp' },
+  { name: 'Tarjeta Cencosud', src: '/images/payments/logo_cencosud.webp' },
 ];
 
 const FEATURES = [
@@ -22,7 +24,7 @@ const FEATURES = [
   },
   {
     icon: QrCode,
-    title: 'Pago con QR',
+    title: 'Pago con QR y MODO',
     description: 'Escaneá de forma rápida y segura desde la app de tu banco.',
   },
 ];
@@ -41,16 +43,17 @@ export default function PaymentMethods() {
         </div>
 
         {/* Logos container */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-center justify-center mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5 items-center justify-center mb-12">
           {PAYMENT_LOGOS.map((logo) => (
             <div
               key={logo.name}
-              className="flex items-center justify-center p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-200 transition-all duration-300 h-20"
+              className="flex items-center justify-center p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-white hover:shadow-md hover:border-slate-200 transition-all duration-300 h-20 group"
+              title={logo.name}
             >
               <img
                 src={logo.src}
                 alt={logo.name}
-                className="h-10 w-auto max-w-full object-contain filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
+                className="h-10 md:h-12 w-auto max-w-full object-contain filter drop-shadow-2xs transition-transform duration-200 group-hover:scale-105"
               />
             </div>
           ))}
