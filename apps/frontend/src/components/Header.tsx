@@ -50,6 +50,11 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Hide store header on admin pages so admin layout renders its own single header & sidebar
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const [families, setFamilies] = useState<Family[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [offers, setOffers] = useState<OfferDto[]>([]);
