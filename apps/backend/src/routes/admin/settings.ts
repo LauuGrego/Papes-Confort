@@ -56,6 +56,61 @@ router.put('/', async (req, res, next) => {
   }
 });
 
+import { v2 as cloudinary } from 'cloudinary';
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
+// POST /api/admin/settings/upload-flyer (Sube imagen a Cloudinary)
+router.post('/upload-flyer', async (req, res, next) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      res.status(400).json({ success: false, error: 'No se envió ninguna imagen.' });
+      return;
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      res.status(500).json({
+        success: false,
+        error: 'Las credenciales de Cloudinary no están configuradas en el servidor.',
+      });
+      return;
+    }
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
+
+    const uploadResult = await cloudinary.uploader.upload(image, {
+      folder: 'papes-confort/flyers',
+    });
+
+    res.json({
+      success: true,
+      data: {
+        url: uploadResult.secure_url,
+      },
+    } as ApiResponse);
+  } catch (error: any) {
+    console.error('Error al subir flyer a Cloudinary:', error);
+    next(error);
+  }
+});
+
 // Guardar solicitudes de cambio de contraseña pendientes en memoria
 const pendingPasswordChanges = new Map<string, { code: string; hash: string; expiresAt: number }>();
 

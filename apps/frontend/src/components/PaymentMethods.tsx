@@ -1,4 +1,8 @@
-import { CreditCard, Percent, QrCode } from 'lucide-react';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { fetchApi } from '../lib/api';
+import { PaymentFeatureCardDto } from '@papes-confort/shared';
 
 const PAYMENT_LOGOS = [
   { name: 'Naranja X', src: '/images/payments/logo_naranja.png' },
@@ -11,25 +15,56 @@ const PAYMENT_LOGOS = [
   { name: 'Tarjeta Cencosud', src: '/images/payments/logo_cencosud.webp' },
 ];
 
-const FEATURES = [
+const DEFAULT_CARDS: PaymentFeatureCardDto[] = [
   {
-    icon: CreditCard,
+    id: 'card-1',
     title: 'Hasta 12 cuotas sin interés',
     description: 'Con tarjetas bancarias seleccionadas en toda la tienda.',
+    icon: 'credit-card',
+    isActive: true,
+    sortOrder: 1,
   },
   {
-    icon: Percent,
+    id: 'card-2',
     title: '10% de descuento',
     description: 'Abonando mediante transferencia bancaria inmediata.',
+    icon: 'percent',
+    isActive: true,
+    sortOrder: 2,
   },
   {
-    icon: QrCode,
+    id: 'card-3',
     title: 'Pago con QR y MODO',
     description: 'Escaneá de forma rápida y segura desde la app de tu banco.',
+    icon: 'qr-code',
+    isActive: true,
+    sortOrder: 3,
   },
 ];
 
 export default function PaymentMethods() {
+  const [cards, setCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_CARDS);
+
+  useEffect(() => {
+    async function loadPaymentCards() {
+      const res = await fetchApi<Record<string, string>>('/api/settings/public');
+      if (res.success && res.data && res.data.home_payment_cards) {
+        try {
+          const parsed = JSON.parse(res.data.home_payment_cards);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const activeOnly = parsed
+              .filter((c: PaymentFeatureCardDto) => c.isActive)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+            setCards(activeOnly);
+          }
+        } catch {
+          // Si falla el parseo, mantiene las tarjetas por defecto
+        }
+      }
+    }
+    loadPaymentCards();
+  }, []);
+
   return (
     <section className="w-full bg-white border-y border-slate-200 py-16">
       <div className="mx-auto max-w-7xl px-6">
@@ -59,30 +94,29 @@ export default function PaymentMethods() {
           ))}
         </div>
 
-        {/* Financing benefits bullet points */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          {FEATURES.map((feat) => {
-            const Icon = feat.icon;
-            return (
+        {/* Dynamic financing benefit cards with sequential numbers */}
+        {cards.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-4">
+            {cards.map((card, index) => (
               <div
-                key={feat.title}
-                className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/70 border border-slate-100"
+                key={card.id}
+                className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-white hover:shadow-sm hover:border-slate-200 transition-all duration-200"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red">
-                  <Icon className="h-5 w-5" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 border border-rose-100/60 font-black text-brand-red text-base">
+                  {index + 1}
                 </div>
-                <div>
-                  <h3 className="font-display text-sm font-bold text-brand-black mb-1">
-                    {feat.title}
+                <div className="space-y-1">
+                  <h3 className="font-display text-sm font-bold text-slate-900 leading-snug">
+                    {card.title}
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    {feat.description}
+                    {card.description}
                   </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

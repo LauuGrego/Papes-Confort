@@ -224,6 +224,27 @@ export interface SyncLogDto {
   errors: string | null;
 }
 
+export interface HomeFlyerDto {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  badge?: string;
+  linkUrl?: string;
+  buttonText?: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface PaymentFeatureCardDto {
+  id: string;
+  title: string;
+  description: string;
+  icon: 'credit-card' | 'percent' | 'qr-code' | 'truck' | 'shield';
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================

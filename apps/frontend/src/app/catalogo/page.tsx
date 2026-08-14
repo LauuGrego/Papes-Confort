@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ChevronRight, Grid, Search, Loader2 } from 'lucide-react';
+import { ChevronRight, Grid, Search, Loader2, X } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
 import { ProductDto, PaginatedResponse } from '@papes-confort/shared';
 import ProductCard from '../../components/products/ProductCard';
@@ -116,7 +116,6 @@ function CatalogoContent() {
   useEffect(() => {
     if (!initialLoaded) return;
     
-    // Only reset page & update search if searchInput actually changed
     if (searchInput === search) return;
 
     const timer = setTimeout(() => {
@@ -125,6 +124,15 @@ function CatalogoContent() {
     }, 400);
     return () => clearTimeout(timer);
   }, [searchInput, search, initialLoaded]);
+
+  // Resolution helpers for Rubro and Subrubro names
+  const selectedFamilyObj = families.find(
+    (f) => f.slug === selectedFamily || f.id === selectedFamily
+  );
+
+  const selectedCategoryObj = families
+    .flatMap((f) => f.categories || [])
+    .find((c) => c.id === selectedCategory || c.slug === selectedCategory);
 
   const hasActiveFilters = Boolean(selectedFamily || selectedCategory || selectedProductType || selectedBrand || selectedOfferSlug || search);
 
@@ -137,7 +145,7 @@ function CatalogoContent() {
       </nav>
 
       {/* Header & Integrated Search Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
         <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight">
             Catálogo de Productos
@@ -163,42 +171,109 @@ function CatalogoContent() {
         </div>
       </div>
 
-      {/* Active filters bar */}
+      {/* Active filters bar with removable tags */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 mb-8 bg-brand-red/5 p-3.5 rounded-2xl border border-brand-red/15">
           <span className="text-xs font-bold text-brand-red uppercase tracking-wider mr-1">
-            Filtro activo:
+            Filtros activos:
           </span>
+
+          {/* Badge Rubro */}
           {selectedFamily && (
-            <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
-              Rubro: {families.find((f) => f.slug === selectedFamily)?.name || selectedFamily}
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
+              <span>Rubro: <strong>{selectedFamilyObj?.name || selectedFamily}</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFamily(null);
+                  setSelectedCategory(null);
+                }}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Quitar filtro de rubro"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
+          {/* Badge Subrubro con Nombre Real */}
           {selectedCategory && (
-            <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
-              Subrubro seleccionado
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
+              <span>Subrubro: <strong>{selectedCategoryObj?.name || selectedCategory}</strong></span>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Quitar filtro de subrubro"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
+          {/* Badge Marca */}
           {selectedBrand && (
-            <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
-              Marca: {brands.find((b) => b.id === selectedBrand)?.name || 'Seleccionada'}
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
+              <span>Marca: <strong>{brands.find((b) => b.id === selectedBrand)?.name || 'Seleccionada'}</strong></span>
+              <button
+                type="button"
+                onClick={() => setSelectedBrand(null)}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Quitar filtro de marca"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
+          {/* Badge Tipo */}
           {selectedProductType && (
-            <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
-              Tipo: {selectedProductType === 'OFFER' ? 'Oferta Especial' : selectedProductType === 'OUTLET' ? 'Outlet / Saldos' : 'Promo Bancaria'}
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
+              <span>Tipo: <strong>{selectedProductType === 'OFFER' ? 'Oferta Especial' : selectedProductType === 'OUTLET' ? 'Outlet / Saldos' : 'Promo Bancaria'}</strong></span>
+              <button
+                type="button"
+                onClick={() => setSelectedProductType(null)}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Quitar filtro de tipo"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
+          {/* Badge Oferta */}
           {selectedOfferSlug && (
-            <span className="text-xs bg-brand-red text-white px-3 py-1 rounded-xl font-bold shadow-2xs">
-              Oferta: {selectedOfferSlug}
+            <span className="inline-flex items-center gap-1.5 text-xs bg-brand-red text-white px-3 py-1 rounded-xl font-bold shadow-2xs">
+              <span>Oferta: <strong>{selectedOfferSlug}</strong></span>
+              <button
+                type="button"
+                onClick={() => setSelectedOfferSlug(null)}
+                className="text-white/80 hover:text-white cursor-pointer p-0.5 rounded-full hover:bg-white/20 transition-colors"
+                title="Quitar filtro de oferta"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
+          {/* Badge Búsqueda */}
           {search && (
-            <span className="text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
-              Búsqueda: "{search}"
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white text-slate-700 px-3 py-1 rounded-xl border border-slate-200 font-semibold shadow-2xs">
+              <span>Búsqueda: <strong>&quot;{search}&quot;</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSearchInput('');
+                }}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Quitar filtro de búsqueda"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </span>
           )}
+
           <button
             onClick={() => {
               setSelectedFamily(null);
