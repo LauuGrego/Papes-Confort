@@ -13,9 +13,11 @@ import {
   LogOut,
   Loader2,
   Menu,
+  X,
   Tag,
   Image as ImageIcon,
   CreditCard,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -50,7 +52,7 @@ export default function AdminLayout({
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });
     clearAuth();
-    router.push('/admin/login');
+    router.push('/');
   };
 
   if (checkingAuth) {
@@ -62,7 +64,7 @@ export default function AdminLayout({
     );
   }
 
-  // If path is login, render children directly without sidebar
+  // If path is login, render children directly without admin header/sidebar
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
@@ -81,123 +83,237 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] bg-slate-50/50 relative">
-      {/* Backdrop for mobile */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 top-20 z-30 bg-black/40 backdrop-blur-xs md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Positioned cleanly under the sticky header (top-20 / 80px) */}
-      <aside
-        className={`fixed top-20 bottom-0 left-0 z-40 w-64 border-r border-slate-200/80 bg-white flex flex-col justify-between shrink-0 transform transition-transform duration-300 ease-in-out md:sticky md:top-20 md:h-[calc(100vh-5rem)] md:translate-x-0 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="overflow-y-auto flex-grow p-4 space-y-6">
-          {/* Section 1: Gestión Comercial */}
-          <div className="space-y-1.5">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Gestión Comercial
-            </p>
-            {mainNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-brand-red text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Section 2: Portada y Sistema */}
-          <div className="space-y-1.5">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Portada & Sistema
-            </p>
-            {systemNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href.split('?')[0] && (
-                !item.href.includes('tab=') || pathname.includes(item.href)
-              );
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-brand-navy text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+    <div className="min-h-screen bg-slate-50/50 flex flex-col">
+      {/* 1. Header Único del Panel de Administración */}
+      <header className="sticky top-0 z-50 h-16 bg-white border-b border-slate-200/80 px-4 md:px-8 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-3">
+          <Link href="/admin" className="flex items-center gap-2">
+            <img
+              src="/images/logo/logo-slogan-negro.svg"
+              alt="Logo Papes Confort"
+              className="h-8 md:h-9 w-auto"
+            />
+          </Link>
+          <span className="hidden sm:inline-flex px-2.5 py-1 rounded-lg bg-brand-navy/10 text-brand-navy font-extrabold text-[11px] uppercase tracking-wider">
+            Panel Admin
+          </span>
         </div>
 
-        {/* Footer info (User & Logout) */}
-        <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50 shrink-0">
+        {/* Desktop User Info & Actions */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link
+            href="/"
+            target="_blank"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+            title="Abrir tienda en nueva pestaña"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            <span>Ver Tienda</span>
+          </Link>
+
           {user && (
-            <div className="px-2">
-              <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Usuario Sesión</p>
-              <p className="text-xs font-bold text-slate-700 truncate">{user.email}</p>
-            </div>
+            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/60">
+              {user.email}
+            </span>
           )}
+
           <button
-            onClick={() => {
-              setIsSidebarOpen(false);
-              handleLogout();
-            }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all text-left cursor-pointer border border-rose-100/60"
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-600 text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             <span>Cerrar sesión</span>
           </button>
         </div>
-      </aside>
 
-      {/* Main Content Container with Mobile Header */}
-      <div className="flex-grow flex flex-col min-w-0">
-        {/* Mobile Admin Header Bar */}
-        <div className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-slate-100 md:hidden sticky top-0 z-30">
-          <Link href="/admin">
-            <img
-              src="/images/logo/logo-slogan-negro.svg"
-              alt="Logo Papes Confort"
-              className="h-8 w-auto"
-            />
-          </Link>
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
+        {/* Mobile Single Hamburger Button */}
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-xl border border-slate-200 text-slate-700 bg-slate-50 hover:bg-slate-100 cursor-pointer md:hidden"
+          aria-label="Menú del panel de administración"
+        >
+          {isSidebarOpen ? <X className="h-5 w-5 text-brand-red" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </header>
 
-        {/* Main Scrollable Area */}
-        <main className="flex-grow p-6 md:p-10 overflow-y-auto">
-          <div className="max-w-5xl mx-auto">
-            {children}
+      {/* 2. Layout Body (Sidebar + Content / Mobile Menu Drawer) */}
+      <div className="flex-grow flex flex-col md:flex-row min-w-0">
+        {/* Mobile Fullscreen Admin Drawer */}
+        {isSidebarOpen && (
+          <div className="fixed inset-x-0 top-16 bottom-0 z-40 bg-white p-6 flex flex-col justify-between overflow-y-auto md:hidden border-t border-slate-100">
+            <div className="space-y-6">
+              {/* Sección 1: Gestión Comercial */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Gestión Comercial
+                </p>
+                <div className="space-y-1">
+                  {mainNav.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-brand-red text-white shadow-xs'
+                            : 'text-slate-700 bg-slate-50 border border-slate-100'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sección 2: Portada y Sistema */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Portada & Sistema
+                </p>
+                <div className="space-y-1">
+                  {systemNav.map((item) => {
+                    const Icon = item.icon;
+                    const isActive =
+                      pathname === item.href.split('?')[0] &&
+                      (!item.href.includes('tab=') || pathname.includes(item.href));
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-brand-navy text-white shadow-xs'
+                            : 'text-slate-700 bg-slate-50 border border-slate-100'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Admin Footer: User Email + Ver Tienda + Cerrar Sesión */}
+            <div className="pt-6 border-t border-slate-100 space-y-3">
+              {user && (
+                <div className="px-1">
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
+                    Sesión Administrador
+                  </p>
+                  <p className="text-xs font-bold text-slate-700 truncate">{user.email}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Ver Tienda</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsSidebarOpen(false);
+                    handleLogout();
+                  }}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Desktop Permanent Sidebar */}
+        <aside className="hidden md:flex flex-col w-64 border-r border-slate-200/80 bg-white justify-between shrink-0 sticky top-16 h-[calc(100vh-4rem)]">
+          <div className="p-4 space-y-6 overflow-y-auto flex-grow">
+            {/* Sección 1: Gestión Comercial */}
+            <div className="space-y-1.5">
+              <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Gestión Comercial
+              </p>
+              {mainNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                      isActive
+                        ? 'bg-brand-red text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Sección 2: Portada y Sistema */}
+            <div className="space-y-1.5">
+              <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Portada & Sistema
+              </p>
+              {systemNav.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href.split('?')[0] &&
+                  (!item.href.includes('tab=') || pathname.includes(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                      isActive
+                        ? 'bg-brand-navy text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer Sidebar (User email info + Logout) */}
+          <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50 shrink-0">
+            {user && (
+              <div className="px-2">
+                <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
+                  Usuario Sesión
+                </p>
+                <p className="text-xs font-bold text-slate-700 truncate">{user.email}</p>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all text-left cursor-pointer border border-rose-100/60"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-grow p-4 sm:p-6 md:p-10 overflow-y-auto">
+          <div className="max-w-5xl mx-auto">{children}</div>
         </main>
       </div>
     </div>
