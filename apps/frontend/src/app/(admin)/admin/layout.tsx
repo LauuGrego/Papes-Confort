@@ -15,6 +15,7 @@ import {
   Menu,
   Tag,
   Image as ImageIcon,
+  CreditCard,
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -74,6 +75,7 @@ export default function AdminLayout({
 
   const systemNav = [
     { href: '/admin/configuracion?tab=banners', label: 'Banners de Portada', icon: ImageIcon },
+    { href: '/admin/configuracion?tab=payment_cards', label: 'Tarjetas Informativas', icon: CreditCard },
     { href: '/admin/configuracion?tab=general', label: 'Configuración General', icon: Settings },
     { href: '/admin/sync-logs', label: 'Logs de Sincronización', icon: RefreshCw },
   ];

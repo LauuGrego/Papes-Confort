@@ -22,9 +22,10 @@ import {
   Lock,
   Mail,
   Smartphone,
+  CreditCard,
 } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
-import { HomeFlyerDto } from '@papes-confort/shared';
+import { HomeFlyerDto, PaymentFeatureCardDto } from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
   {
@@ -37,10 +38,37 @@ const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
   },
 ];
 
+const DEFAULT_PAYMENT_CARDS: PaymentFeatureCardDto[] = [
+  {
+    id: 'card-1',
+    title: 'Hasta 12 cuotas sin interés',
+    description: 'Con tarjetas bancarias seleccionadas en toda la tienda.',
+    icon: 'credit-card',
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'card-2',
+    title: '10% de descuento',
+    description: 'Abonando mediante transferencia bancaria inmediata.',
+    icon: 'percent',
+    isActive: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'card-3',
+    title: 'Pago con QR y MODO',
+    description: 'Escaneá de forma rápida y segura desde la app de tu banco.',
+    icon: 'qr-code',
+    isActive: true,
+    sortOrder: 3,
+  },
+];
+
 export default function AdminConfiguracionPage() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as 'banners' | 'general' | 'security') || 'banners';
-  const [activeTab, setActiveTab] = useState<'banners' | 'general' | 'security'>(initialTab);
+  const initialTab = (searchParams.get('tab') as 'banners' | 'payment_cards' | 'general' | 'security') || 'banners';
+  const [activeTab, setActiveTab] = useState<'banners' | 'payment_cards' | 'general' | 'security'>(initialTab);
 
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -50,16 +78,23 @@ export default function AdminConfiguracionPage() {
   const [safetyStock, setSafetyStock] = useState('1');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
+  const [paymentCards, setPaymentCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_PAYMENT_CARDS);
 
-  // Modal State para Flyers
+  // Modal State para Banners Flyers
   const [isFlyerModalOpen, setIsFlyerModalOpen] = useState(false);
   const [editingFlyer, setEditingFlyer] = useState<HomeFlyerDto | null>(null);
-
-  // Flyer Form State
   const [flyerTitle, setFlyerTitle] = useState('');
   const [flyerImageUrl, setFlyerImageUrl] = useState('');
   const [flyerIsActive, setFlyerIsActive] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Modal State para Tarjetas Informativas
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState<PaymentFeatureCardDto | null>(null);
+  const [cardTitle, setCardTitle] = useState('');
+  const [cardDescription, setCardDescription] = useState('');
+  const [cardIcon, setCardIcon] = useState<'credit-card' | 'percent' | 'qr-code' | 'truck' | 'shield'>('credit-card');
+  const [cardIsActive, setCardIsActive] = useState(true);
 
   const { user, accessToken, setAuth } = useAuthStore();
 
@@ -90,23 +125,35 @@ export default function AdminConfiguracionPage() {
             console.error('Error al parsear home_flyers de DB:', e);
           }
         }
+        if (res.data.home_payment_cards) {
+          try {
+            const parsed = JSON.parse(res.data.home_payment_cards);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setPaymentCards(parsed);
+            }
+          } catch (e) {
+            console.error('Error al parsear home_payment_cards de DB:', e);
+          }
+        }
       }
       setLoading(false);
     }
     loadSettings();
   }, []);
 
-  const saveSettings = async (updatedFlyers?: HomeFlyerDto[]) => {
+  const saveSettings = async (updatedFlyers?: HomeFlyerDto[], updatedCards?: PaymentFeatureCardDto[]) => {
     setSaveLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
     const flyersToSave = updatedFlyers || flyers;
+    const cardsToSave = updatedCards || paymentCards;
 
     const body = {
       safety_stock: safetyStock,
       whatsapp_number: whatsappNumber,
       home_flyers: JSON.stringify(flyersToSave),
+      home_payment_cards: JSON.stringify(cardsToSave),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -139,7 +186,7 @@ export default function AdminConfiguracionPage() {
         if (res.success && res.data?.url) {
           setFlyerImageUrl(res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -197,7 +244,7 @@ export default function AdminConfiguracionPage() {
 
     setFlyers(newFlyersList);
     setIsFlyerModalOpen(false);
-    await saveSettings(newFlyersList);
+    await saveSettings(newFlyersList, undefined);
   };
 
   const handleToggleFlyerActive = async (id: string) => {
@@ -205,14 +252,14 @@ export default function AdminConfiguracionPage() {
       f.id === id ? { ...f, isActive: !f.isActive } : f
     );
     setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
+    await saveSettings(newFlyersList, undefined);
   };
 
   const handleDeleteFlyer = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este banner promocional?')) return;
     const newFlyersList = flyers.filter((f) => f.id !== id);
     setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
+    await saveSettings(newFlyersList, undefined);
   };
 
   const handleMoveFlyer = async (index: number, direction: 'up' | 'down') => {
@@ -233,7 +280,101 @@ export default function AdminConfiguracionPage() {
     });
 
     setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
+    await saveSettings(newFlyersList, undefined);
+  };
+
+  // Payment Cards CRUD Operations
+  const openNewCardModal = () => {
+    setEditingCard(null);
+    setCardTitle('');
+    setCardDescription('');
+    setCardIcon('credit-card');
+    setCardIsActive(true);
+    setIsCardModalOpen(true);
+  };
+
+  const openEditCardModal = (card: PaymentFeatureCardDto) => {
+    setEditingCard(card);
+    setCardTitle(card.title);
+    setCardDescription(card.description);
+    setCardIcon(card.icon);
+    setCardIsActive(card.isActive);
+    setIsCardModalOpen(true);
+  };
+
+  const handleSaveCardModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let newCardsList: PaymentFeatureCardDto[] = [];
+
+    if (editingCard) {
+      newCardsList = paymentCards.map((c) =>
+        c.id === editingCard.id
+          ? {
+              ...c,
+              title: cardTitle,
+              description: cardDescription,
+              icon: cardIcon,
+              isActive: cardIsActive,
+            }
+          : c
+      );
+    } else {
+      const newCard: PaymentFeatureCardDto = {
+        id: `card-${Date.now()}`,
+        title: cardTitle,
+        description: cardDescription,
+        icon: cardIcon,
+        isActive: cardIsActive,
+        sortOrder: paymentCards.length + 1,
+      };
+      newCardsList = [...paymentCards, newCard];
+    }
+
+    setPaymentCards(newCardsList);
+    setIsCardModalOpen(false);
+    await saveSettings(undefined, newCardsList);
+  };
+
+  const handleToggleCardActive = async (id: string) => {
+    const newCardsList = paymentCards.map((c) =>
+      c.id === id ? { ...c, isActive: !c.isActive } : c
+    );
+    setPaymentCards(newCardsList);
+    await saveSettings(undefined, newCardsList);
+  };
+
+  const handleDeleteCard = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta tarjeta informativa?')) return;
+    const newCardsList = paymentCards.filter((c) => c.id !== id);
+    setPaymentCards(newCardsList);
+    await saveSettings(undefined, newCardsList);
+  };
+
+  const handleMoveCard = async (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === paymentCards.length - 1)
+    ) {
+      return;
+    }
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const newCardsList = [...paymentCards];
+    const temp = newCardsList[index];
+    newCardsList[index] = newCardsList[targetIdx];
+    newCardsList[targetIdx] = temp;
+
+    newCardsList.forEach((c, idx) => {
+      c.sortOrder = idx + 1;
+    });
+
+    setPaymentCards(newCardsList);
+    await saveSettings(undefined, newCardsList);
+  };
+
+  const handleLoadDefaultPresetCards = async () => {
+    if (!confirm('¿Deseas restaurar las 3 tarjetas informativas sugeridas por defecto?')) return;
+    setPaymentCards(DEFAULT_PAYMENT_CARDS);
+    await saveSettings(undefined, DEFAULT_PAYMENT_CARDS);
   };
 
   const handleRequestPasswordChange = async () => {
@@ -323,7 +464,7 @@ export default function AdminConfiguracionPage() {
           Configuración del Sistema
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Gestiona los banners promocionales, vías de contacto comercial y credenciales de acceso.
+          Gestiona los banners promocionales, tarjetas informativas de la portada, vías de contacto comercial y credenciales de acceso.
         </p>
       </div>
 
@@ -343,6 +484,23 @@ export default function AdminConfiguracionPage() {
             activeTab === 'banners' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
           }`}>
             {flyers.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('payment_cards')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'payment_cards'
+              ? 'bg-brand-red text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+          }`}
+        >
+          <CreditCard className="h-4 w-4" />
+          <span>Tarjetas Informativas</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+            activeTab === 'payment_cards' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+          }`}>
+            {paymentCards.length}
           </span>
         </button>
 
@@ -386,15 +544,12 @@ export default function AdminConfiguracionPage() {
         </div>
       )}
 
-      {/* TAB 1: Banners y Flyers de Portada */}
+      {/* TAB 1: Banners de Portada */}
       {activeTab === 'banners' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Las imágenes se guardan de forma segura en Cloudinary y se muestran rotativamente en la portada.
-              </p>
             </div>
             <button
               type="button"
@@ -427,7 +582,6 @@ export default function AdminConfiguracionPage() {
                   }`}
                 >
                   <div className="flex items-center gap-4 min-w-0">
-                    {/* Visual Preview */}
                     <div className="h-16 w-28 rounded-xl bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center relative">
                       {flyer.imageUrl ? (
                         <img
@@ -443,7 +597,6 @@ export default function AdminConfiguracionPage() {
                       )}
                     </div>
 
-                    {/* Meta info */}
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-slate-400">#{index + 1}</span>
@@ -458,11 +611,9 @@ export default function AdminConfiguracionPage() {
                           {flyer.isActive ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
-                    
                     </div>
                   </div>
 
-                  {/* Acciones */}
                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                     <button
                       type="button"
@@ -518,7 +669,140 @@ export default function AdminConfiguracionPage() {
         </div>
       )}
 
-      {/* TAB 2: WhatsApp y Atención Comercial */}
+      {/* TAB 2: Tarjetas Informativas de Beneficios */}
+      {activeTab === 'payment_cards' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-800">Tarjetas Informativas de Portada</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Personaliza libremente el título, descripción e ícono de las tarjetas de beneficios que se ven en la portada.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleLoadDefaultPresetCards}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-all cursor-pointer shrink-0"
+              >
+                <span>Restaurar Sugerencias</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openNewCardModal}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Nueva Tarjeta</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Grilla de Tarjetas Informativas */}
+          {paymentCards.length === 0 ? (
+            <div className="p-10 border-2 border-dashed border-slate-200 rounded-3xl text-center bg-white space-y-3">
+              <CreditCard className="h-10 w-10 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-600">No hay tarjetas informativas configuradas</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Crea una nueva tarjeta o presiona &quot;Restaurar Sugerencias&quot; para cargar los 3 modelos por defecto.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {paymentCards.map((card, index) => {
+                return (
+                  <div
+                    key={card.id}
+                    className={`p-4.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      card.isActive
+                        ? 'bg-white border-slate-200/80 shadow-xs'
+                        : 'bg-slate-50/60 border-slate-200/40 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-start sm:items-center gap-4 min-w-0">
+                      {/* Number Container */}
+                      <div className="h-11 w-11 rounded-2xl bg-rose-50 border border-rose-100 text-brand-red font-black text-base shrink-0 flex items-center justify-center">
+                        {index + 1}
+                      </div>
+
+                      {/* Text details */}
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-400">#{index + 1}</span>
+                          <h3 className="text-sm font-bold text-slate-900 truncate">{card.title}</h3>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                              card.isActive
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {card.isActive ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-1">{card.description}</p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCard(index, 'up')}
+                        disabled={index === 0}
+                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                        title="Mover arriba"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCard(index, 'down')}
+                        disabled={index === paymentCards.length - 1}
+                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                        title="Mover abajo"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCardActive(card.id)}
+                        className={`p-2 rounded-xl border cursor-pointer ${
+                          card.isActive
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                            : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
+                        }`}
+                        title={card.isActive ? 'Desactivar tarjeta' : 'Activar tarjeta'}
+                      >
+                        {card.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEditCardModal(card)}
+                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer"
+                        title="Editar tarjeta"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCard(card.id)}
+                        className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                        title="Eliminar tarjeta"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: WhatsApp y Atención Comercial */}
       {activeTab === 'general' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs max-w-2xl space-y-6">
           <div>
@@ -563,7 +847,7 @@ export default function AdminConfiguracionPage() {
         </div>
       )}
 
-      {/* TAB 3: Seguridad de la Cuenta */}
+      {/* TAB 4: Seguridad de la Cuenta */}
       {activeTab === 'security' && (
         <div className="space-y-8 max-w-2xl">
           {/* Cambio de Correo */}
@@ -733,7 +1017,6 @@ export default function AdminConfiguracionPage() {
                   Imagen del Banner (Adjuntar archivo)
                 </label>
                 
-                {/* Nota de tamaño ideal recomendado */}
                 <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2.5">
                   <ImageIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
@@ -744,7 +1027,6 @@ export default function AdminConfiguracionPage() {
                   </div>
                 </div>
 
-                {/* Input de archivo y Preview */}
                 <div className="space-y-3">
                   {flyerImageUrl ? (
                     <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between gap-4">
@@ -769,7 +1051,7 @@ export default function AdminConfiguracionPage() {
                       {uploadingImage ? (
                         <div className="flex flex-col items-center justify-center gap-2 py-2">
                           <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
-                          <span className="text-xs font-bold text-slate-600">Subiendo imagen a Cloudinary...</span>
+                          <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
                         </div>
                       ) : (
                         <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
@@ -798,27 +1080,109 @@ export default function AdminConfiguracionPage() {
                   id="flyerIsActive"
                   checked={flyerIsActive}
                   onChange={(e) => setFlyerIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded text-brand-red focus:ring-brand-red cursor-pointer"
+                  className="h-4 w-4 rounded-md border-slate-300 text-brand-red focus:ring-brand-red/20 cursor-pointer"
                 />
                 <label htmlFor="flyerIsActive" className="text-xs font-bold text-slate-700 cursor-pointer">
-                  Activar este banner inmediatamente en la portada
+                  Banner Activo (Visible en la portada)
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsFlyerModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={uploadingImage}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-brand-red text-white hover:bg-brand-red-dark transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  disabled={!flyerTitle || saveLoading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all disabled:opacity-50 cursor-pointer shadow-sm"
                 >
-                  Guardar Banner
+                  {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <span>Guardar Banner</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Crear / Editar Tarjeta Informativa */}
+      {isCardModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <h3 className="font-display text-lg font-extrabold text-brand-black">
+                {editingCard ? 'Editar Tarjeta Informativa' : 'Nueva Tarjeta Informativa'}
+              </h3>
+              <button
+                onClick={() => setIsCardModalOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCardModal} className="overflow-y-auto p-6 space-y-4 flex-grow">
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Título Principal de la Tarjeta
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ej. Hasta 12 cuotas sin interés"
+                  value={cardTitle}
+                  onChange={(e) => setCardTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Descripción / Texto Informativo
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="ej. Con tarjetas bancarias seleccionadas en toda la tienda."
+                  value={cardDescription}
+                  onChange={(e) => setCardDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="cardIsActive"
+                  checked={cardIsActive}
+                  onChange={(e) => setCardIsActive(e.target.checked)}
+                  className="h-4 w-4 rounded-md border-slate-300 text-brand-red focus:ring-brand-red/20 cursor-pointer"
+                />
+                <label htmlFor="cardIsActive" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  Tarjeta Activa (Visible en la portada)
+                </label>
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCardModalOpen(false)}
+                  className="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!cardTitle || !cardDescription || saveLoading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <span>Guardar Tarjeta</span>
                 </button>
               </div>
             </form>

@@ -84,6 +84,32 @@ export const DEFAULT_SETTINGS = {
       sortOrder: 1,
     },
   ]),
+  home_payment_cards: JSON.stringify([
+    {
+      id: 'card-1',
+      title: 'Hasta 12 cuotas sin interés',
+      description: 'Con tarjetas bancarias seleccionadas en toda la tienda.',
+      icon: 'credit-card',
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      id: 'card-2',
+      title: '10% de descuento',
+      description: 'Abonando mediante transferencia bancaria inmediata.',
+      icon: 'percent',
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      id: 'card-3',
+      title: 'Pago con QR y MODO',
+      description: 'Escaneá de forma rápida y segura desde la app de tu banco.',
+      icon: 'qr-code',
+      isActive: true,
+      sortOrder: 3,
+    },
+  ]),
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

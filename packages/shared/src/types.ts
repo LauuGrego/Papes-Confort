@@ -236,6 +236,15 @@ export interface HomeFlyerDto {
   sortOrder: number;
 }
 
+export interface PaymentFeatureCardDto {
+  id: string;
+  title: string;
+  description: string;
+  icon: 'credit-card' | 'percent' | 'qr-code' | 'truck' | 'shield';
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================

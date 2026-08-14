@@ -62,9 +62,19 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-200 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-          <p className="text-slate-400">&copy; {new Date().getFullYear()} Lautaro Gregoraschuk. Todos los derechos reservados.</p>
-          <p className="text-slate-400">Servicio y calidad asegurados.</p>
+        <div className="border-t border-slate-200 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <p>Copyright {new Date().getFullYear()} &copy; Papes Confort. Todos los derechos reservados.</p>
+          <p>
+            Diseño y desarrollo por{' '}
+            <a
+              href="https://laugregoportfolio.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-slate-600 hover:text-brand-red underline transition-colors"
+            >
+              Lautaro Gregoraschuk Schmidt
+            </a>
+          </p>
         </div>
       </div>
     </footer>
