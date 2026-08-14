@@ -1,8 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
-import { Loader2, AlertCircle, CheckCircle, Plus, Trash2, Edit2, Eye, EyeOff, X, ArrowUp, ArrowDown, Image as ImageIcon } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Plus,
+  Trash2,
+  Edit2,
+  Eye,
+  EyeOff,
+  X,
+  ArrowUp,
+  ArrowDown,
+  Image as ImageIcon,
+  MessageSquare,
+  ShieldCheck,
+  Save,
+  Lock,
+  Mail,
+  Smartphone,
+} from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
 import { HomeFlyerDto } from '@papes-confort/shared';
 
@@ -18,6 +38,10 @@ const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
 ];
 
 export default function AdminConfiguracionPage() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as 'banners' | 'general' | 'security') || 'banners';
+  const [activeTab, setActiveTab] = useState<'banners' | 'general' | 'security'>(initialTab);
+
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -33,12 +57,70 @@ export default function AdminConfiguracionPage() {
 
   // Flyer Form State
   const [flyerTitle, setFlyerTitle] = useState('');
-  const [flyerSubtitle, setFlyerSubtitle] = useState('');
-  const [flyerBadge, setFlyerBadge] = useState('');
   const [flyerImageUrl, setFlyerImageUrl] = useState('');
-  const [flyerButtonText, setFlyerButtonText] = useState('Ver Promoción');
   const [flyerIsActive, setFlyerIsActive] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const { user, accessToken, setAuth } = useAuthStore();
+
+  const [newPassword, setNewPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const [newEmail, setNewEmail] = useState('');
+  const [confirmPasswordForEmail, setConfirmPasswordForEmail] = useState('');
+  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadSettings() {
+      setLoading(true);
+      const res = await fetchApi<Record<string, string>>('/api/admin/settings');
+      if (res.success && res.data) {
+        setSafetyStock(res.data.safety_stock || '1');
+        setWhatsappNumber(res.data.whatsapp_number || '');
+        if (res.data.home_flyers) {
+          try {
+            const parsed = JSON.parse(res.data.home_flyers);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setFlyers(parsed);
+            }
+          } catch (e) {
+            console.error('Error al parsear home_flyers de DB:', e);
+          }
+        }
+      }
+      setLoading(false);
+    }
+    loadSettings();
+  }, []);
+
+  const saveSettings = async (updatedFlyers?: HomeFlyerDto[]) => {
+    setSaveLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    const flyersToSave = updatedFlyers || flyers;
+
+    const body = {
+      safety_stock: safetyStock,
+      whatsapp_number: whatsappNumber,
+      home_flyers: JSON.stringify(flyersToSave),
+    };
+
+    const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    if (res.success) {
+      setSuccessMsg('Configuraciones guardadas exitosamente.');
+    } else {
+      setErrorMsg(res.error || 'Error al guardar las configuraciones.');
+    }
+    setSaveLoading(false);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,7 +139,7 @@ export default function AdminConfiguracionPage() {
         if (res.success && res.data?.url) {
           setFlyerImageUrl(res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen.');
+          alert(res.error || 'Error al subir la imagen a Cloudinary.');
         }
         setUploadingImage(false);
       };
@@ -68,17 +150,91 @@ export default function AdminConfiguracionPage() {
     }
   };
 
-  const { user, accessToken, setAuth } = useAuthStore();
+  // Flyer CRUD operations
+  const openNewFlyerModal = () => {
+    setEditingFlyer(null);
+    setFlyerTitle('');
+    setFlyerImageUrl('');
+    setFlyerIsActive(true);
+    setIsFlyerModalOpen(true);
+  };
 
-  const [newPassword, setNewPassword] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [showCodeInput, setShowCodeInput] = useState(false);
-  const [requestLoading, setRequestLoading] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
+  const openEditFlyerModal = (flyer: HomeFlyerDto) => {
+    setEditingFlyer(flyer);
+    setFlyerTitle(flyer.title || '');
+    setFlyerImageUrl(flyer.imageUrl || '');
+    setFlyerIsActive(flyer.isActive);
+    setIsFlyerModalOpen(true);
+  };
 
-  const [newEmail, setNewEmail] = useState('');
-  const [confirmPasswordForEmail, setConfirmPasswordForEmail] = useState('');
-  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
+  const handleSaveFlyerModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let newFlyersList: HomeFlyerDto[] = [];
+
+    if (editingFlyer) {
+      newFlyersList = flyers.map((f) =>
+        f.id === editingFlyer.id
+          ? {
+              ...f,
+              title: flyerTitle,
+              imageUrl: flyerImageUrl,
+              linkUrl: '/catalogo',
+              isActive: flyerIsActive,
+            }
+          : f
+      );
+    } else {
+      const newFlyer: HomeFlyerDto = {
+        id: `flyer-${Date.now()}`,
+        title: flyerTitle,
+        imageUrl: flyerImageUrl,
+        linkUrl: '/catalogo',
+        isActive: flyerIsActive,
+        sortOrder: flyers.length + 1,
+      };
+      newFlyersList = [...flyers, newFlyer];
+    }
+
+    setFlyers(newFlyersList);
+    setIsFlyerModalOpen(false);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleToggleFlyerActive = async (id: string) => {
+    const newFlyersList = flyers.map((f) =>
+      f.id === id ? { ...f, isActive: !f.isActive } : f
+    );
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleDeleteFlyer = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este banner promocional?')) return;
+    const newFlyersList = flyers.filter((f) => f.id !== id);
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleMoveFlyer = async (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === flyers.length - 1)
+    ) {
+      return;
+    }
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const newFlyersList = [...flyers];
+    const temp = newFlyersList[index];
+    newFlyersList[index] = newFlyersList[targetIdx];
+    newFlyersList[targetIdx] = temp;
+
+    newFlyersList.forEach((f, idx) => {
+      f.sortOrder = idx + 1;
+    });
+
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
+  };
 
   const handleRequestPasswordChange = async () => {
     if (!newPassword) return;
@@ -150,484 +306,407 @@ export default function AdminConfiguracionPage() {
     setConfirmLoading(false);
   };
 
-  useEffect(() => {
-    async function loadSettings() {
-      setLoading(true);
-      const res = await fetchApi<Record<string, string>>('/api/admin/settings');
-      if (res.success && res.data) {
-        setSafetyStock(res.data.safety_stock || '1');
-        setWhatsappNumber(res.data.whatsapp_number || '');
-        if (res.data.home_flyers) {
-          try {
-            const parsed = JSON.parse(res.data.home_flyers);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setFlyers(parsed);
-            }
-          } catch (e) {
-            console.error('Error al parsear home_flyers de DB:', e);
-          }
-        }
-      }
-      setLoading(false);
-    }
-    loadSettings();
-  }, []);
-
-  const saveSettings = async (updatedFlyers?: HomeFlyerDto[]) => {
-    setSaveLoading(true);
-    setSuccessMsg(null);
-    setErrorMsg(null);
-
-    const flyersToSave = updatedFlyers || flyers;
-
-    const body = {
-      safety_stock: safetyStock,
-      whatsapp_number: whatsappNumber,
-      home_flyers: JSON.stringify(flyersToSave),
-    };
-
-    const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-
-    if (res.success) {
-      setSuccessMsg('Configuraciones y flyers guardados exitosamente.');
-    } else {
-      setErrorMsg(res.error || 'Error al guardar las configuraciones.');
-    }
-    setSaveLoading(false);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await saveSettings();
-  };
-
-  // Flyer CRUD operations
-  const openNewFlyerModal = () => {
-    setEditingFlyer(null);
-    setFlyerTitle('');
-    setFlyerSubtitle('');
-    setFlyerBadge('');
-    setFlyerImageUrl('');
-    setFlyerButtonText('Ver Promoción');
-    setFlyerIsActive(true);
-    setIsFlyerModalOpen(true);
-  };
-
-  const openEditFlyerModal = (flyer: HomeFlyerDto) => {
-    setEditingFlyer(flyer);
-    setFlyerTitle(flyer.title || '');
-    setFlyerSubtitle(flyer.subtitle || '');
-    setFlyerBadge(flyer.badge || '');
-    setFlyerImageUrl(flyer.imageUrl || '');
-    setFlyerButtonText(flyer.buttonText || 'Ver Promoción');
-    setFlyerIsActive(flyer.isActive);
-    setIsFlyerModalOpen(true);
-  };
-
-  const handleSaveFlyerModal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    let newFlyersList: HomeFlyerDto[] = [];
-
-    if (editingFlyer) {
-      newFlyersList = flyers.map((f) =>
-        f.id === editingFlyer.id
-          ? {
-              ...f,
-              title: flyerTitle,
-              subtitle: flyerSubtitle,
-              badge: flyerBadge,
-              imageUrl: flyerImageUrl,
-              linkUrl: '/catalogo',
-              buttonText: flyerButtonText,
-              isActive: flyerIsActive,
-            }
-          : f
-      );
-    } else {
-      const newFlyer: HomeFlyerDto = {
-        id: `flyer-${Date.now()}`,
-        title: flyerTitle,
-        subtitle: flyerSubtitle,
-        badge: flyerBadge,
-        imageUrl: flyerImageUrl,
-        linkUrl: '/catalogo',
-        buttonText: flyerButtonText,
-        isActive: flyerIsActive,
-        sortOrder: flyers.length + 1,
-      };
-      newFlyersList = [...flyers, newFlyer];
-    }
-
-    setFlyers(newFlyersList);
-    setIsFlyerModalOpen(false);
-    await saveSettings(newFlyersList);
-  };
-
-  const handleToggleFlyerActive = async (id: string) => {
-    const newFlyersList = flyers.map((f) =>
-      f.id === id ? { ...f, isActive: !f.isActive } : f
-    );
-    setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
-  };
-
-  const handleDeleteFlyer = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este flyer promocional?')) return;
-    const newFlyersList = flyers.filter((f) => f.id !== id);
-    setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
-  };
-
-  const handleMoveFlyer = async (index: number, direction: 'up' | 'down') => {
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === flyers.length - 1)
-    ) {
-      return;
-    }
-    const targetIdx = direction === 'up' ? index - 1 : index + 1;
-    const newFlyersList = [...flyers];
-    const temp = newFlyersList[index];
-    newFlyersList[index] = newFlyersList[targetIdx];
-    newFlyersList[targetIdx] = temp;
-
-    // Recalculate sortOrders
-    newFlyersList.forEach((f, idx) => {
-      f.sortOrder = idx + 1;
-    });
-
-    setFlyers(newFlyersList);
-    await saveSettings(newFlyersList);
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
-        <span className="text-sm font-semibold text-slate-400">Cargando configuración...</span>
+        <span className="text-sm font-semibold text-slate-400">Cargando panel de configuración...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Encabezado Principal */}
       <div>
-        <h1 className="font-display text-2xl font-extrabold text-brand-black">
+        <h1 className="font-display text-3xl font-extrabold text-brand-black tracking-tight">
           Configuración del Sistema
         </h1>
-        <p className="text-sm text-slate-400">
-          Ajusta las variables de control comercial del e-commerce.
+        <p className="text-sm text-slate-400 mt-1">
+          Gestiona los banners promocionales, vías de contacto comercial y credenciales de acceso.
         </p>
       </div>
 
-      <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-[0_5px_20px_rgba(0,0,0,0.01)] max-w-2xl">
-        <form onSubmit={handleSave} className="space-y-6">
-          {successMsg && (
-            <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-xs font-semibold text-emerald-600">
-              <CheckCircle className="h-5 w-5 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-          )}
+      {/* Tabs de Navegación de Configuración */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('banners')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'banners'
+              ? 'bg-brand-red text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+          }`}
+        >
+          <ImageIcon className="h-4 w-4" />
+          <span>Banners de Portada</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+            activeTab === 'banners' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+          }`}>
+            {flyers.length}
+          </span>
+        </button>
 
-          {errorMsg && (
-            <div className="flex items-center gap-3 rounded-2xl bg-red-50 border border-red-100 p-4 text-xs font-semibold text-red-600">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
+        <button
+          onClick={() => setActiveTab('general')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'general'
+              ? 'bg-brand-red text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+          }`}
+        >
+          <Smartphone className="h-4 w-4" />
+          <span>WhatsApp y Atención</span>
+        </button>
 
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold text-slate-700">WhatsApp de Consultas</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Número de teléfono celular para recibir consultas de compras y financiación.
-              Usa el formato internacional sin símbolos (ej: 5493445454261).
-            </p>
-            <input
-              type="text"
-              required
-              value={whatsappNumber}
-              onChange={(e) => setWhatsappNumber(e.target.value)}
-              placeholder="549XXXXXXXXXX"
-              className="w-64 px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all mt-1"
-            />
-          </div>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'security'
+              ? 'bg-brand-red text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+          }`}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          <span>Seguridad de Cuenta</span>
+        </button>
+      </div>
 
-          <div className="border-t border-slate-50 pt-6 flex justify-end">
-            <button
-              type="submit"
-              disabled={saveLoading}
-              className="inline-flex items-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-dark px-8 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-            >
-              {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar Configuración
-            </button>
-          </div>
-        </form>
+      {/* Alertas de Respuesta */}
+      {successMsg && (
+        <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-200/80 p-4 text-xs font-semibold text-emerald-700 shadow-xs">
+          <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
 
-        {/* Sección de Gestión de Flyers Promocionales del Home */}
-        <div className="space-y-6 border-t border-slate-50 pt-8 mt-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {errorMsg && (
+        <div className="flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-200/80 p-4 text-xs font-semibold text-rose-700 shadow-xs">
+          <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* TAB 1: Banners y Flyers de Portada */}
+      {activeTab === 'banners' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-extrabold text-brand-black flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-brand-red" />
-                Flyers Promocionales de Portada (Carrusel)
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
-                Carga banners promocionales rotativos por foto o texto para destacar ofertas (ej. Día del Niño, Descuentos).
+              <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Las imágenes se guardan de forma segura en Cloudinary y se muestran rotativamente en la portada.
               </p>
             </div>
             <button
               type="button"
               onClick={openNewFlyerModal}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-red hover:bg-brand-red-dark text-white px-5 py-2.5 text-xs font-bold transition-all shadow-sm hover:shadow shrink-0 cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer shrink-0"
             >
               <Plus className="h-4 w-4" />
-              Nuevo Flyer
+              <span>Nuevo Banner</span>
             </button>
           </div>
 
-          {/* Listado de Flyers */}
-          <div className="space-y-3">
-            {flyers.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-slate-200 rounded-3xl bg-slate-50/50 text-slate-400 text-xs">
-                No hay flyers promocionales cargados. Haz clic en "Nuevo Flyer" para agregar el primero.
-              </div>
-            ) : (
-              flyers.map((flyer, idx) => (
+          {/* Grilla de Banners Configurados */}
+          {flyers.length === 0 ? (
+            <div className="p-10 border-2 border-dashed border-slate-200 rounded-3xl text-center bg-white space-y-3">
+              <ImageIcon className="h-10 w-10 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-600">No hay banners promocionales configurados</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Haz clic en &quot;Nuevo Banner&quot; para adjuntar la primera imagen promocional para la portada de la tienda.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {flyers.map((flyer, index) => (
                 <div
                   key={flyer.id}
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border transition-all ${
+                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                     flyer.isActive
-                      ? 'bg-white border-slate-100 shadow-xs'
-                      : 'bg-slate-50/70 border-slate-100 opacity-60'
+                      ? 'bg-white border-slate-200/80 shadow-xs'
+                      : 'bg-slate-50/60 border-slate-200/40 opacity-75'
                   }`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    {/* Miniatura / Icono */}
-                    <div className="h-12 w-16 shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                  <div className="flex items-center gap-4 min-w-0">
+                    {/* Visual Preview */}
+                    <div className="h-16 w-28 rounded-xl bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center relative">
                       {flyer.imageUrl ? (
-                        <img src={flyer.imageUrl} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={flyer.imageUrl}
+                          alt={flyer.title}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <ImageIcon className="h-6 w-6" />
+                        <div className="flex flex-col items-center justify-center text-slate-300 p-1 text-center">
+                          <ImageIcon className="h-5 w-5" />
+                          <span className="text-[9px] font-bold mt-0.5">Sin imagen</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {flyer.badge && (
-                          <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                            {flyer.badge}
-                          </span>
-                        )}
-                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${flyer.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                    {/* Meta info */}
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-400">#{index + 1}</span>
+                        <h3 className="text-sm font-bold text-slate-800 truncate">{flyer.title || 'Sin Nombre'}</h3>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            flyer.isActive
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
                           {flyer.isActive ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-800 truncate max-w-sm">
-                        {flyer.title || 'Flyer de Imagen Exclusiva'}
-                      </h4>
-                      {flyer.subtitle && (
-                        <p className="text-[11px] text-slate-400 truncate max-w-sm">
-                          {flyer.subtitle}
-                        </p>
-                      )}
+                    
                     </div>
                   </div>
 
                   {/* Acciones */}
-                  <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                     <button
                       type="button"
-                      onClick={() => handleMoveFlyer(idx, 'up')}
-                      disabled={idx === 0}
-                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-30 cursor-pointer"
+                      onClick={() => handleMoveFlyer(index, 'up')}
+                      disabled={index === 0}
+                      className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                       title="Mover arriba"
                     >
-                      <ArrowUp className="h-3.5 w-3.5" />
+                      <ArrowUp className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleMoveFlyer(idx, 'down')}
-                      disabled={idx === flyers.length - 1}
-                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-30 cursor-pointer"
+                      onClick={() => handleMoveFlyer(index, 'down')}
+                      disabled={index === flyers.length - 1}
+                      className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                       title="Mover abajo"
                     >
-                      <ArrowDown className="h-3.5 w-3.5" />
+                      <ArrowDown className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleToggleFlyerActive(flyer.id)}
-                      className={`p-1.5 rounded-xl border border-slate-100 transition-colors cursor-pointer ${
-                        flyer.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-50'
+                      className={`p-2 rounded-xl border cursor-pointer ${
+                        flyer.isActive
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                          : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
                       }`}
-                      title={flyer.isActive ? 'Desactivar' : 'Activar'}
+                      title={flyer.isActive ? 'Desactivar banner' : 'Activar banner'}
                     >
-                      {flyer.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      {flyer.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
                     <button
                       type="button"
                       onClick={() => openEditFlyerModal(flyer)}
-                      className="p-1.5 rounded-xl border border-slate-100 text-slate-500 hover:text-brand-red hover:bg-slate-50 transition-colors cursor-pointer"
-                      title="Editar"
+                      className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer"
+                      title="Editar banner"
                     >
-                      <Edit2 className="h-3.5 w-3.5" />
+                      <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteFlyer(flyer.id)}
-                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      title="Eliminar"
+                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                      title="Eliminar banner"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Sección de Cambio de Correo */}
-        <div className="space-y-6 border-t border-slate-50 pt-6 mt-8">
-          <div>
-            <h3 className="text-sm font-bold text-slate-700">Correo Electrónico de Administrador</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Modifica la dirección de correo a la cual se envían las confirmaciones de seguridad del panel.
-            </p>
-          </div>
-
-          <form onSubmit={handleEmailChange} className="space-y-4 max-w-md">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Nuevo Correo Electrónico
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="ejemplo@papesconfort.com"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-              />
-            </div>
-            
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Confirmar con Contraseña Actual
-              </label>
-              <input
-                type="password"
-                required
-                placeholder="Contraseña actual"
-                value={confirmPasswordForEmail}
-                onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={emailChangeLoading || !newEmail || !confirmPasswordForEmail}
-              className="px-6 py-2.5 h-10 rounded-full bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              {emailChangeLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Actualizar Correo
-            </button>
-          </form>
-        </div>
-
-        {/* Sección de Cambio de Contraseña */}
-        <div className="space-y-6 border-t border-slate-50 pt-6 mt-8">
-          <div>
-            <h3 className="text-sm font-bold text-slate-700">Contraseña de Administrador</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Cambia la contraseña de acceso al panel de administración. Requiere confirmación por correo electrónico.
-            </p>
-          </div>
-
-          {!showCodeInput ? (
-            <div className="flex gap-3 max-w-md items-end">
-              <div className="flex-grow space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Nueva Contraseña
-                </label>
-                <input
-                  type="password"
-                  placeholder="Nueva contraseña"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleRequestPasswordChange}
-                disabled={!newPassword || requestLoading}
-                className="px-6 py-2.5 h-10 rounded-full bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {requestLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Solicitar Código'}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4 max-w-md bg-slate-50/50 border border-slate-100 p-5 rounded-3xl">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Código de Confirmación (enviado a {user?.email || 'tu correo'})
-                </label>
-                <input
-                  type="text"
-                  placeholder="Código de 6 dígitos"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all text-center font-mono text-lg tracking-widest"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleConfirmPasswordChange}
-                  disabled={!verificationCode || confirmLoading}
-                  className="flex-grow px-6 py-2.5 h-10 rounded-full bg-brand-red hover:bg-brand-red-dark text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {confirmLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Confirmar Cambio'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCodeInput(false);
-                    setVerificationCode('');
-                  }}
-                  className="px-4 py-2.5 h-10 rounded-full border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-700 text-xs font-bold transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
-              </div>
+              ))}
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Modal para Crear / Editar Flyer Promocional */}
-      {isFlyerModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs p-4">
-          <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-100 shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <div>
-                <h3 className="font-display text-lg font-extrabold text-brand-black">
-                  {editingFlyer ? 'Editar Flyer Promocional' : 'Nuevo Flyer Promocional'}
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Completa los datos del banner para la portada del e-commerce.
-                </p>
-              </div>
+      {/* TAB 2: WhatsApp y Atención Comercial */}
+      {activeTab === 'general' && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs max-w-2xl space-y-6">
+          <div>
+            <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-brand-red" />
+              <span>WhatsApp de Atención Comercial</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              Configura el número oficial de atención al cliente para recibir mensajes del botón de WhatsApp y consultas de compra.
+            </p>
+          </div>
+
+          <form onSubmit={(e) => { e.preventDefault(); saveSettings(); }} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Número Telefónico (Formato Internacional sin +)
+              </label>
+              <input
+                type="text"
+                required
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="ej. 5493445454261"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all font-mono"
+              />
+              <p className="text-[11px] text-slate-400">
+                Ejemplo para Argentina: <span className="font-semibold text-slate-600">5493445454261</span> (Código de país 54 + 9 + característica + número).
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end">
               <button
-                type="button"
+                type="submit"
+                disabled={saveLoading}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {saveLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 3: Seguridad de la Cuenta */}
+      {activeTab === 'security' && (
+        <div className="space-y-8 max-w-2xl">
+          {/* Cambio de Correo */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <Mail className="h-5 w-5 text-brand-red" />
+                <span>Correo de Administrador</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Correo actual del administrador: <span className="font-bold text-slate-700">{user?.email || 'N/A'}</span>
+              </p>
+            </div>
+
+            <form onSubmit={handleEmailChange} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Nuevo Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="nuevo-email@papesconfort.com.ar"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Confirmar con Contraseña Actual
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Ingresa tu contraseña actual"
+                  value={confirmPasswordForEmail}
+                  onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={emailChangeLoading || !newEmail || !confirmPasswordForEmail}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {emailChangeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <span>Actualizar Correo</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Cambio de Contraseña */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <Lock className="h-5 w-5 text-brand-red" />
+                <span>Contraseña de Acceso</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Modifica la contraseña de acceso al panel comercial. Por seguridad se enviará un código de validación a tu correo.
+              </p>
+            </div>
+
+            {!showCodeInput ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Nueva Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Ingresa la nueva contraseña"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={handleRequestPasswordChange}
+                    disabled={!newPassword || requestLoading}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                  >
+                    {requestLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <span>Solicitar Código por Email</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 bg-slate-50/80 border border-slate-200 p-5 rounded-2xl">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Código de Confirmación (Enviado a {user?.email || 'tu correo'})
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ej. 123456"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-brand-black outline-none focus:border-brand-red/40 transition-all font-mono"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCodeInput(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmPasswordChange}
+                    disabled={!verificationCode || confirmLoading}
+                    className="flex items-center gap-2 px-6 py-2 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all disabled:opacity-50 shadow-sm"
+                  >
+                    {confirmLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <span>Confirmar Cambio</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Crear / Editar Flyer */}
+      {isFlyerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <h3 className="font-display text-lg font-extrabold text-brand-black">
+                {editingFlyer ? 'Editar Banner Promocional' : 'Nuevo Banner Promocional'}
+              </h3>
+              <button
                 onClick={() => setIsFlyerModalOpen(false)}
-                className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -644,7 +723,7 @@ export default function AdminConfiguracionPage() {
                   placeholder="ej. Promoción Día del Niño, Ofertas en Colchones"
                   value={flyerTitle}
                   onChange={(e) => setFlyerTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
                 />
               </div>
 
@@ -690,7 +769,7 @@ export default function AdminConfiguracionPage() {
                       {uploadingImage ? (
                         <div className="flex flex-col items-center justify-center gap-2 py-2">
                           <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
-                          <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
+                          <span className="text-xs font-bold text-slate-600">Subiendo imagen a Cloudinary...</span>
                         </div>
                       ) : (
                         <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
@@ -730,15 +809,16 @@ export default function AdminConfiguracionPage() {
                 <button
                   type="button"
                   onClick={() => setIsFlyerModalOpen(false)}
-                  className="px-5 py-2 rounded-xl text-xs font-bold uppercase border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-xl text-xs font-bold uppercase bg-brand-red text-white hover:bg-brand-red-dark transition-all shadow-md"
+                  disabled={uploadingImage}
+                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-brand-red text-white hover:bg-brand-red-dark transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
-                  Guardar Flyer
+                  Guardar Banner
                 </button>
               </div>
             </form>
@@ -748,4 +828,3 @@ export default function AdminConfiguracionPage() {
     </div>
   );
 }
-
