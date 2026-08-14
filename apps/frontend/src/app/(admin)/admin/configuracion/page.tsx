@@ -2,8 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { fetchApi } from '../../../../lib/api';
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Plus, Trash2, Edit2, Eye, EyeOff, X, ArrowUp, ArrowDown, Image as ImageIcon } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
+import { HomeFlyerDto } from '@papes-confort/shared';
+
+const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
+  {
+    id: 'flyer-1',
+    title: 'Banner Promocional Inicial',
+    imageUrl: '',
+    linkUrl: '/catalogo',
+    isActive: true,
+    sortOrder: 1,
+  },
+];
 
 export default function AdminConfiguracionPage() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +25,48 @@ export default function AdminConfiguracionPage() {
 
   const [safetyStock, setSafetyStock] = useState('1');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
+
+  // Modal State para Flyers
+  const [isFlyerModalOpen, setIsFlyerModalOpen] = useState(false);
+  const [editingFlyer, setEditingFlyer] = useState<HomeFlyerDto | null>(null);
+
+  // Flyer Form State
+  const [flyerTitle, setFlyerTitle] = useState('');
+  const [flyerSubtitle, setFlyerSubtitle] = useState('');
+  const [flyerBadge, setFlyerBadge] = useState('');
+  const [flyerImageUrl, setFlyerImageUrl] = useState('');
+  const [flyerButtonText, setFlyerButtonText] = useState('Ver Promoción');
+  const [flyerIsActive, setFlyerIsActive] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64Data }),
+        });
+
+        if (res.success && res.data?.url) {
+          setFlyerImageUrl(res.data.url);
+        } else {
+          alert(res.error || 'Error al subir la imagen.');
+        }
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error al procesar la imagen:', err);
+      setUploadingImage(false);
+    }
+  };
 
   const { user, accessToken, setAuth } = useAuthStore();
 
@@ -103,21 +157,33 @@ export default function AdminConfiguracionPage() {
       if (res.success && res.data) {
         setSafetyStock(res.data.safety_stock || '1');
         setWhatsappNumber(res.data.whatsapp_number || '');
+        if (res.data.home_flyers) {
+          try {
+            const parsed = JSON.parse(res.data.home_flyers);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setFlyers(parsed);
+            }
+          } catch (e) {
+            console.error('Error al parsear home_flyers de DB:', e);
+          }
+        }
       }
       setLoading(false);
     }
     loadSettings();
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveSettings = async (updatedFlyers?: HomeFlyerDto[]) => {
     setSaveLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const flyersToSave = updatedFlyers || flyers;
+
     const body = {
       safety_stock: safetyStock,
       whatsapp_number: whatsappNumber,
+      home_flyers: JSON.stringify(flyersToSave),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -126,11 +192,115 @@ export default function AdminConfiguracionPage() {
     });
 
     if (res.success) {
-      setSuccessMsg('Configuraciones guardadas exitosamente.');
+      setSuccessMsg('Configuraciones y flyers guardados exitosamente.');
     } else {
       setErrorMsg(res.error || 'Error al guardar las configuraciones.');
     }
     setSaveLoading(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveSettings();
+  };
+
+  // Flyer CRUD operations
+  const openNewFlyerModal = () => {
+    setEditingFlyer(null);
+    setFlyerTitle('');
+    setFlyerSubtitle('');
+    setFlyerBadge('');
+    setFlyerImageUrl('');
+    setFlyerButtonText('Ver Promoción');
+    setFlyerIsActive(true);
+    setIsFlyerModalOpen(true);
+  };
+
+  const openEditFlyerModal = (flyer: HomeFlyerDto) => {
+    setEditingFlyer(flyer);
+    setFlyerTitle(flyer.title || '');
+    setFlyerSubtitle(flyer.subtitle || '');
+    setFlyerBadge(flyer.badge || '');
+    setFlyerImageUrl(flyer.imageUrl || '');
+    setFlyerButtonText(flyer.buttonText || 'Ver Promoción');
+    setFlyerIsActive(flyer.isActive);
+    setIsFlyerModalOpen(true);
+  };
+
+  const handleSaveFlyerModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let newFlyersList: HomeFlyerDto[] = [];
+
+    if (editingFlyer) {
+      newFlyersList = flyers.map((f) =>
+        f.id === editingFlyer.id
+          ? {
+              ...f,
+              title: flyerTitle,
+              subtitle: flyerSubtitle,
+              badge: flyerBadge,
+              imageUrl: flyerImageUrl,
+              linkUrl: '/catalogo',
+              buttonText: flyerButtonText,
+              isActive: flyerIsActive,
+            }
+          : f
+      );
+    } else {
+      const newFlyer: HomeFlyerDto = {
+        id: `flyer-${Date.now()}`,
+        title: flyerTitle,
+        subtitle: flyerSubtitle,
+        badge: flyerBadge,
+        imageUrl: flyerImageUrl,
+        linkUrl: '/catalogo',
+        buttonText: flyerButtonText,
+        isActive: flyerIsActive,
+        sortOrder: flyers.length + 1,
+      };
+      newFlyersList = [...flyers, newFlyer];
+    }
+
+    setFlyers(newFlyersList);
+    setIsFlyerModalOpen(false);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleToggleFlyerActive = async (id: string) => {
+    const newFlyersList = flyers.map((f) =>
+      f.id === id ? { ...f, isActive: !f.isActive } : f
+    );
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleDeleteFlyer = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este flyer promocional?')) return;
+    const newFlyersList = flyers.filter((f) => f.id !== id);
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
+  };
+
+  const handleMoveFlyer = async (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === flyers.length - 1)
+    ) {
+      return;
+    }
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const newFlyersList = [...flyers];
+    const temp = newFlyersList[index];
+    newFlyersList[index] = newFlyersList[targetIdx];
+    newFlyersList[targetIdx] = temp;
+
+    // Recalculate sortOrders
+    newFlyersList.forEach((f, idx) => {
+      f.sortOrder = idx + 1;
+    });
+
+    setFlyers(newFlyersList);
+    await saveSettings(newFlyersList);
   };
 
   if (loading) {
@@ -196,6 +366,129 @@ export default function AdminConfiguracionPage() {
             </button>
           </div>
         </form>
+
+        {/* Sección de Gestión de Flyers Promocionales del Home */}
+        <div className="space-y-6 border-t border-slate-50 pt-8 mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-extrabold text-brand-black flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-brand-red" />
+                Flyers Promocionales de Portada (Carrusel)
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
+                Carga banners promocionales rotativos por foto o texto para destacar ofertas (ej. Día del Niño, Descuentos).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openNewFlyerModal}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-red hover:bg-brand-red-dark text-white px-5 py-2.5 text-xs font-bold transition-all shadow-sm hover:shadow shrink-0 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo Flyer
+            </button>
+          </div>
+
+          {/* Listado de Flyers */}
+          <div className="space-y-3">
+            {flyers.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-slate-200 rounded-3xl bg-slate-50/50 text-slate-400 text-xs">
+                No hay flyers promocionales cargados. Haz clic en "Nuevo Flyer" para agregar el primero.
+              </div>
+            ) : (
+              flyers.map((flyer, idx) => (
+                <div
+                  key={flyer.id}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border transition-all ${
+                    flyer.isActive
+                      ? 'bg-white border-slate-100 shadow-xs'
+                      : 'bg-slate-50/70 border-slate-100 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* Miniatura / Icono */}
+                    <div className="h-12 w-16 shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                      {flyer.imageUrl ? (
+                        <img src={flyer.imageUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-6 w-6" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {flyer.badge && (
+                          <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            {flyer.badge}
+                          </span>
+                        )}
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${flyer.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                          {flyer.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-800 truncate max-w-sm">
+                        {flyer.title || 'Flyer de Imagen Exclusiva'}
+                      </h4>
+                      {flyer.subtitle && (
+                        <p className="text-[11px] text-slate-400 truncate max-w-sm">
+                          {flyer.subtitle}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveFlyer(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-30 cursor-pointer"
+                      title="Mover arriba"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveFlyer(idx, 'down')}
+                      disabled={idx === flyers.length - 1}
+                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-30 cursor-pointer"
+                      title="Mover abajo"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFlyerActive(flyer.id)}
+                      className={`p-1.5 rounded-xl border border-slate-100 transition-colors cursor-pointer ${
+                        flyer.isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-50'
+                      }`}
+                      title={flyer.isActive ? 'Desactivar' : 'Activar'}
+                    >
+                      {flyer.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEditFlyerModal(flyer)}
+                      className="p-1.5 rounded-xl border border-slate-100 text-slate-500 hover:text-brand-red hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Editar"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFlyer(flyer.id)}
+                      className="p-1.5 rounded-xl border border-slate-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
 
         {/* Sección de Cambio de Correo */}
         <div className="space-y-6 border-t border-slate-50 pt-6 mt-8">
@@ -317,6 +610,142 @@ export default function AdminConfiguracionPage() {
           )}
         </div>
       </div>
+
+      {/* Modal para Crear / Editar Flyer Promocional */}
+      {isFlyerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs p-4">
+          <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-100 shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-slate-100 p-6">
+              <div>
+                <h3 className="font-display text-lg font-extrabold text-brand-black">
+                  {editingFlyer ? 'Editar Flyer Promocional' : 'Nuevo Flyer Promocional'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Completa los datos del banner para la portada del e-commerce.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFlyerModalOpen(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFlyerModal} className="overflow-y-auto p-6 space-y-4 flex-grow">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Nombre / Referencia Interna del Banner
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ej. Promoción Día del Niño, Ofertas en Colchones"
+                  value={flyerTitle}
+                  onChange={(e) => setFlyerTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* Adjuntar Imagen del Flyer */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Imagen del Banner (Adjuntar archivo)
+                </label>
+                
+                {/* Nota de tamaño ideal recomendado */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2.5">
+                  <ImageIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-bold">Tamaño ideal recomendado para el Banner</p>
+                    <p className="text-amber-800 leading-relaxed text-[11px]">
+                      <strong>1200 x 400 píxeles</strong> (Proporción horizontal 3:1). Formatos soportados: JPG, PNG o WebP (Máx. 5 MB).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Input de archivo y Preview */}
+                <div className="space-y-3">
+                  {flyerImageUrl ? (
+                    <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <img src={flyerImageUrl} alt="Preview" className="h-16 w-28 object-cover rounded-xl border border-slate-200" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" /> Imagen adjunta lista para la portada
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFlyerImageUrl('')}
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-slate-200 hover:border-brand-red/40 rounded-2xl p-6 text-center bg-slate-50/50 transition-colors group">
+                      {uploadingImage ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-2">
+                          <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
+                          <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                          <ImageIcon className="h-8 w-8 text-slate-400 group-hover:text-brand-red transition-colors" />
+                          <div className="space-y-1">
+                            <span className="text-xs font-bold text-brand-red hover:underline block">
+                              Haz clic aquí para seleccionar y adjuntar la imagen del banner
+                            </span>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="flyerIsActive"
+                  checked={flyerIsActive}
+                  onChange={(e) => setFlyerIsActive(e.target.checked)}
+                  className="h-4 w-4 rounded text-brand-red focus:ring-brand-red cursor-pointer"
+                />
+                <label htmlFor="flyerIsActive" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  Activar este banner inmediatamente en la portada
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsFlyerModalOpen(false)}
+                  className="px-5 py-2 rounded-xl text-xs font-bold uppercase border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-xl text-xs font-bold uppercase bg-brand-red text-white hover:bg-brand-red-dark transition-all shadow-md"
+                >
+                  Guardar Flyer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

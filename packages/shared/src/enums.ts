@@ -74,6 +74,16 @@ export const DEFAULT_SETTINGS = {
   whatsapp_number: '',               // número para botón de consulta WhatsApp
   gescom_images_path: '',            // ruta de la carpeta de imágenes GesCom
   gateway_reservation_minutes: 15,   // minutos de reserva de stock en Mercado Pago
+  home_flyers: JSON.stringify([
+    {
+      id: 'flyer-1',
+      title: 'Banner Promocional Inicial',
+      imageUrl: '',
+      linkUrl: '/catalogo',
+      isActive: true,
+      sortOrder: 1,
+    },
+  ]),
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

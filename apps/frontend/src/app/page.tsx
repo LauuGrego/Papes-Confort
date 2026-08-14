@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, MapPin, Search, X } from 'lucide-react';
 import PaymentMethods from '../components/PaymentMethods';
+import FlyersCarousel from '../components/FlyersCarousel';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,8 +27,11 @@ export default function HomePage() {
   return (
     <div className="w-full bg-slate-50/50">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 text-brand-black py-16 md:py-24 border-b border-slate-200">
-        <div className="mx-auto max-w-7xl px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 text-brand-black pt-6 sm:pt-8 pb-12 md:pb-20 border-b border-slate-200">
+        {/* Promotional Flyers Rotative Carousel */}
+        <FlyersCarousel />
+
+        <div className="mx-auto max-w-7xl px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mt-6 md:mt-8">
           {/* Hero left content */}
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-red/20 bg-brand-red/5 px-4 py-1.5 text-xs font-semibold text-brand-red uppercase tracking-wider">

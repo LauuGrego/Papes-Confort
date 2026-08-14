@@ -56,6 +56,53 @@ router.put('/', async (req, res, next) => {
   }
 });
 
+import { v2 as cloudinary } from 'cloudinary';
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
+// POST /api/admin/settings/upload-flyer (Sube imagen a Cloudinary)
+router.post('/upload-flyer', async (req, res, next) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      res.status(400).json({ success: false, error: 'No se envió ninguna imagen.' });
+      return;
+    }
+
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      const uploadResult = await cloudinary.uploader.upload(image, {
+        folder: 'papes-confort/flyers',
+      });
+
+      res.json({
+        success: true,
+        data: {
+          url: uploadResult.secure_url,
+        },
+      } as ApiResponse);
+      return;
+    }
+
+    // Fallback si Cloudinary no está configurado en el archivo .env local
+    res.json({
+      success: true,
+      data: {
+        url: image, // Devolver la data URL de la imagen
+      },
+    } as ApiResponse);
+  } catch (error: any) {
+    console.error('Error al subir flyer a Cloudinary:', error);
+    next(error);
+  }
+});
+
 // Guardar solicitudes de cambio de contraseña pendientes en memoria
 const pendingPasswordChanges = new Map<string, { code: string; hash: string; expiresAt: number }>();
 

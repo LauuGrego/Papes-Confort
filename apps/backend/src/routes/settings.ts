@@ -7,15 +7,26 @@ const router = Router();
 // GET /api/settings/public
 router.get('/public', async (_req, res, next) => {
   try {
-    const setting = await prisma.setting.findUnique({
-      where: { key: 'whatsapp_number' },
+    const settings = await prisma.setting.findMany({
+      where: {
+        key: {
+          in: ['whatsapp_number', 'home_flyers'],
+        },
+      },
+    });
+
+    const settingsMap: Record<string, string> = {
+      whatsapp_number: '',
+      home_flyers: '',
+    };
+
+    settings.forEach((s) => {
+      settingsMap[s.key] = s.value;
     });
 
     res.json({
       success: true,
-      data: {
-        whatsapp_number: setting ? setting.value : '',
-      },
+      data: settingsMap,
     } as ApiResponse);
   } catch (error) {
     next(error);

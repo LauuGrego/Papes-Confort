@@ -224,6 +224,18 @@ export interface SyncLogDto {
   errors: string | null;
 }
 
+export interface HomeFlyerDto {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  badge?: string;
+  linkUrl?: string;
+  buttonText?: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================
