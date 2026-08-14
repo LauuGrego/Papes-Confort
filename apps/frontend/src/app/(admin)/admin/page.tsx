@@ -76,7 +76,7 @@ export default function AdminDashboardPage() {
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-amber-300">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Panel de Administración Comercial</span>
+            <span>Panel de Administrador</span>
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight">
             ¡Hola de nuevo!
