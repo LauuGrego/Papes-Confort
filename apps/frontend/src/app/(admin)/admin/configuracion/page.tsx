@@ -725,6 +725,7 @@ export default function AdminConfiguracionPage() {
                       <div className="h-11 w-11 rounded-2xl bg-rose-50 border border-rose-100 text-brand-red font-black text-base shrink-0 flex items-center justify-center">
                         {index + 1}
                       </div>
+                      
 
                       {/* Text details */}
                       <div className="min-w-0 space-y-0.5">
