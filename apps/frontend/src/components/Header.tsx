@@ -50,11 +50,6 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide store header on admin pages so admin layout renders its own single header & sidebar
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
-
   const [families, setFamilies] = useState<Family[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [offers, setOffers] = useState<OfferDto[]>([]);
@@ -67,13 +62,15 @@ export default function Header() {
   }, [load]);
 
   useEffect(() => {
-    if (isAuthenticated && !pathname.startsWith('/admin')) {
+    if (isAuthenticated && pathname && !pathname.startsWith('/admin')) {
       fetchApi('/api/auth/logout', { method: 'POST' });
       clearAuth();
     }
   }, [pathname, isAuthenticated, clearAuth]);
 
   useEffect(() => {
+    if (pathname && pathname.startsWith('/admin')) return;
+
     async function loadNavigationData() {
       const [categoriesRes, brandsRes, offersRes] = await Promise.all([
         fetchApi<Family[]>('/api/categories', { cache: 'no-store' }),
@@ -106,6 +103,11 @@ export default function Header() {
     await fetchApi('/api/auth/logout', { method: 'POST' });
     clearAuth();
   };
+
+  // Hide store header on admin pages so admin layout renders its own single header & sidebar
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
