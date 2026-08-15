@@ -10,9 +10,79 @@ const openSans = Open_Sans({
   display: 'swap',
 });
 
+const SITE_URL = 'https://www.papesconfort.com.ar';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Papes Confort | Servicio y Calidad Asegurados',
   description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-48.png', type: 'image/png', sizes: '48x48' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    shortcut: ['/favicon.ico'],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  openGraph: {
+    title: 'Papes Confort | Servicio y Calidad Asegurados',
+    description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+    url: SITE_URL,
+    siteName: 'Papes Confort',
+    images: [
+      {
+        url: '/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'Papes Confort Logo',
+      },
+    ],
+    locale: 'es_AR',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      'name': 'Papes Confort',
+      'url': SITE_URL,
+      'logo': {
+        '@type': 'ImageObject',
+        'url': `${SITE_URL}/icon-512.png`,
+        'width': 512,
+        'height': 512,
+      },
+      'image': `${SITE_URL}/icon-512.png`,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      'url': SITE_URL,
+      'name': 'Papes Confort',
+      'publisher': {
+        '@id': `${SITE_URL}/#organization`,
+      },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -22,6 +92,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${openSans.variable}`} suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
+        <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+        <link rel="icon" href="/icon-512.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased">
         <Header />
         <main className="grow">
@@ -32,3 +113,4 @@ export default function RootLayout({
     </html>
   );
 }
+

@@ -96,7 +96,7 @@ function AdminConfiguracionContent() {
   const [cardIcon, setCardIcon] = useState<'credit-card' | 'percent' | 'qr-code' | 'truck' | 'shield'>('credit-card');
   const [cardIsActive, setCardIsActive] = useState(true);
 
-  const { user, accessToken, setAuth } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
 
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -421,17 +421,19 @@ function AdminConfiguracionContent() {
       }),
     });
 
-    if (res.success && res.data) {
-      setSuccessMsg('Correo electrónico de administrador actualizado con éxito.');
-      if (user) {
-        setAuth({ ...user, email: res.data.email }, accessToken);
-      }
+    if (res.success) {
+      setSuccessMsg('Correo electrónico actualizado con éxito. Redirigiendo para iniciar sesión con tu nuevo correo...');
       setNewEmail('');
       setConfirmPasswordForEmail('');
+      setTimeout(async () => {
+        await fetchApi('/api/auth/logout', { method: 'POST' });
+        clearAuth();
+        window.location.href = '/admin/login';
+      }, 1500);
     } else {
       setErrorMsg(res.error || 'Error al cambiar el correo electrónico.');
+      setEmailChangeLoading(false);
     }
-    setEmailChangeLoading(false);
   };
 
   const handleConfirmPasswordChange = async () => {
@@ -446,14 +448,19 @@ function AdminConfiguracionContent() {
     });
 
     if (res.success) {
-      setSuccessMsg('Contraseña de administrador actualizada con éxito.');
+      setSuccessMsg('Contraseña de administrador actualizada con éxito. Redirigiendo para iniciar sesión con tu nueva contraseña...');
       setNewPassword('');
       setVerificationCode('');
       setShowCodeInput(false);
+      setTimeout(async () => {
+        await fetchApi('/api/auth/logout', { method: 'POST' });
+        clearAuth();
+        window.location.href = '/admin/login';
+      }, 1500);
     } else {
       setErrorMsg(res.error || 'Código incorrecto o expirado.');
+      setConfirmLoading(false);
     }
-    setConfirmLoading(false);
   };
 
   if (loading) {
