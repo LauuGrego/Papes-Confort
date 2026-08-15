@@ -11,10 +11,16 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
     throw new Error('Servidor de correo no configurado. Faltan las credenciales SMTP en el servidor.');
   }
   
+  const isSecure = port === 465;
+
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure: isSecure,
+    requireTLS: !isSecure,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user,
       pass,
