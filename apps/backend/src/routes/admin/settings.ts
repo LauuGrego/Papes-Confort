@@ -4,7 +4,6 @@ import { prisma } from '@papes-confort/database';
 import { ApiResponse, UserPayload } from '@papes-confort/shared';
 import { hash, compare } from 'bcryptjs';
 import { sendEmail } from '../../services/email.service';
-import { generateAccessToken, generateRefreshToken } from '../../utils/tokens';
 import { env } from '../../config/env';
 
 const router = Router();
@@ -239,9 +238,16 @@ router.post('/confirm-password-change', async (req, res, next) => {
     // Eliminar la solicitud de la memoria
     pendingPasswordChanges.delete(user.id);
 
+    // Limpiar cookie de sesión para exigir nuevo inicio de sesión
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
     res.json({
       success: true,
-      message: 'Contraseña de administrador actualizada con éxito.',
+      message: 'Contraseña de administrador actualizada con éxito. Debe iniciar sesión nuevamente.',
     } as ApiResponse);
   } catch (error) {
     next(error);
@@ -303,32 +309,20 @@ router.post('/change-email', async (req, res, next) => {
       data: { email: cleanEmail },
     });
 
-    // Generar nuevos tokens de sesión con el nuevo email
-    const newPayload: UserPayload = {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      role: updatedUser.role as any,
-    };
-
-    const newAccessToken = generateAccessToken(newPayload);
-    const newRefreshToken = generateRefreshToken(newPayload);
-
-    res.cookie('refreshToken', newRefreshToken, {
+    // Limpiar cookie de sesión para exigir nuevo inicio de sesión con el nuevo correo
+    res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     console.log(`[DB UPDATE] Correo del usuario ${updatedUser.id} actualizado exitosamente a: ${updatedUser.email}`);
 
     res.json({
       success: true,
-      message: 'Correo electrónico de administrador actualizado con éxito en la base de datos.',
+      message: 'Correo electrónico de administrador actualizado con éxito en la base de datos. Debe iniciar sesión nuevamente.',
       data: {
         email: updatedUser.email,
-        token: newAccessToken,
-        user: newPayload,
       }
     } as ApiResponse);
   } catch (error) {

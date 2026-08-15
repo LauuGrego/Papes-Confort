@@ -62,7 +62,7 @@ export default function AdminLayout({
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });
     clearAuth();
-    router.push('/');
+    window.location.href = '/';
   };
 
   if (checkingAuth) {

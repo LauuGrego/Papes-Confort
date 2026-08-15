@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search, X } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -21,10 +21,16 @@ export default function ProductDetailPage() {
   // Zoom states
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Mobile Touch Swipe / Drag states
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const changeImage = (newIdx: number) => {
+    setIsZoomed(false);
+    setActiveImageIdx(newIdx);
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -36,7 +42,6 @@ export default function ProductDetailPage() {
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
-    setIsZoomed(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -52,17 +57,16 @@ export default function ProductDetailPage() {
   };
 
   const handleTouchEnd = () => {
-    setIsZoomed(false);
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const minSwipeDistance = 40;
 
     if (distance > minSwipeDistance && product && product.images.length > 1) {
       // Swiped left -> next image
-      setActiveImageIdx((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+      changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1);
     } else if (distance < -minSwipeDistance && product && product.images.length > 1) {
       // Swiped right -> prev image
-      setActiveImageIdx((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+      changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1);
     }
     setTouchStart(null);
     setTouchEnd(null);
@@ -173,6 +177,7 @@ export default function ProductDetailPage() {
         
         {/* Left column: Images Gallery */}
         <div className="lg:col-span-5 space-y-4 w-full">
+          {/* Main Image Viewport */}
           <div
             className="relative aspect-square w-full max-w-md mx-auto items-center justify-center overflow-hidden rounded-3xl bg-slate-50/50 border border-slate-100 p-6 md:p-8 flex cursor-zoom-in group select-none touch-pan-y"
             onMouseMove={handleMouseMove}
@@ -181,6 +186,7 @@ export default function ProductDetailPage() {
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onClick={() => setIsLightboxOpen(true)}
           >
             <img
               src={imageUrl}
@@ -212,25 +218,37 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Image navigation arrows for desktop & mobile */}
+            {/* Image navigation arrows over main viewport (with isolated hover/touch to prevent zoom) */}
             {product.images.length > 1 && (
               <>
                 <button
+                  type="button"
+                  onMouseEnter={() => setIsZoomed(false)}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    setIsZoomed(false);
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveImageIdx((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+                    changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1);
                   }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg border border-slate-200 text-slate-700 hover:bg-white hover:scale-110 active:scale-95 transition-all z-20 cursor-pointer"
                   aria-label="Imagen anterior"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
+                  type="button"
+                  onMouseEnter={() => setIsZoomed(false)}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    setIsZoomed(false);
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveImageIdx((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+                    changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg border border-slate-200 text-slate-700 hover:bg-white hover:scale-110 active:scale-95 transition-all z-20 cursor-pointer"
                   aria-label="Imagen siguiente"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -241,33 +259,64 @@ export default function ProductDetailPage() {
             {/* Hint pill */}
             <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium tracking-wide pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
               <Search className="h-3 w-3" />
-              Pasá el cursor o deslizá para ampliar
+              Pasá el cursor o tocá para ampliar
             </div>
           </div>
 
-          {/* Thumbnails */}
+          {/* Navigation Control Bar & Thumbnails below image */}
           {product.images.length > 1 && (
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {product.images.map((img, idx) => (
+            <div className="space-y-3">
+              {/* Separate Previous / Next Control Bar */}
+              <div className="flex items-center justify-between px-2 py-1 bg-slate-50 border border-slate-100 rounded-2xl">
                 <button
-                  key={img.id}
-                  onClick={() => setActiveImageIdx(idx)}
-                  className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 border p-2 flex transition-all ${
-                    activeImageIdx === idx
-                      ? 'border-brand-red ring-2 ring-brand-red/10'
-                      : 'border-slate-100 hover:border-slate-300'
-                  }`}
+                  type="button"
+                  onClick={() => changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
                 >
-                  <img
-                    src={img.url}
-                    alt={`${product.name} vista ${idx + 1}`}
-                    className="h-full w-full object-contain"
-                  />
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Anterior</span>
                 </button>
-              ))}
+
+                <span className="text-xs font-bold text-slate-500">
+                  Imagen {activeImageIdx + 1} de {product.images.length}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Thumbnails list */}
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                {product.images.map((img, idx) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    onMouseEnter={() => setIsZoomed(false)}
+                    onClick={() => changeImage(idx)}
+                    className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 border p-2 flex transition-all cursor-pointer ${
+                      activeImageIdx === idx
+                        ? 'border-brand-red ring-2 ring-brand-red/20 shadow-sm scale-105'
+                        : 'border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={img.url}
+                      alt={`${product.name} vista ${idx + 1}`}
+                      className="h-full w-full object-contain"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
+
 
         {/* Right column: Purchase Info */}
         <div className="lg:col-span-7 space-y-8">
@@ -451,6 +500,64 @@ export default function ProductDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Full-Screen Image Lightbox Modal */}
+      {isLightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-6 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors z-50 cursor-pointer"
+            aria-label="Cerrar vista previa"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Modal image content */}
+          <div
+            className="relative max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="max-h-[80vh] max-w-full object-contain rounded-2xl shadow-2xl"
+            />
+
+            {/* Navigation buttons inside Lightbox */}
+            {product.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer"
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft className="h-7 w-7" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer"
+                  aria-label="Imagen siguiente"
+                >
+                  <ChevronRight className="h-7 w-7" />
+                </button>
+
+                <div className="absolute -bottom-10 bg-black/50 text-white px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm">
+                  {activeImageIdx + 1} / {product.images.length}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+

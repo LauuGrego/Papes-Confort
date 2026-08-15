@@ -102,6 +102,7 @@ export default function Header() {
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });
     clearAuth();
+    window.location.href = '/';
   };
 
   // Hide store header on admin pages so admin layout renders its own single header & sidebar

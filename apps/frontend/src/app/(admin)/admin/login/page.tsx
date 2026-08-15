@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { fetchApi } from '../../../../lib/api';
 import { useAuthStore } from '../../../../stores/auth';
 import { LoginResponseDto } from '@papes-confort/shared';
-import { Loader2, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Loader2, Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-[75vh] items-center justify-center bg-slate-50/50 px-6">
+    <div className="flex min-h-[75vh] flex-col items-center justify-center bg-slate-50/50 px-6 py-12">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-[0_10px_35px_rgba(0,0,0,0.02)]">
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red shadow-sm mb-4">
@@ -107,7 +108,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-dark px-8 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-dark px-8 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <>
@@ -119,6 +120,17 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
+
+        {/* Botón para volver a la pantalla de inicio (landing) */}
+        <div className="pt-2 text-center border-t border-slate-100">
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-500 hover:text-brand-red transition-colors py-2 px-4 rounded-xl hover:bg-slate-50"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span>Volver a la página principal</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
