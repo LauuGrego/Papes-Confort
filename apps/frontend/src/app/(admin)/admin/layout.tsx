@@ -290,26 +290,8 @@ export default function AdminLayout({
               })}
             </div>
           </div>
-
-          {/* Footer Sidebar (User email info + Logout) */}
-          <div className="p-4 border-t border-slate-100 space-y-3 bg-slate-50/50 shrink-0">
-            {user && (
-              <div className="px-2">
-                <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
-                  Usuario Sesión
-                </p>
-                <p className="text-xs font-bold text-slate-700 truncate">{user.email}</p>
-              </div>
-            )}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all text-left cursor-pointer border border-rose-100/60"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
         </aside>
+
 
         {/* Main Content Area */}
         <main className="flex-grow p-4 sm:p-6 md:p-10 overflow-y-auto">

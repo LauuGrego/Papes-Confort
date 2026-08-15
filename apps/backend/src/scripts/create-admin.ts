@@ -13,7 +13,11 @@ async function main() {
     throw new Error('DATABASE_URL no está definida.');
   }
 
-  console.log(`[CREATING ADMIN] Email: lautarogrego@gmail.com`);
+  const email = (process.env.ADMIN_EMAIL || 'papesconfort@gmail.com.ar').trim().toLowerCase();
+  const plainPassword = process.env.ADMIN_PASSWORD || 'admin';
+  const name = process.env.ADMIN_NAME || 'Alejandro Papes';
+
+  console.log(`[CREATING ADMIN] Email: ${email}, Nombre: ${name}`);
   console.log(`[TARGET DB]: ${dbUrl.split('@')[1] || dbUrl}`);
 
   const prisma = new PrismaClient({
@@ -25,10 +29,6 @@ async function main() {
   });
 
   try {
-    const email = 'lautarogrego@gmail.com';
-    const plainPassword = '121103grego';
-    const name = 'Lautaro Grego';
-
     const hashedPassword = await hash(plainPassword, 12);
 
     const existingUser = await prisma.user.findUnique({
@@ -39,12 +39,13 @@ async function main() {
       const updated = await prisma.user.update({
         where: { email },
         data: {
+          name,
           password: hashedPassword,
           role: 'ADMIN',
           isActive: true,
         },
       });
-      console.log(`[SUCCESS] Usuario existente actualizado a ADMIN en la BDD. ID: ${updated.id}`);
+      console.log(`[SUCCESS] Usuario existente ${email} actualizado a ADMIN en la BDD. ID: ${updated.id}`);
     } else {
       const newUser = await prisma.user.create({
         data: {
@@ -55,7 +56,7 @@ async function main() {
           isActive: true,
         },
       });
-      console.log(`[SUCCESS] Nuevo usuario ADMIN creado con éxito en la BDD. ID: ${newUser.id}`);
+      console.log(`[SUCCESS] Nuevo usuario ADMIN ${email} creado con éxito en la BDD. ID: ${newUser.id}`);
     }
   } finally {
     await prisma.$disconnect();
