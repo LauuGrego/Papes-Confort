@@ -173,11 +173,20 @@ router.post('/change-password-request', async (req, res, next) => {
       </div>
     `;
 
-    await sendEmail({
-      to: userEmail,
-      subject: 'Código de Confirmación - Cambio de Contraseña de Administrador',
-      html: emailHtml,
-    });
+    try {
+      await sendEmail({
+        to: userEmail,
+        subject: 'Código de Confirmación - Cambio de Contraseña de Administrador',
+        html: emailHtml,
+      });
+    } catch (emailErr: any) {
+      console.error('[EMAIL ERROR] Error al enviar correo de contraseña:', emailErr);
+      res.status(400).json({
+        success: false,
+        error: `No se pudo enviar el correo a ${userEmail}: ${emailErr.message || 'Error en el servidor de correo SMTP'}`,
+      });
+      return;
+    }
 
     res.json({
       success: true,
@@ -187,6 +196,7 @@ router.post('/change-password-request', async (req, res, next) => {
     next(error);
   }
 });
+
 
 // POST /api/admin/settings/confirm-password-change
 router.post('/confirm-password-change', async (req, res, next) => {

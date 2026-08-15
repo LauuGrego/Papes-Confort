@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { UserPayload } from '@papes-confort/shared';
 
 interface AuthState {
@@ -9,10 +10,18 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-  setAuth: (user, token) => set({ user, accessToken: token, isAuthenticated: !!token }),
-  clearAuth: () => set({ user: null, accessToken: null, isAuthenticated: false }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      setAuth: (user, token) => set({ user, accessToken: token, isAuthenticated: !!token }),
+      clearAuth: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+    }),
+    {
+      name: 'papes-confort-auth',
+    }
+  )
+);
+

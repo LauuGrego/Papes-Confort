@@ -99,6 +99,7 @@ function AdminConfiguracionContent() {
   const { user, accessToken, setAuth } = useAuthStore();
 
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
@@ -106,7 +107,9 @@ function AdminConfiguracionContent() {
 
   const [newEmail, setNewEmail] = useState('');
   const [confirmPasswordForEmail, setConfirmPasswordForEmail] = useState('');
+  const [showConfirmPasswordForEmail, setShowConfirmPasswordForEmail] = useState(false);
   const [emailChangeLoading, setEmailChangeLoading] = useState(false);
+
 
   useEffect(() => {
     async function loadSettings() {
@@ -186,8 +189,14 @@ function AdminConfiguracionContent() {
         if (res.success && res.data?.url) {
           setFlyerImageUrl(res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen.');
+          if (res.error === 'Unauthorized' || res.error?.includes('Unauthorized')) {
+            alert('Tu sesión de administrador ha expirado. Por favor, vuelve a iniciar sesión.');
+            window.location.href = '/admin/login';
+          } else {
+            alert(res.error || 'Error al subir la imagen.');
+          }
         }
+
         setUploadingImage(false);
       };
       reader.readAsDataURL(file);
