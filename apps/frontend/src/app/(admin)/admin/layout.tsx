@@ -18,6 +18,8 @@ import {
   Image as ImageIcon,
   CreditCard,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -30,6 +32,14 @@ export default function AdminLayout({
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('admin_sidebar_collapsed');
+    if (saved === 'true') {
+      setIsCollapsed(true);
+    }
+  }, []);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -236,13 +246,21 @@ export default function AdminLayout({
         )}
 
         {/* Desktop Permanent Sidebar */}
-        <aside className="hidden md:flex flex-col w-64 border-r border-slate-200/80 bg-white justify-between shrink-0 sticky top-16 h-[calc(100vh-4rem)]">
-          <div className="p-4 space-y-6 overflow-y-auto flex-grow">
+        <aside
+          className={`hidden md:flex flex-col ${
+            isCollapsed ? 'w-20' : 'w-64'
+          } border-r border-slate-200/80 bg-white justify-between shrink-0 sticky top-16 h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out`}
+        >
+          <div className="p-3 space-y-6 overflow-y-auto flex-grow overflow-x-hidden">
             {/* Sección 1: Gestión Comercial */}
             <div className="space-y-1.5">
-              <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Gestión Comercial
-              </p>
+              {!isCollapsed ? (
+                <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
+                  Gestión Comercial
+                </p>
+              ) : (
+                <div className="my-2 border-t border-slate-100" title="Gestión Comercial" />
+              )}
               {mainNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -250,14 +268,17 @@ export default function AdminLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                    title={isCollapsed ? item.label : undefined}
+                    className={`flex items-center ${
+                      isCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-2.5'
+                    } rounded-2xl text-xs font-bold tracking-wide transition-all ${
                       isActive
                         ? 'bg-brand-red text-white shadow-xs'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span>{item.label}</span>
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
               })}
@@ -265,9 +286,13 @@ export default function AdminLayout({
 
             {/* Sección 2: Portada y Sistema */}
             <div className="space-y-1.5">
-              <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Portada & Sistema
-              </p>
+              {!isCollapsed ? (
+                <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
+                  Portada & Sistema
+                </p>
+              ) : (
+                <div className="my-2 border-t border-slate-100" title="Portada & Sistema" />
+              )}
               {systemNav.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -277,18 +302,43 @@ export default function AdminLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                    title={isCollapsed ? item.label : undefined}
+                    className={`flex items-center ${
+                      isCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-2.5'
+                    } rounded-2xl text-xs font-bold tracking-wide transition-all ${
                       isActive
                         ? 'bg-brand-navy text-white shadow-xs'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span>{item.label}</span>
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
               })}
             </div>
+          </div>
+
+          {/* Desktop Collapse Toggle Button */}
+          <div className="p-3 border-t border-slate-100">
+            <button
+              onClick={() => {
+                const nextState = !isCollapsed;
+                setIsCollapsed(nextState);
+                localStorage.setItem('admin_sidebar_collapsed', String(nextState));
+              }}
+              className={`w-full flex items-center ${
+                isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
+              } rounded-2xl border border-slate-200/80 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold transition-all cursor-pointer`}
+              title={isCollapsed ? 'Expandir panel lateral' : 'Contraer panel lateral'}
+            >
+              {!isCollapsed && <span>Contraer menú</span>}
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4 shrink-0" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 shrink-0" />
+              )}
+            </button>
           </div>
         </aside>
 

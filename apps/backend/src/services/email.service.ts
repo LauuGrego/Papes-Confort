@@ -21,8 +21,10 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
     },
   });
   
+  const fromEmail = process.env.SMTP_FROM || (user.includes('@') ? user : `noreply@${host}`);
+
   await transporter.sendMail({
-    from: `"Papes Confort" <${user}>`,
+    from: `"Papes Confort" <${fromEmail}>`,
     to,
     subject,
     html,
