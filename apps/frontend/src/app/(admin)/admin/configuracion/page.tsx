@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
 import {
@@ -65,7 +65,7 @@ const DEFAULT_PAYMENT_CARDS: PaymentFeatureCardDto[] = [
   },
 ];
 
-export default function AdminConfiguracionPage() {
+function AdminConfiguracionContent() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as 'banners' | 'payment_cards' | 'general' | 'security') || 'banners';
   const [activeTab, setActiveTab] = useState<'banners' | 'payment_cards' | 'general' | 'security'>(initialTab);
@@ -1191,5 +1191,18 @@ export default function AdminConfiguracionPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminConfiguracionPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
+        <span className="text-sm font-semibold text-slate-400">Cargando panel de configuración...</span>
+      </div>
+    }>
+      <AdminConfiguracionContent />
+    </Suspense>
   );
 }
