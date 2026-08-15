@@ -1,14 +1,37 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  // SMTP credentials from environment variables
+  const apiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM || 'notificaciones@papesconfort.com';
+  const from = `"Papes Confort" <${fromEmail}>`;
+
+  // 1. Usar API HTTP de Resend si existe una clave de API (empieza con "re_")
+  // Esto utiliza HTTPS (Puerto 443) y evita bloqueos de puertos SMTP en servidores como Railway/Vercel.
+  if (apiKey && apiKey.startsWith('re_')) {
+    const resend = new Resend(apiKey);
+    const { error } = await resend.emails.send({
+      from,
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (error) {
+      throw new Error(`Error en Resend API: ${error.message}`);
+    }
+
+    return;
+  }
+
+  // 2. Fallback a Nodemailer SMTP tradicional
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   
   if (!host || !user || !pass) {
-    throw new Error('Servidor de correo no configurado. Faltan las credenciales SMTP en el servidor.');
+    throw new Error('Servidor de correo no configurado. Falta la clave RESEND_API_KEY o las credenciales SMTP.');
   }
   
   const isSecure = port === 465;
@@ -26,11 +49,9 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
       pass,
     },
   });
-  
-  const fromEmail = process.env.SMTP_FROM || (user.includes('@') ? user : `noreply@${host}`);
 
   await transporter.sendMail({
-    from: `"Papes Confort" <${fromEmail}>`,
+    from,
     to,
     subject,
     html,
