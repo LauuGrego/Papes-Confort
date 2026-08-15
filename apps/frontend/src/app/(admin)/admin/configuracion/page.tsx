@@ -108,7 +108,10 @@ function AdminConfiguracionContent() {
   const [newEmail, setNewEmail] = useState('');
   const [confirmPasswordForEmail, setConfirmPasswordForEmail] = useState('');
   const [showConfirmPasswordForEmail, setShowConfirmPasswordForEmail] = useState(false);
-  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
+  const [emailVerificationCode, setEmailVerificationCode] = useState('');
+  const [showEmailCodeInput, setShowEmailCodeInput] = useState(false);
+  const [emailRequestLoading, setEmailRequestLoading] = useState(false);
+  const [emailConfirmLoading, setEmailConfirmLoading] = useState(false);
 
 
   useEffect(() => {
@@ -406,14 +409,14 @@ function AdminConfiguracionContent() {
     setRequestLoading(false);
   };
 
-  const handleEmailChange = async (e: React.FormEvent) => {
+  const handleRequestEmailChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !confirmPasswordForEmail) return;
-    setEmailChangeLoading(true);
+    setEmailRequestLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
-    const res = await fetchApi<any>('/api/admin/settings/change-email', {
+    const res = await fetchApi<any>('/api/admin/settings/change-email-request', {
       method: 'POST',
       body: JSON.stringify({
         newEmail,
@@ -422,17 +425,39 @@ function AdminConfiguracionContent() {
     });
 
     if (res.success) {
-      setSuccessMsg('Correo electrónico actualizado con éxito. Redirigiendo para iniciar sesión con tu nuevo correo...');
+      setSuccessMsg(res.message || `Código de confirmación enviado a tu correo actual (${user?.email || ''}).`);
+      setShowEmailCodeInput(true);
+    } else {
+      setErrorMsg(res.error || 'Error al solicitar el cambio de correo.');
+    }
+    setEmailRequestLoading(false);
+  };
+
+  const handleConfirmEmailChange = async () => {
+    if (!emailVerificationCode) return;
+    setEmailConfirmLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    const res = await fetchApi<any>('/api/admin/settings/confirm-email-change', {
+      method: 'POST',
+      body: JSON.stringify({ code: emailVerificationCode }),
+    });
+
+    if (res.success) {
+      setSuccessMsg('Correo electrónico de administrador actualizado con éxito. Redirigiendo para iniciar sesión...');
       setNewEmail('');
       setConfirmPasswordForEmail('');
+      setEmailVerificationCode('');
+      setShowEmailCodeInput(false);
       setTimeout(async () => {
         await fetchApi('/api/auth/logout', { method: 'POST' });
         clearAuth();
         window.location.href = '/admin/login';
       }, 1500);
     } else {
-      setErrorMsg(res.error || 'Error al cambiar el correo electrónico.');
-      setEmailChangeLoading(false);
+      setErrorMsg(res.error || 'Código incorrecto o expirado.');
+      setEmailConfirmLoading(false);
     }
   };
 
@@ -879,58 +904,94 @@ function AdminConfiguracionContent() {
               </p>
             </div>
 
-            <form onSubmit={handleEmailChange} autoComplete="off" className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Nuevo Correo Electrónico
-                </label>
-                <input
-                  type="email"
-                  required
-                  autoComplete="off"
-                  placeholder="nuevo-email@papesconfort.com.ar"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Confirmar con Contraseña Actual
-                </label>
-                <div className="relative">
+            {!showEmailCodeInput ? (
+              <form onSubmit={handleRequestEmailChange} autoComplete="off" className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Nuevo Correo Electrónico
+                  </label>
                   <input
-                    type={showConfirmPasswordForEmail ? 'text' : 'password'}
+                    type="email"
                     required
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    value={confirmPasswordForEmail}
-                    onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
-                    className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                    autoComplete="off"
+                    placeholder="nuevo-email@papesconfort.com.ar"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Confirmar con Contraseña Actual
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPasswordForEmail ? 'text' : 'password'}
+                      required
+                      autoComplete="new-password"
+                      placeholder="••••••••"
+                      value={confirmPasswordForEmail}
+                      onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
+                      className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPasswordForEmail(!showConfirmPasswordForEmail)}
+                      className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+                      title={showConfirmPasswordForEmail ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showConfirmPasswordForEmail ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={emailRequestLoading || !newEmail || !confirmPasswordForEmail}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                  >
+                    {emailRequestLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <span>Solicitar Código por Email</span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 bg-slate-50/80 border border-slate-200 p-5 rounded-2xl">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Código de Confirmación (Enviado a {user?.email || 'tu correo actual'})
+                  </label>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    placeholder="ej. 123456"
+                    value={emailVerificationCode}
+                    onChange={(e) => setEmailVerificationCode(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-brand-black outline-none focus:border-brand-red/40 transition-all font-mono"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPasswordForEmail(!showConfirmPasswordForEmail)}
-                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
-                    title={showConfirmPasswordForEmail ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    onClick={() => setShowEmailCodeInput(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500 hover:bg-white transition-colors cursor-pointer"
                   >
-                    {showConfirmPasswordForEmail ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmEmailChange}
+                    disabled={!emailVerificationCode || emailConfirmLoading}
+                    className="flex items-center gap-2 px-6 py-2 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all disabled:opacity-50 shadow-sm cursor-pointer"
+                  >
+                    {emailConfirmLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <span>Confirmar Cambio de Correo</span>
                   </button>
                 </div>
               </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={emailChangeLoading || !newEmail || !confirmPasswordForEmail}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-sm"
-                >
-                  {emailChangeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  <span>Actualizar Correo</span>
-                </button>
-              </div>
-            </form>
+            )}
           </div>
 
           {/* Cambio de Contraseña */}
