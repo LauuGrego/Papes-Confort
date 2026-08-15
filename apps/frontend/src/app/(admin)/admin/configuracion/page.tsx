@@ -891,14 +891,24 @@ function AdminConfiguracionContent() {
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Confirmar con Contraseña Actual
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Ingresa tu contraseña actual"
-                  value={confirmPasswordForEmail}
-                  onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPasswordForEmail ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={confirmPasswordForEmail}
+                    onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
+                    className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPasswordForEmail(!showConfirmPasswordForEmail)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+                    title={showConfirmPasswordForEmail ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showConfirmPasswordForEmail ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end">
@@ -932,14 +942,25 @@ function AdminConfiguracionContent() {
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Nueva Contraseña
                   </label>
-                  <input
-                    type="password"
-                    placeholder="Ingresa la nueva contraseña"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+                      title={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showNewPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    </button>
+                  </div>
                 </div>
+
                 <div className="flex justify-end pt-2">
                   <button
                     type="button"
