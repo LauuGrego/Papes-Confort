@@ -23,20 +23,40 @@ ${html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
     return;
   }
   
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user,
-      pass,
-    },
-  });
-  
-  await transporter.sendMail({
-    from: `"Papes Confort" <${user}>`,
-    to,
-    subject,
-    html,
-  });
+  const isGmail = host.includes('gmail');
+
+  const transporter = nodemailer.createTransport(
+    isGmail
+      ? {
+          service: 'gmail',
+          auth: { user, pass },
+        }
+      : {
+          host,
+          port,
+          secure: port === 465,
+          auth: {
+            user,
+            pass,
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+        }
+  );
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Papes Confort" <${user}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log(`[EMAIL SUCCESS] Correo enviado exitosamente a ${to}. ID: ${info.messageId}`);
+    return info;
+  } catch (err: any) {
+    console.error(`[EMAIL ERROR] Falló el envío de correo a ${to}:`, err);
+    throw new Error(`Error en el servidor de correo: ${err.message || 'Error de autenticación o conexión SMTP'}`);
+  }
 }
+

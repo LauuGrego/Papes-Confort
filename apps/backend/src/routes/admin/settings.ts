@@ -4,8 +4,11 @@ import { prisma } from '@papes-confort/database';
 import { ApiResponse, UserPayload } from '@papes-confort/shared';
 import { hash, compare } from 'bcryptjs';
 import { sendEmail } from '../../services/email.service';
+import { generateAccessToken, generateRefreshToken } from '../../utils/tokens';
+import { env } from '../../config/env';
 
 const router = Router();
+
 
 router.use(requireAuth);
 
@@ -244,6 +247,13 @@ router.post('/change-email', async (req, res, next) => {
       return;
     }
 
+    const cleanEmail = newEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      res.status(400).json({ success: false, error: 'El formato del correo electrónico ingresado no es válido.' });
+      return;
+    }
+
     const user = req.user as UserPayload;
     if (!user) {
       res.status(401).json({ success: false, error: 'No autorizado.' });
@@ -256,7 +266,7 @@ router.post('/change-email', async (req, res, next) => {
     });
 
     if (!dbUser) {
-      res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
+      res.status(404).json({ success: false, error: 'Usuario no encontrado en la base de datos.' });
       return;
     }
 
@@ -267,22 +277,54 @@ router.post('/change-email', async (req, res, next) => {
       return;
     }
 
-    // Actualizar correo
+    // Verificar si el correo ya pertenece a otro usuario registrado
+    const existingUser = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (existingUser && existingUser.id !== user.id) {
+      res.status(400).json({ success: false, error: 'El correo electrónico ingresado ya pertenece a otra cuenta.' });
+      return;
+    }
+
+    // Actualizar correo directamente en la base de datos (Tabla User)
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { email: newEmail.trim().toLowerCase() },
+      data: { email: cleanEmail },
     });
+
+    // Generar nuevos tokens de sesión con el nuevo email
+    const newPayload: UserPayload = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role as any,
+    };
+
+    const newAccessToken = generateAccessToken(newPayload);
+    const newRefreshToken = generateRefreshToken(newPayload);
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    console.log(`[DB UPDATE] Correo del usuario ${updatedUser.id} actualizado exitosamente a: ${updatedUser.email}`);
 
     res.json({
       success: true,
-      message: 'Correo electrónico de administrador actualizado con éxito.',
+      message: 'Correo electrónico de administrador actualizado con éxito en la base de datos.',
       data: {
         email: updatedUser.email,
+        token: newAccessToken,
+        user: newPayload,
       }
     } as ApiResponse);
   } catch (error) {
     next(error);
   }
 });
+
 
 export default router;

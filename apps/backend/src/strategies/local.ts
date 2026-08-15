@@ -4,22 +4,27 @@ import { compare } from 'bcryptjs';
 
 export const localStrategy = new LocalStrategy(
   {
-    usernameField: 'password',
+    usernameField: 'email',
     passwordField: 'password',
   },
-  async (_usernamePlaceholder, password, done) => {
+  async (email, password, done) => {
     try {
+      if (!email || !password) {
+        return done(null, false, { message: 'Debes ingresar correo y contraseña.' });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
       const user = await prisma.user.findFirst({
-        where: { role: 'ADMIN', isActive: true, deletedAt: null },
+        where: { email: cleanEmail, isActive: true, deletedAt: null },
       });
 
       if (!user) {
-        return done(null, false, { message: 'Administrador no configurado en el sistema' });
+        return done(null, false, { message: 'Correo electrónico no registrado o inactivo.' });
       }
 
       const isMatch = await compare(password, user.password);
       if (!isMatch) {
-        return done(null, false, { message: 'Contraseña incorrecta' });
+        return done(null, false, { message: 'Contraseña incorrecta.' });
       }
 
       const payload = {
@@ -34,3 +39,4 @@ export const localStrategy = new LocalStrategy(
     }
   }
 );
+

@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
 import { useAuthStore } from '../../../../stores/auth';
 import { LoginResponseDto } from '@papes-confort/shared';
-import { Loader2, Lock, AlertCircle } from 'lucide-react';
+import { Loader2, Lock, Mail, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,14 +23,14 @@ export default function AdminLoginPage() {
 
     const res = await fetchApi<LoginResponseDto>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (res.success && res.data) {
       setAuth(res.data.user, res.data.token);
       router.push('/admin');
     } else {
-      setError(res.error || 'Contraseña incorrecta.');
+      setError(res.error || 'Credenciales incorrectas.');
       setLoading(false);
     }
   };
@@ -45,7 +46,7 @@ export default function AdminLoginPage() {
             Acceso Administración
           </h2>
           <p className="text-sm text-slate-400">
-            Ingresa la contraseña de administrador para continuar.
+            Ingresa tu correo y contraseña de administrador para continuar.
           </p>
         </div>
 
@@ -59,7 +60,24 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Contraseña de Administrador
+              Correo Electrónico
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
+                placeholder="ejemplo@papesconfort.com.ar"
+              />
+              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Contraseña
             </label>
             <div className="relative">
               <input
@@ -93,3 +111,4 @@ export default function AdminLoginPage() {
     </div>
   );
 }
+
