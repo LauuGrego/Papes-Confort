@@ -872,7 +872,7 @@ function AdminConfiguracionContent() {
               </p>
             </div>
 
-            <form onSubmit={handleEmailChange} className="space-y-4">
+            <form onSubmit={handleEmailChange} autoComplete="off" className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Nuevo Correo Electrónico
@@ -880,6 +880,7 @@ function AdminConfiguracionContent() {
                 <input
                   type="email"
                   required
+                  autoComplete="off"
                   placeholder="nuevo-email@papesconfort.com.ar"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
@@ -895,6 +896,7 @@ function AdminConfiguracionContent() {
                   <input
                     type={showConfirmPasswordForEmail ? 'text' : 'password'}
                     required
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     value={confirmPasswordForEmail}
                     onChange={(e) => setConfirmPasswordForEmail(e.target.value)}
@@ -945,6 +947,7 @@ function AdminConfiguracionContent() {
                   <div className="relative">
                     <input
                       type={showNewPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       placeholder="••••••••"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
@@ -960,6 +963,7 @@ function AdminConfiguracionContent() {
                     </button>
                   </div>
                 </div>
+
 
                 <div className="flex justify-end pt-2">
                   <button
@@ -981,11 +985,13 @@ function AdminConfiguracionContent() {
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     placeholder="ej. 123456"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-brand-black outline-none focus:border-brand-red/40 transition-all font-mono"
                   />
+
                 </div>
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
