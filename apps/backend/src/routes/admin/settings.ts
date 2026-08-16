@@ -5,9 +5,11 @@ import { ApiResponse, UserPayload } from '@papes-confort/shared';
 import { hash, compare } from 'bcryptjs';
 import { sendEmail } from '../../services/email.service';
 import { env } from '../../config/env';
+import { passwordSecurityService } from '../../services/password-security.service';
+import { auditSecurityEvent } from '../../utils/audit';
+import { v2 as cloudinary } from 'cloudinary';
 
 const router = Router();
-
 
 router.use(requireAuth);
 
@@ -57,8 +59,6 @@ router.put('/', async (req, res, next) => {
     next(error);
   }
 });
-
-import { v2 as cloudinary } from 'cloudinary';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   cloudinary.config({
@@ -113,9 +113,6 @@ router.post('/upload-flyer', async (req, res, next) => {
   }
 });
 
-// Guardar solicitudes de cambio de contraseña pendientes en memoria
-const pendingPasswordChanges = new Map<string, { code: string; hash: string; expiresAt: number }>();
-
 // POST /api/admin/settings/change-password-request
 router.post('/change-password-request', async (req, res, next) => {
   try {
@@ -126,12 +123,11 @@ router.post('/change-password-request', async (req, res, next) => {
     }
 
     const user = req.user as UserPayload;
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       res.status(403).json({ success: false, error: 'Solo los administradores pueden cambiar la contraseña.' });
       return;
     }
 
-    // Buscar al usuario administrador en la base de datos para obtener su correo real actual
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
     });
@@ -141,18 +137,36 @@ router.post('/change-password-request', async (req, res, next) => {
       return;
     }
 
-    const userEmail = dbUser.email;
-
-    // Generar código de 6 dígitos
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedPassword = await hash(newPassword, 12);
+    const reqResult = passwordSecurityService.createRequest(user.id, 'PASSWORD_CHANGE', hashedPassword);
 
-    // Guardar en memoria por 10 minutos
-    pendingPasswordChanges.set(user.id, {
-      code,
-      hash: hashedPassword,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-    });
+    if (reqResult.status === 'LOCKED') {
+      auditSecurityEvent('PASSWORD_CHANGE_LOCKED', {
+        userId: user.id,
+        email: dbUser.email,
+        ip: req.ip,
+        result: 'LOCKED',
+        detail: 'Solicitud bloqueada por exceso de intentos fallidos previo.',
+      });
+      res.status(429).json({
+        success: false,
+        error: `Cuenta bloqueada temporalmente. Por favor reintenta en ${reqResult.remainingSeconds} segundos.`,
+        retryAfter: reqResult.remainingSeconds,
+      } as ApiResponse);
+      return;
+    }
+
+    if (reqResult.status === 'COOLDOWN') {
+      res.status(429).json({
+        success: false,
+        error: `Debes esperar ${reqResult.remainingSeconds} segundos antes de solicitar un nuevo código.`,
+        retryAfter: reqResult.remainingSeconds,
+      } as ApiResponse);
+      return;
+    }
+
+    const code = reqResult.code;
+    const userEmail = dbUser.email;
 
     const emailHtml = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 16px;">
@@ -180,12 +194,20 @@ router.post('/change-password-request', async (req, res, next) => {
       });
     } catch (emailErr: any) {
       console.error('[EMAIL ERROR] Error al enviar correo de contraseña:', emailErr);
+      passwordSecurityService.cancelPendingRequest(user.id, 'PASSWORD_CHANGE');
       res.status(400).json({
         success: false,
         error: `No se pudo enviar el correo a ${userEmail}: ${emailErr.message || 'Error en el servidor de correo SMTP'}`,
       });
       return;
     }
+
+    auditSecurityEvent('PASSWORD_CHANGE_REQUESTED', {
+      userId: user.id,
+      email: userEmail,
+      ip: req.ip,
+      result: 'SUCCESS',
+    });
 
     res.json({
       success: true,
@@ -195,7 +217,6 @@ router.post('/change-password-request', async (req, res, next) => {
     next(error);
   }
 });
-
 
 // POST /api/admin/settings/confirm-password-change
 router.post('/confirm-password-change', async (req, res, next) => {
@@ -207,42 +228,93 @@ router.post('/confirm-password-change', async (req, res, next) => {
     }
 
     const user = req.user as UserPayload;
-    if (!user) {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       res.status(401).json({ success: false, error: 'No autorizado.' });
       return;
     }
 
-    const pending = pendingPasswordChanges.get(user.id);
-    if (!pending) {
-      res.status(400).json({ success: false, error: 'No hay ninguna solicitud de cambio de contraseña pendiente o ya expiró.' });
+    const verifyRes = passwordSecurityService.verifyCode(user.id, 'PASSWORD_CHANGE', String(code).trim());
+
+    if (verifyRes.status === 'LOCKED') {
+      auditSecurityEvent('PASSWORD_CHANGE_LOCKED', {
+        userId: user.id,
+        email: user.email,
+        ip: req.ip,
+        result: 'LOCKED',
+        detail: 'Intento de confirmación rechazado por bloqueo temporal.',
+      });
+      res.status(429).json({
+        success: false,
+        error: `Demasiados intentos fallidos. Tu cuenta está bloqueada temporalmente. Intenta nuevamente en ${verifyRes.remainingSeconds} segundos.`,
+        retryAfter: verifyRes.remainingSeconds,
+      } as ApiResponse);
       return;
     }
 
-    if (pending.expiresAt < Date.now()) {
-      pendingPasswordChanges.delete(user.id);
-      res.status(400).json({ success: false, error: 'El código de confirmación ha expirado. Por favor, solicita uno nuevo.' });
+    if (verifyRes.status === 'EXPIRED') {
+      res.status(400).json({
+        success: false,
+        error: 'El código de confirmación ha expirado o no existe ninguna solicitud pendiente. Solicita uno nuevo.',
+      } as ApiResponse);
       return;
     }
 
-    if (pending.code !== String(code).trim()) {
-      res.status(400).json({ success: false, error: 'El código de confirmación ingresado es incorrecto.' });
+    if (verifyRes.status === 'INVALID') {
+      if (verifyRes.isLockedNow) {
+        auditSecurityEvent('PASSWORD_CHANGE_LOCKED', {
+          userId: user.id,
+          email: user.email,
+          ip: req.ip,
+          result: 'LOCKED',
+          attempts: verifyRes.attempts,
+          detail: 'Cuenta bloqueada tras alcanzar 5 intentos fallidos en cambio de contraseña.',
+        });
+        res.status(429).json({
+          success: false,
+          error: 'Has superado el límite de 5 intentos fallidos. Tu cuenta ha sido bloqueada temporalmente por 30 minutos.',
+          retryAfter: verifyRes.remainingLockoutSeconds,
+        } as ApiResponse);
+        return;
+      }
+
+      auditSecurityEvent('PASSWORD_CHANGE_ATTEMPT_FAILED', {
+        userId: user.id,
+        email: user.email,
+        ip: req.ip,
+        result: 'FAILED',
+        attempts: verifyRes.attempts,
+      });
+
+      res.status(400).json({
+        success: false,
+        error: `El código ingresado es incorrecto. Te quedan ${verifyRes.remainingAttempts} intento(s).`,
+        remainingAttempts: verifyRes.remainingAttempts,
+      } as ApiResponse);
       return;
     }
 
-    // Actualizar la contraseña en la base de datos
+    // Success -> verifyRes.data contains newPasswordHash
+    const newPasswordHash = verifyRes.data;
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: pending.hash },
+      data: {
+        password: newPasswordHash,
+        passwordChangedAt: new Date(),
+      },
     });
 
-    // Eliminar la solicitud de la memoria
-    pendingPasswordChanges.delete(user.id);
-
-    // Limpiar cookie de sesión para exigir nuevo inicio de sesión
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+    });
+
+    auditSecurityEvent('PASSWORD_CHANGE_CONFIRMED', {
+      userId: user.id,
+      email: user.email,
+      ip: req.ip,
+      result: 'SUCCESS',
     });
 
     res.json({
@@ -254,8 +326,8 @@ router.post('/confirm-password-change', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/settings/change-email
-router.post('/change-email', async (req, res, next) => {
+// POST /api/admin/settings/change-email-request
+router.post('/change-email-request', async (req, res, next) => {
   try {
     const { newEmail, currentPassword } = req.body;
     if (!newEmail || !currentPassword) {
@@ -271,12 +343,11 @@ router.post('/change-email', async (req, res, next) => {
     }
 
     const user = req.user as UserPayload;
-    if (!user) {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       res.status(401).json({ success: false, error: 'No autorizado.' });
       return;
     }
 
-    // Buscar usuario en base de datos para comparar contraseña
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
     });
@@ -286,14 +357,12 @@ router.post('/change-email', async (req, res, next) => {
       return;
     }
 
-    // Verificar contraseña actual
     const isMatch = await compare(currentPassword, dbUser.password);
     if (!isMatch) {
       res.status(401).json({ success: false, error: 'La contraseña actual ingresada es incorrecta.' });
       return;
     }
 
-    // Verificar si el correo ya pertenece a otro usuario registrado
     const existingUser = await prisma.user.findUnique({
       where: { email: cleanEmail },
     });
@@ -303,32 +372,190 @@ router.post('/change-email', async (req, res, next) => {
       return;
     }
 
-    // Actualizar correo directamente en la base de datos (Tabla User)
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: { email: cleanEmail },
-    });
+    const reqResult = passwordSecurityService.createRequest(user.id, 'EMAIL_CHANGE', cleanEmail);
 
-    // Limpiar cookie de sesión para exigir nuevo inicio de sesión con el nuevo correo
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
+    if (reqResult.status === 'LOCKED') {
+      auditSecurityEvent('EMAIL_CHANGE_LOCKED', {
+        userId: user.id,
+        email: dbUser.email,
+        ip: req.ip,
+        result: 'LOCKED',
+        detail: 'Solicitud de cambio de email bloqueada.',
+      });
+      res.status(429).json({
+        success: false,
+        error: `Cuenta bloqueada temporalmente. Por favor reintenta en ${reqResult.remainingSeconds} segundos.`,
+        retryAfter: reqResult.remainingSeconds,
+      } as ApiResponse);
+      return;
+    }
 
-    console.log(`[DB UPDATE] Correo del usuario ${updatedUser.id} actualizado exitosamente a: ${updatedUser.email}`);
+    if (reqResult.status === 'COOLDOWN') {
+      res.status(429).json({
+        success: false,
+        error: `Debes esperar ${reqResult.remainingSeconds} segundos antes de solicitar un nuevo código.`,
+        retryAfter: reqResult.remainingSeconds,
+      } as ApiResponse);
+      return;
+    }
+
+    const code = reqResult.code;
+    const currentEmail = dbUser.email;
+
+    const emailHtml = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 16px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #e41414; margin: 0; font-size: 24px; font-weight: 800;">Papes Confort</h2>
+          <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Acceso Administrativo</p>
+        </div>
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px;">
+          <p style="color: #334155; font-size: 15px; line-height: 1.5; margin: 0 0 16px 0;">Hola Administrador,</p>
+          <p style="color: #334155; font-size: 15px; line-height: 1.5; margin: 0 0 16px 0;">Se ha solicitado modificar tu dirección de correo de administrador a: <strong>${cleanEmail}</strong>.</p>
+          <p style="color: #334155; font-size: 15px; line-height: 1.5; margin: 0 0 24px 0;">Introduce el siguiente código de confirmación en el panel para autorizar esta modificación:</p>
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0f172a;">${code}</span>
+          </div>
+          <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin: 0 0 8px 0;">* Este código es válido por 10 minutos y es de uso único.</p>
+          <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin: 0;">Si tú no iniciaste esta solicitud, puedes ignorar este correo de forma segura.</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendEmail({
+        to: currentEmail,
+        subject: 'Código de Confirmación - Cambio de Correo Electrónico',
+        html: emailHtml,
+      });
+    } catch (emailErr: any) {
+      console.error('[EMAIL ERROR] Error al enviar correo de cambio de email:', emailErr);
+      passwordSecurityService.cancelPendingRequest(user.id, 'EMAIL_CHANGE');
+      res.status(400).json({
+        success: false,
+        error: `No se pudo enviar el correo a ${currentEmail}: ${emailErr.message || 'Error en el servidor de correo SMTP'}`,
+      });
+      return;
+    }
+
+    auditSecurityEvent('EMAIL_CHANGE_REQUESTED', {
+      userId: user.id,
+      email: currentEmail,
+      ip: req.ip,
+      result: 'SUCCESS',
+      detail: `Nuevo correo solicitado: ${cleanEmail}`,
+    });
 
     res.json({
       success: true,
-      message: 'Correo electrónico de administrador actualizado con éxito en la base de datos. Debe iniciar sesión nuevamente.',
-      data: {
-        email: updatedUser.email,
-      }
+      message: `Código de confirmación enviado con éxito a tu correo actual (${currentEmail}).`,
     } as ApiResponse);
   } catch (error) {
     next(error);
   }
 });
 
+// POST /api/admin/settings/confirm-email-change
+router.post('/confirm-email-change', async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      res.status(400).json({ success: false, error: 'El código de confirmación es requerido.' });
+      return;
+    }
+
+    const user = req.user as UserPayload;
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      res.status(401).json({ success: false, error: 'No autorizado.' });
+      return;
+    }
+
+    const verifyRes = passwordSecurityService.verifyCode(user.id, 'EMAIL_CHANGE', String(code).trim());
+
+    if (verifyRes.status === 'LOCKED') {
+      auditSecurityEvent('EMAIL_CHANGE_LOCKED', {
+        userId: user.id,
+        email: user.email,
+        ip: req.ip,
+        result: 'LOCKED',
+      });
+      res.status(429).json({
+        success: false,
+        error: `Demasiados intentos fallidos. Tu cuenta está bloqueada temporalmente. Intenta nuevamente en ${verifyRes.remainingSeconds} segundos.`,
+        retryAfter: verifyRes.remainingSeconds,
+      } as ApiResponse);
+      return;
+    }
+
+    if (verifyRes.status === 'EXPIRED') {
+      res.status(400).json({
+        success: false,
+        error: 'El código de confirmación ha expirado o no existe ninguna solicitud pendiente. Solicita uno nuevo.',
+      } as ApiResponse);
+      return;
+    }
+
+    if (verifyRes.status === 'INVALID') {
+      if (verifyRes.isLockedNow) {
+        auditSecurityEvent('EMAIL_CHANGE_LOCKED', {
+          userId: user.id,
+          email: user.email,
+          ip: req.ip,
+          result: 'LOCKED',
+          attempts: verifyRes.attempts,
+        });
+        res.status(429).json({
+          success: false,
+          error: 'Has superado el límite de 5 intentos fallidos. Tu cuenta ha sido bloqueada temporalmente por 30 minutos.',
+          retryAfter: verifyRes.remainingLockoutSeconds,
+        } as ApiResponse);
+        return;
+      }
+
+      auditSecurityEvent('EMAIL_CHANGE_ATTEMPT_FAILED', {
+        userId: user.id,
+        email: user.email,
+        ip: req.ip,
+        result: 'FAILED',
+        attempts: verifyRes.attempts,
+      });
+
+      res.status(400).json({
+        success: false,
+        error: `El código ingresado es incorrecto. Te quedan ${verifyRes.remainingAttempts} intento(s).`,
+        remainingAttempts: verifyRes.remainingAttempts,
+      } as ApiResponse);
+      return;
+    }
+
+    // Success -> verifyRes.data contains newEmail
+    const newEmail = verifyRes.data;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { email: newEmail },
+    });
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    auditSecurityEvent('EMAIL_CHANGE_CONFIRMED', {
+      userId: user.id,
+      email: updatedUser.email,
+      ip: req.ip,
+      result: 'SUCCESS',
+    });
+
+    res.json({
+      success: true,
+      message: 'Correo electrónico de administrador actualizado con éxito. Debe iniciar sesión nuevamente.',
+      data: { email: updatedUser.email },
+    } as ApiResponse);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

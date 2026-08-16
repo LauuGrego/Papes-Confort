@@ -85,23 +85,50 @@ export default function FlyersCarousel() {
 
   const currentFlyer = flyers[currentIndex];
 
+  const aspectClass = (() => {
+    switch (currentFlyer.aspectRatio) {
+      case 'wide':
+        return 'aspect-[16/9] max-h-[320px] sm:max-h-[420px]';
+      case 'compact':
+        return 'aspect-[2.5/1] max-h-[200px] sm:max-h-[260px]';
+      case 'tall':
+        return 'aspect-[3/2] max-h-[380px] sm:max-h-[480px]';
+      case 'ultrawide':
+      default:
+        return 'aspect-[3.6/1] sm:aspect-[4.2/1] md:aspect-[4.5/1] max-h-[140px] sm:max-h-[180px] md:max-h-[220px]';
+    }
+  })();
+
+  const objectPositionStyle = (() => {
+    if (currentFlyer.objectPositionX !== undefined && currentFlyer.objectPositionY !== undefined) {
+      return `${currentFlyer.objectPositionX}% ${currentFlyer.objectPositionY}%`;
+    }
+    if (currentFlyer.objectPosition) {
+      return currentFlyer.objectPosition.replace('-', ' ');
+    }
+    return '50% 50%';
+  })();
+
+  const objectFitClass = currentFlyer.objectFit === 'contain' ? 'object-contain w-auto h-full mx-auto' : 'object-cover w-full h-full';
+
   return (
-    <div className="w-full bg-transparent">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="w-full bg-transparent flex justify-center items-center">
+      <div className="w-full max-w-7xl px-4 sm:px-6 flex justify-center items-center">
         <div
-          className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200/80 shadow-sm bg-slate-100 group max-h-[140px] sm:max-h-[180px] md:max-h-[220px]"
+          className={`relative overflow-hidden group w-full mx-auto flex items-center justify-center ${aspectClass}`}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Banner Cliqueable estilo Cetrogar (Bajo perfil de altura) */}
-          <Link href={currentFlyer.linkUrl || '/catalogo'} className="w-full block relative aspect-[3.6/1] sm:aspect-[4.2/1] md:aspect-[4.5/1]">
+          {/* Banner Cliqueable */}
+          <Link href={currentFlyer.linkUrl || '/catalogo'} className="w-full h-full flex items-center justify-center relative z-10">
             <img
               src={currentFlyer.imageUrl}
               alt={currentFlyer.title || 'Banner promocional Papes Confort'}
-              className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-[1.01]"
+              style={{ objectPosition: objectPositionStyle }}
+              className={`rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md ${objectFitClass} transition-transform duration-700 hover:scale-[1.01]`}
             />
           </Link>
 

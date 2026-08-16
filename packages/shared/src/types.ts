@@ -224,6 +224,19 @@ export interface SyncLogDto {
   errors: string | null;
 }
 
+export type FlyerAspectRatio = 'ultrawide' | 'wide' | 'compact' | 'tall';
+export type FlyerObjectFit = 'cover' | 'contain';
+export type FlyerObjectPosition =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right';
+
 export interface HomeFlyerDto {
   id: string;
   title: string;
@@ -234,6 +247,11 @@ export interface HomeFlyerDto {
   buttonText?: string;
   isActive: boolean;
   sortOrder: number;
+  aspectRatio?: FlyerAspectRatio;
+  objectFit?: FlyerObjectFit;
+  objectPosition?: string;
+  objectPositionX?: number;
+  objectPositionY?: number;
 }
 
 export interface PaymentFeatureCardDto {

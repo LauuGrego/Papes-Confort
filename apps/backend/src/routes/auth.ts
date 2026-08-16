@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens';
 import { ApiResponse, LoginResponseDto, UserPayload } from '@papes-confort/shared';
+import { prisma } from '@papes-confort/database';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.post('/login', (req, res, next) => {
 });
 
 // POST /api/auth/refresh
-router.post('/refresh', (req, res) => {
+router.post('/refresh', async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
@@ -58,12 +59,54 @@ router.post('/refresh', (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as UserPayload;
-    
+    const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as UserPayload & { iat?: number };
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        deletedAt: true,
+        passwordChangedAt: true,
+      },
+    });
+
+    if (!dbUser || !dbUser.isActive || dbUser.deletedAt !== null) {
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
+      res.status(401).json({
+        success: false,
+        error: 'Usuario inactivo o no autorizado',
+      } as ApiResponse);
+      return;
+    }
+
+    if (dbUser.passwordChangedAt && decoded.iat) {
+      const passwordChangedTime = dbUser.passwordChangedAt.getTime();
+      const tokenIssuedTime = decoded.iat * 1000;
+      if (tokenIssuedTime < passwordChangedTime - 1000) {
+        res.clearCookie('refreshToken', {
+          httpOnly: true,
+          secure: env.NODE_ENV === 'production',
+          sameSite: 'strict',
+        });
+        res.status(401).json({
+          success: false,
+          error: 'La sesión ha expirado por cambio de contraseña. Por favor inicia sesión nuevamente.',
+        } as ApiResponse);
+        return;
+      }
+    }
+
     const payload: UserPayload = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role,
     };
 
     const newAccessToken = generateAccessToken(payload);
@@ -76,6 +119,11 @@ router.post('/refresh', (req, res) => {
       },
     });
   } catch (error) {
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
     res.status(401).json({
       success: false,
       error: 'Invalid or expired refresh token',
