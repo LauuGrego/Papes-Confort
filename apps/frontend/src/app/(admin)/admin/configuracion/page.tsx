@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
 import {
@@ -23,9 +23,10 @@ import {
   Mail,
   Smartphone,
   CreditCard,
+  Move,
 } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
-import { HomeFlyerDto, PaymentFeatureCardDto } from '@papes-confort/shared';
+import { HomeFlyerDto, PaymentFeatureCardDto, FlyerAspectRatio, FlyerObjectFit} from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
   {
@@ -35,6 +36,9 @@ const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
     linkUrl: '/catalogo',
     isActive: true,
     sortOrder: 1,
+    aspectRatio: 'ultrawide',
+    objectFit: 'cover',
+    objectPosition: 'center',
   },
 ];
 
@@ -86,7 +90,49 @@ function AdminConfiguracionContent() {
   const [flyerTitle, setFlyerTitle] = useState('');
   const [flyerImageUrl, setFlyerImageUrl] = useState('');
   const [flyerIsActive, setFlyerIsActive] = useState(true);
+  const [flyerAspectRatio, setFlyerAspectRatio] = useState<FlyerAspectRatio>('ultrawide');
+  const [flyerObjectFit, setFlyerObjectFit] = useState<FlyerObjectFit>('cover');
+  const [flyerObjectPositionX, setFlyerObjectPositionX] = useState<number>(50);
+  const [flyerObjectPositionY, setFlyerObjectPositionY] = useState<number>(50);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number; startX: number; startY: number } | null>(null);
+
+  const handleBannerDragStart = (clientX: number, clientY: number) => {
+    if (!flyerImageUrl) return;
+    setIsDraggingBanner(true);
+    setDragStartPos({
+      x: clientX,
+      y: clientY,
+      startX: flyerObjectPositionX,
+      startY: flyerObjectPositionY,
+    });
+  };
+
+  const handleBannerDragMove = (clientX: number, clientY: number) => {
+    if (!isDraggingBanner || !dragStartPos || !previewContainerRef.current) return;
+    const rect = previewContainerRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const deltaX = clientX - dragStartPos.x;
+    const deltaY = clientY - dragStartPos.y;
+
+    const percentDeltaX = -(deltaX / rect.width) * 100;
+    const percentDeltaY = -(deltaY / rect.height) * 100;
+
+    const newX = Math.max(0, Math.min(100, Math.round(dragStartPos.startX + percentDeltaX)));
+    const newY = Math.max(0, Math.min(100, Math.round(dragStartPos.startY + percentDeltaY)));
+
+    setFlyerObjectPositionX(newX);
+    setFlyerObjectPositionY(newY);
+  };
+
+  const handleBannerDragEnd = () => {
+    setIsDraggingBanner(false);
+    setDragStartPos(null);
+  };
 
   // Modal State para Tarjetas Informativas
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
@@ -215,6 +261,10 @@ function AdminConfiguracionContent() {
     setFlyerTitle('');
     setFlyerImageUrl('');
     setFlyerIsActive(true);
+    setFlyerAspectRatio('ultrawide');
+    setFlyerObjectFit('cover');
+    setFlyerObjectPositionX(50);
+    setFlyerObjectPositionY(50);
     setIsFlyerModalOpen(true);
   };
 
@@ -223,12 +273,31 @@ function AdminConfiguracionContent() {
     setFlyerTitle(flyer.title || '');
     setFlyerImageUrl(flyer.imageUrl || '');
     setFlyerIsActive(flyer.isActive);
+    setFlyerAspectRatio(flyer.aspectRatio || 'ultrawide');
+    setFlyerObjectFit(flyer.objectFit || 'cover');
+
+    if (flyer.objectPositionX !== undefined && flyer.objectPositionY !== undefined) {
+      setFlyerObjectPositionX(flyer.objectPositionX);
+      setFlyerObjectPositionY(flyer.objectPositionY);
+    } else {
+      // Map string presets if exist
+      const pos = flyer.objectPosition || 'center';
+      if (pos.includes('top')) setFlyerObjectPositionY(0);
+      else if (pos.includes('bottom')) setFlyerObjectPositionY(100);
+      else setFlyerObjectPositionY(50);
+
+      if (pos.includes('left')) setFlyerObjectPositionX(0);
+      else if (pos.includes('right')) setFlyerObjectPositionX(100);
+      else setFlyerObjectPositionX(50);
+    }
+
     setIsFlyerModalOpen(true);
   };
 
   const handleSaveFlyerModal = async (e: React.FormEvent) => {
     e.preventDefault();
     let newFlyersList: HomeFlyerDto[] = [];
+    const formattedPosition = `${flyerObjectPositionX}% ${flyerObjectPositionY}%`;
 
     if (editingFlyer) {
       newFlyersList = flyers.map((f) =>
@@ -239,6 +308,11 @@ function AdminConfiguracionContent() {
               imageUrl: flyerImageUrl,
               linkUrl: '/catalogo',
               isActive: flyerIsActive,
+              aspectRatio: flyerAspectRatio,
+              objectFit: flyerObjectFit,
+              objectPosition: formattedPosition,
+              objectPositionX: flyerObjectPositionX,
+              objectPositionY: flyerObjectPositionY,
             }
           : f
       );
@@ -250,6 +324,11 @@ function AdminConfiguracionContent() {
         linkUrl: '/catalogo',
         isActive: flyerIsActive,
         sortOrder: flyers.length + 1,
+        aspectRatio: flyerAspectRatio,
+        objectFit: flyerObjectFit,
+        objectPosition: formattedPosition,
+        objectPositionX: flyerObjectPositionX,
+        objectPositionY: flyerObjectPositionY,
       };
       newFlyersList = [...flyers, newFlyer];
     }
@@ -1101,7 +1180,8 @@ function AdminConfiguracionContent() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveFlyerModal} className="overflow-y-auto p-6 space-y-4 flex-grow">
+            <form onSubmit={handleSaveFlyerModal} className="overflow-y-auto p-6 space-y-5 flex-grow">
+              {/* Referencia Interna */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Nombre / Referencia Interna del Banner
@@ -1122,24 +1202,15 @@ function AdminConfiguracionContent() {
                   Imagen del Banner (Adjuntar archivo)
                 </label>
                 
-                <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2.5">
-                  <ImageIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
-                    <p className="font-bold">Tamaño ideal recomendado para el Banner</p>
-                    <p className="text-amber-800 leading-relaxed text-[11px]">
-                      <strong>1200 x 400 píxeles</strong> (Proporción horizontal 3:1). Formatos soportados: JPG, PNG o WebP (Máx. 5 MB).
-                    </p>
-                  </div>
-                </div>
-
                 <div className="space-y-3">
                   {flyerImageUrl ? (
-                    <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between gap-4">
+                    <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2.5 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <img src={flyerImageUrl} alt="Preview" className="h-16 w-28 object-cover rounded-xl border border-slate-200" />
+                        <img src={flyerImageUrl} alt="Preview" className="h-14 w-24 object-cover rounded-xl border border-slate-200 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" /> Imagen adjunta lista para la portada
+                          <p className="text-xs font-bold text-slate-800 truncate">Imagen adjunta cargada</p>
+                          <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                            <CheckCircle className="h-3 w-3 shrink-0" /> Lista para la portada
                           </p>
                         </div>
                       </div>
@@ -1176,6 +1247,203 @@ function AdminConfiguracionContent() {
                       )}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Selector de Proporciones Predefinidas con Previsualizaciones de Tamaño */}
+              <div className="space-y-2 pt-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Proporción y Tamaño de Banner
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setFlyerAspectRatio('ultrawide')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                      flyerAspectRatio === 'ultrawide'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Ultrawide (4.5:1)</span>
+                      {flyerAspectRatio === 'ultrawide' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    {/* Miniatura visual de proporción */}
+                    <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
+                      <div className="w-full h-2.5 bg-slate-400/80 rounded-xs" />
+                    </div>
+                    <span className="text-[10px] text-slate-400">Banner delgado horizontal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFlyerAspectRatio('wide')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                      flyerAspectRatio === 'wide'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Estándar (16:9)</span>
+                      {flyerAspectRatio === 'wide' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    {/* Miniatura visual de proporción */}
+                    <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
+                      <div className="w-10 h-5 bg-slate-400/80 rounded-xs" />
+                    </div>
+                    <span className="text-[10px] text-slate-400">Hero clásico rectangular</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFlyerAspectRatio('compact')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                      flyerAspectRatio === 'compact'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Compacto (2.5:1)</span>
+                      {flyerAspectRatio === 'compact' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    {/* Miniatura visual de proporción */}
+                    <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
+                      <div className="w-12 h-4 bg-slate-400/80 rounded-xs" />
+                    </div>
+                    <span className="text-[10px] text-slate-400">Mediano balanceado</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFlyerAspectRatio('tall')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                      flyerAspectRatio === 'tall'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Alto (3:2)</span>
+                      {flyerAspectRatio === 'tall' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    {/* Miniatura visual de proporción */}
+                    <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
+                      <div className="w-8 h-6 bg-slate-400/80 rounded-xs" />
+                    </div>
+                    <span className="text-[10px] text-slate-400">Destacado de mayor altura</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modo de Ajuste (object-fit) */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Modo de Ajuste
+                </label>
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
+                  <button
+                    type="button"
+                    onClick={() => setFlyerObjectFit('cover')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      flyerObjectFit === 'cover'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Recortar y Llenar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFlyerObjectFit('contain')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      flyerObjectFit === 'contain'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Ajustar Entera sin Recorte
+                  </button>
+                </div>
+              </div>
+
+              {/* LIENZO DE ARRASTRE INTERACTIVO DIRECTO (MOUSE & TÁCTIL) */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Move className="h-3.5 w-3.5 text-brand-red" />
+                    <span>Ajuste de Posición (Haz clic/toca y arrastra la foto)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFlyerObjectPositionX(50);
+                      setFlyerObjectPositionY(50);
+                    }}
+                    className="text-[11px] font-bold text-brand-red hover:underline cursor-pointer"
+                  >
+                    Centrar (50% / 50%)
+                  </button>
+                </div>
+
+                {/* Contenedor Interactivo con Eventos de Arrastre */}
+                <div className="w-full flex justify-center items-center bg-transparent p-1">
+                  <div
+                    ref={previewContainerRef}
+                    onMouseDown={(e) => handleBannerDragStart(e.clientX, e.clientY)}
+                    onMouseMove={(e) => handleBannerDragMove(e.clientX, e.clientY)}
+                    onMouseUp={handleBannerDragEnd}
+                    onMouseLeave={handleBannerDragEnd}
+                    onTouchStart={(e) => {
+                      if (e.touches.length > 0) handleBannerDragStart(e.touches[0].clientX, e.touches[0].clientY);
+                    }}
+                    onTouchMove={(e) => {
+                      if (e.touches.length > 0) handleBannerDragMove(e.touches[0].clientX, e.touches[0].clientY);
+                    }}
+                    onTouchEnd={handleBannerDragEnd}
+                    onTouchCancel={handleBannerDragEnd}
+                    className={`w-full relative overflow-hidden flex justify-center items-center transition-all mx-auto select-none touch-none rounded-2xl border-2 border-slate-300 group ${
+                      isDraggingBanner ? 'cursor-grabbing border-brand-red ring-2 ring-brand-red/20' : 'cursor-grab hover:border-brand-red/60'
+                    } ${
+                      flyerAspectRatio === 'wide'
+                        ? 'aspect-[16/9]'
+                        : flyerAspectRatio === 'compact'
+                        ? 'aspect-[2.5/1]'
+                        : flyerAspectRatio === 'tall'
+                        ? 'aspect-[3/2]'
+                        : 'aspect-[4.5/1]'
+                    }`}
+                  >
+                    {/* Badge ayuda flotante */}
+                    {flyerImageUrl && (
+                      <div className="absolute top-2.5 right-2.5 z-20 bg-slate-900/80 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md border border-white/20 pointer-events-none flex items-center gap-1.5 shadow-md">
+                        <Move className="h-3 w-3 text-rose-400 animate-pulse" />
+                        <span>{isDraggingBanner ? 'Arrastrando...' : 'Arrastra la foto para ubicarla'}</span>
+                      </div>
+                    )}
+
+                    {flyerImageUrl ? (
+                      <img
+                        src={flyerImageUrl}
+                        alt="Ajuste Interactivo"
+                        draggable={false}
+                        style={{
+                          objectFit: flyerObjectFit,
+                          objectPosition: `${flyerObjectPositionX}% ${flyerObjectPositionY}%`,
+                        }}
+                        className={`transition-all duration-75 select-none ${
+                          flyerObjectFit === 'contain' ? 'w-auto h-full mx-auto' : 'w-full h-full'
+                        }`}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-xl flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-slate-50">
+                        <ImageIcon className="h-6 w-6 opacity-40 mb-1" />
+                        <span className="text-[11px] font-bold">Adjunta una imagen arriba para arrastrar y encuadrar</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
