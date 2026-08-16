@@ -263,56 +263,28 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Navigation Control Bar & Thumbnails below image */}
+          {/* Thumbnails list below image */}
           {product.images.length > 1 && (
-            <div className="space-y-3">
-              {/* Separate Previous / Next Control Bar */}
-              <div className="flex items-center justify-between px-2 py-1 bg-slate-50 border border-slate-100 rounded-2xl">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+              {product.images.map((img, idx) => (
                 <button
+                  key={img.id}
                   type="button"
-                  onClick={() => changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
+                  onMouseEnter={() => setIsZoomed(false)}
+                  onClick={() => changeImage(idx)}
+                  className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 border p-2 flex transition-all cursor-pointer ${
+                    activeImageIdx === idx
+                      ? 'border-brand-red ring-2 ring-brand-red/20 shadow-sm scale-105'
+                      : 'border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100'
+                  }`}
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span>Anterior</span>
+                  <img
+                    src={img.url}
+                    alt={`${product.name} vista ${idx + 1}`}
+                    className="h-full w-full object-contain"
+                  />
                 </button>
-
-                <span className="text-xs font-bold text-slate-500">
-                  Imagen {activeImageIdx + 1} de {product.images.length}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <span>Siguiente</span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Thumbnails list */}
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={img.id}
-                    type="button"
-                    onMouseEnter={() => setIsZoomed(false)}
-                    onClick={() => changeImage(idx)}
-                    className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 border p-2 flex transition-all cursor-pointer ${
-                      activeImageIdx === idx
-                        ? 'border-brand-red ring-2 ring-brand-red/20 shadow-sm scale-105'
-                        : 'border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img
-                      src={img.url}
-                      alt={`${product.name} vista ${idx + 1}`}
-                      className="h-full w-full object-contain"
-                    />
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           )}
         </div>
