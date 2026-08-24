@@ -68,6 +68,7 @@ router.post('/', async (req, res, next) => {
           name,
           description,
           basePrice,
+          listPrice,
           stock,
           brandName,
           gescomId,
@@ -152,6 +153,7 @@ router.post('/', async (req, res, next) => {
         }
 
         const numericPrice = Number(basePrice);
+        const numericListPrice = listPrice !== undefined && listPrice !== null ? Number(listPrice) : numericPrice;
         const numericStock = Number(stock);
         const baseSlug = slugify(gescomName) || `prod-${sku}`;
         const finalSlug = `${baseSlug}-${sku.toLowerCase()}`;
@@ -178,6 +180,7 @@ router.post('/', async (req, res, next) => {
               ...(description !== undefined && { description: String(description) }),
               ...(isActive !== undefined && { isActive: Boolean(isActive) }),
               basePrice: numericPrice,
+              listPrice: numericListPrice,
               stock: numericStock,
               brandId,
               productFamilyId,
@@ -207,6 +210,7 @@ router.post('/', async (req, res, next) => {
               description: description !== undefined ? String(description) : undefined,
               isActive: isActive !== undefined ? Boolean(isActive) : true,
               basePrice: numericPrice,
+              listPrice: numericListPrice,
               stock: numericStock,
               brandId,
               productFamilyId,

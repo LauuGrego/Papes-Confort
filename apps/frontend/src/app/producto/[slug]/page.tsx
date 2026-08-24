@@ -191,7 +191,7 @@ export default function ProductDetailPage() {
             <img
               src={imageUrl}
               alt={product.name}
-              className="max-h-full max-w-full object-contain transition-transform duration-150 ease-out pointer-events-none"
+              className="max-h-full max-w-full object-contain transition-transform duration-150 ease-out pointer-events-none mix-blend-multiply"
               style={{
                 transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                 transform: isZoomed ? 'scale(2.5)' : 'scale(1)',
@@ -265,23 +265,23 @@ export default function ProductDetailPage() {
 
           {/* Thumbnails list below image */}
           {product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+            <div className="flex gap-3 overflow-x-auto py-2 px-1 scrollbar-thin">
               {product.images.map((img, idx) => (
                 <button
                   key={img.id}
                   type="button"
                   onMouseEnter={() => setIsZoomed(false)}
                   onClick={() => changeImage(idx)}
-                  className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 border p-2 flex transition-all cursor-pointer ${
+                  className={`relative h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl overflow-hidden bg-slate-50 transition-all cursor-pointer ${
                     activeImageIdx === idx
-                      ? 'border-brand-red ring-2 ring-brand-red/20 shadow-sm scale-105'
-                      : 'border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100'
-                  }`}
+                      ? 'border-2 border-brand-red ring-2 ring-brand-red/20 shadow-md scale-105'
+                      : 'border border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100'
+                  } p-2 flex`}
                 >
                   <img
                     src={img.url}
                     alt={`${product.name} vista ${idx + 1}`}
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-contain mix-blend-multiply"
                   />
                 </button>
               ))}
@@ -303,22 +303,22 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Price Box */}
-          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 space-y-4">
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-black text-brand-black">
-                {formatPrice(product.finalPrice)}
-              </span>
-              {hasDiscount && (
-                <span className="text-sm text-slate-400 line-through">
-                  {formatPrice(product.basePrice)}
-                </span>
-              )}
+          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 space-y-2">
+            {/* Precio de Lista */}
+            <div className="text-xl md:text-2xl font-bold text-slate-800">
+              {formatPrice(product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice)}
             </div>
-            {hasDiscount && (
-              <p className="text-xs text-brand-red font-semibold">
-                ¡Ahorras {formatPrice(product.basePrice - product.finalPrice)} en esta compra!
-              </p>
-            )}
+
+            {/* Etiqueta Transferencia */}
+            <div className="text-sm md:text-base font-black text-brand-red uppercase tracking-wider">
+              TRANSFERENCIA {product.discountPercent > 0 ? product.discountPercent : (product.listPrice && product.listPrice > product.basePrice ? Math.round(((product.listPrice - product.basePrice) / product.listPrice) * 100) : 20)}% OFF
+            </div>
+
+            {/* Precio Transferencia */}
+            <div className="text-3xl md:text-4xl font-black text-brand-red">
+              {formatPrice(product.finalPrice)}
+            </div>
+          </div>
 
             {/* Stock Availability Indicator */}
             <div className="space-y-3 pt-1 border-t border-slate-100/50">
@@ -401,7 +401,6 @@ export default function ProductDetailPage() {
                 Consultar por WhatsApp
               </a>
             </div>
-          </div>
 
           {/* Key details checklist */}
           <div className="space-y-4 text-sm border-t border-b border-slate-100 py-6">

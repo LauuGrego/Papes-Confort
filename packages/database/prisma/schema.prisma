@@ -136,6 +136,7 @@ model Product {
   slug              String           @unique
   description       String?          @db.Text
   basePrice         Decimal          @db.Decimal(10, 2) @map("base_price")
+  listPrice         Decimal?         @db.Decimal(10, 2) @map("list_price")
   stock             Int              @default(0)
   brandId           String           @map("brand_id")
   weightKg          Decimal?         @db.Decimal(8, 2) @map("weight_kg")

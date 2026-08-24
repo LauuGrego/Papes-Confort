@@ -17,6 +17,7 @@ export interface SyncProductItem {
   name?: string;
   description?: string;
   basePrice: number;
+  listPrice?: number;
   stock: number;
   brandName?: string;
   gescomId?: number;

@@ -64,7 +64,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <img
           src={images[currentImgIdx]?.url}
           alt={product.name}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
           }}
@@ -138,15 +138,21 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <div className="border-t border-slate-50 pt-2 md:pt-4 mt-auto">
         <div className="flex items-center justify-between gap-2 mb-1 md:mb-3">
-          <div className="flex flex-wrap items-baseline gap-1 md:gap-2">
-            <span className="text-xs md:text-lg font-extrabold text-brand-black">
+          <div className="flex flex-col items-start gap-0.5">
+            {/* Precio de Lista */}
+            <span className="text-xs md:text-sm font-bold text-slate-800">
+              {formatPrice(product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice)}
+            </span>
+
+            {/* Etiqueta Transferencia */}
+            <span className="text-[10px] md:text-xs font-black text-brand-red uppercase tracking-wider">
+              TRANSFERENCIA {product.discountPercent > 0 ? product.discountPercent : (product.listPrice && product.listPrice > product.basePrice ? Math.round(((product.listPrice - product.basePrice) / product.listPrice) * 100) : 20)}% OFF
+            </span>
+
+            {/* Precio Transferencia */}
+            <span className="text-base md:text-xl font-black text-brand-red">
               {formatPrice(product.finalPrice)}
             </span>
-            {hasDiscount && (
-              <span className="text-[9px] md:text-xs text-slate-400 line-through">
-                {formatPrice(product.basePrice)}
-              </span>
-            )}
           </div>
           
           {/* Botón rápido Agregar al Carrito */}
