@@ -22,11 +22,8 @@ export default function AdminProductosPage() {
 
   // Form Fields
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [warrantyMonths, setWarrantyMonths] = useState(12);
-  const [weightKg, setWeightKg] = useState<number | ''>('');
-  const [dimensions, setDimensions] = useState('');
   const [specs, setSpecs] = useState<{ key: string; val: string }[]>([]);
 
   const fetchProducts = async (pNum: number, searchVal: string, statusVal: string) => {
@@ -62,17 +59,16 @@ export default function AdminProductosPage() {
   const openEditModal = (product: ProductDto) => {
     setEditingProduct(product);
     setName(product.name);
-    setDescription(product.description || '');
     setDiscountPercent(product.discountPercent);
     setWarrantyMonths(product.warrantyMonths || 12);
-    setWeightKg(product.weightKg !== null ? product.weightKg : '');
-    setDimensions(product.dimensions || '');
 
-    // Map specs Record to array
-    const mappedSpecs = Object.entries(product.specs || {}).map(([k, v]) => ({
-      key: k,
-      val: String(v),
-    }));
+    // Map specs Record to array (filtering out internal ivaPercent metadata)
+    const mappedSpecs = Object.entries(product.specs || {})
+      .filter(([k]) => k !== 'ivaPercent')
+      .map(([k, v]) => ({
+        key: k,
+        val: String(v),
+      }));
     setSpecs(mappedSpecs);
 
     setSaveError(null);
@@ -109,11 +105,8 @@ export default function AdminProductosPage() {
     });
 
     const body = {
-      description,
       discountPercent: Number(discountPercent),
       warrantyMonths: Number(warrantyMonths),
-      weightKg: weightKg === '' ? null : Number(weightKg),
-      dimensions: dimensions.trim() || null,
       specs: specsRecord,
     };
 
@@ -362,19 +355,8 @@ export default function AdminProductosPage() {
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción Larga</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all resize-none"
-                />
-              </div>
-
-              {/* Discount, Warranty, Weight, Dimensions */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Discount & Warranty */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descuento (%)</label>
                   <input
@@ -393,26 +375,6 @@ export default function AdminProductosPage() {
                     min="1"
                     value={warrantyMonths}
                     onChange={(e) => setWarrantyMonths(parseInt(e.target.value, 10) || 12)}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Peso (Kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Dimensiones (AlxAnxPr)</label>
-                  <input
-                    type="text"
-                    placeholder="120x60x60"
-                    value={dimensions}
-                    onChange={(e) => setDimensions(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
                   />
                 </div>

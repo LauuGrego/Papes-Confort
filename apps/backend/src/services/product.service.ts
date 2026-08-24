@@ -4,9 +4,19 @@ import { ProductDto, BrandDto, ProductTypeDto, ProductCategoryDto, ProductImageD
 export async function mapProductToDto(product: any, safetyStock?: number): Promise<ProductDto> {
   safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
-  const basePriceNum = Number(product.basePrice);
-  const discountPercentNum = Number(product.discountPercent);
-  const finalPriceNum = basePriceNum * (1 - discountPercentNum / 100);
+  const basePriceNum = Number(product.basePrice); // AVenta (Contado desde GesCom)
+  const listPriceNum = product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
+    ? Number(product.listPrice)
+    : basePriceNum; // AValor (Lista desde GesCom, fallback a AVenta si aún no se cargó AValor)
+
+  const offerDiscount = Number(product.discountPercent);
+
+  const finalPriceNum = offerDiscount > 0
+    ? listPriceNum * (1 - offerDiscount / 100)
+    : basePriceNum;
+
+  // discountPercent solo representa ofertas promocionales activas creadas explícitamente
+  const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
 
   const brandDto: BrandDto = {
     id: product.brand.id,
@@ -58,6 +68,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     slug: product.slug,
     description: product.description,
     basePrice: basePriceNum,
+    listPrice: listPriceNum,
     finalPrice: finalPriceNum,
     discountPercent: discountPercentNum,
     stock: product.stock,

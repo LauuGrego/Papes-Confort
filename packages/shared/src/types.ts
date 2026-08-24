@@ -76,6 +76,7 @@ export interface ProductDto {
   slug: string;
   description: string | null;
   basePrice: number;
+  listPrice: number;
   finalPrice: number;       // Campo computado: basePrice * (1 - discountPercent / 100)
   discountPercent: number;
   stock: number;
@@ -315,6 +316,7 @@ export interface GesComSyncProduct {
   sku: string;
   gescomName: string;
   basePrice: number;
+  listPrice?: number;
   stock: number;
   brandName: string;
   gescomId?: string;
@@ -334,6 +336,7 @@ export interface CreateProductPayload {
   slug: string;
   description?: string;
   basePrice: number;
+  listPrice?: number;
   discountPercent: number;
   stock: number;
   brandId: string;

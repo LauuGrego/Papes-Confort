@@ -45,8 +45,7 @@ export async function getCartDto(sessionId: string): Promise<CartDto> {
     const imageUrl = primaryImage ? primaryImage.url : null;
     const unitPrice = Number(item.unitPriceAtAdd);
     const discount = Number(product.discountPercent);
-    const priceWithDiscount = unitPrice * (1 - discount / 100);
-    const total = priceWithDiscount * item.quantity;
+    const total = unitPrice * item.quantity;
 
     return {
       productId: item.productId,
@@ -108,7 +107,15 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
     throw new Error(`Stock insuficiente. Solo quedan ${stockVisible} unidades disponibles.`);
   }
 
-  const unitPrice = Number(product.basePrice);
+  const basePrice = Number(product.basePrice);
+  const listPrice = product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
+    ? Number(product.listPrice)
+    : (basePrice > 0 ? basePrice / 0.8 : basePrice);
+  const offerDiscount = Number(product.discountPercent);
+
+  const unitPrice = offerDiscount > 0
+    ? listPrice * (1 - offerDiscount / 100)
+    : basePrice;
 
   await prisma.cartItem.upsert({
     where: {

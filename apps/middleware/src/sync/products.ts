@@ -11,6 +11,7 @@ interface GescomStockRow extends RowDataPacket {
   KeyID: number;
   ACod: string | number;
   ADes: string;
+  AValor: number | string;
   AVenta: number | string;
   AExis: number | string;
   ABarra: string | null;
@@ -21,6 +22,8 @@ interface GescomStockRow extends RowDataPacket {
   AMar: string | number | null;
   ANOVENTA: number | null;
   ADESACT: number | null;
+  ANota: string | null;
+  ListaLpor?: number | string | null;
   RubroName?: string | null;
   SubrubroName?: string | null;
   BrandName?: string | null;
@@ -28,8 +31,8 @@ interface GescomStockRow extends RowDataPacket {
 
 import { loadSyncState, saveSyncState } from './state';
 
-function computeProductHash(row: GescomStockRow): string {
-  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AVenta}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.RubroName || ''}|${row.SubrubroName || ''}|${row.BrandName || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}`;
+function computeProductHash(row: GescomStockRow, listPrice: number): string {
+  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AValor || ''}|${row.AVenta}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.RubroName || ''}|${row.SubrubroName || ''}|${row.BrandName || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${row.ANota || ''}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -44,6 +47,7 @@ export async function syncProductsFromGescom() {
         sa.KeyID, 
         sa.ACod, 
         sa.ADes, 
+        sa.AValor,
         sa.AVenta, 
         sa.AExis, 
         sa.ABarra, 
@@ -54,10 +58,14 @@ export async function syncProductsFromGescom() {
         sa.AMar, 
         sa.ANOVENTA, 
         sa.ADESACT,
+        san.ANota,
+        vl.LPOR AS ListaLpor,
         sr.RDes AS RubroName,
         ss.SDes AS SubrubroName,
         sm.MDes AS BrandName
       FROM Stock_Articulo sa
+      LEFT JOIN Stock_ArtiNota san ON sa.ACod = san.ACod
+      LEFT JOIN Ventas_Listas vl ON vl.LCOD = '01'
       LEFT JOIN Stock_Rubros sr ON sa.ARub = sr.RCod
       LEFT JOIN Stock_SubRubro ss ON sa.ASub = ss.SCod
       LEFT JOIN Stock_Marcas sm ON sa.AMar = sm.MCod`
@@ -76,7 +84,11 @@ export async function syncProductsFromGescom() {
 
     for (const row of rows) {
       const sku = String(row.ACod).trim();
-      const currentHash = computeProductHash(row);
+      const basePrice = Number(row.AVenta) || 0;
+      const listaLpor = row.ListaLpor !== null && row.ListaLpor !== undefined ? Number(row.ListaLpor) : 25;
+      const listPrice = Math.round(basePrice * (1 + listaLpor / 100) * 100) / 100;
+
+      const currentHash = computeProductHash(row, listPrice);
       const savedHash = syncState.products[sku];
 
       if (savedHash === currentHash) {
@@ -110,8 +122,9 @@ export async function syncProductsFromGescom() {
         sku,
         gescomName: name,
         name,
-        description: undefined,
-        basePrice: Number(row.AVenta) || 0,
+        description: row.ANota && String(row.ANota).trim() ? String(row.ANota).trim() : undefined,
+        basePrice,
+        listPrice,
         stock: rawStock,
         gescomId: Number(row.KeyID),
         barcode,

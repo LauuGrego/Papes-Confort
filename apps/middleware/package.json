@@ -6,6 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "recon": "tsx src/scripts/recon.ts",
+    "explore-listas": "tsx src/scripts/explore-listas-notas.ts",
+    "build:exe": "npx esbuild src/scripts/explore-listas-notas.ts --bundle --platform=node --target=node18 --outfile=dist/explore-listas-notas.cjs && npx pkg@5.8.1 dist/explore-listas-notas.cjs -t node18-win-x64 -o dist/explore-listas-notas.exe",
     "upload-images": "tsx src/scripts/upload-existing-images.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"

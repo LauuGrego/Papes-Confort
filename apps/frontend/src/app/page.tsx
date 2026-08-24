@@ -1,24 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, MapPin, Search, X } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import PaymentMethods from '../components/PaymentMethods';
 import FlyersCarousel from '../components/FlyersCarousel';
 
 export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/catalogo?search=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      router.push('/catalogo');
-    }
-  };
 
   const handleQuickSearch = (term: string) => {
     router.push(`/catalogo?search=${encodeURIComponent(term)}`);
@@ -44,53 +34,22 @@ export default function HomePage() {
               El asesoramiento personalizado y el servicio posventa que nos caracteriza
             </p>
 
-            {/* Search Bar Form for Landing Page */}
-            <form onSubmit={handleSearch} className="pt-2 max-w-xl space-y-3">
-              <div className="relative flex items-center group">
-                <input
-                  type="text"
-                  placeholder="Buscar por marca, rubro, nombre (ej. Heladera, Sommier)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-28 py-3.5 rounded-2xl border border-slate-200 bg-white text-sm text-brand-black placeholder-slate-400 outline-none shadow-sm focus:border-brand-red/50 focus:ring-4 focus:ring-brand-red/10 transition-all duration-200"
-                />
-                <Search className="absolute left-4 h-5 w-5 text-slate-400 group-focus-within:text-brand-red transition-colors" />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-24 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Limpiar búsqueda"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+            {/* Popular search terms tags */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-1">
+              <span className="font-semibold text-slate-400">Búsquedas populares:</span>
+              {['Colchones', 'Heladeras', 'Televisores', 'Lavarropas', 'Aires'].map((term) => (
                 <button
-                  type="submit"
-                  className="absolute right-1.5 px-5 py-2.5 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all duration-200 shadow-sm hover:shadow cursor-pointer flex items-center gap-1.5"
+                  key={term}
+                  type="button"
+                  onClick={() => handleQuickSearch(term)}
+                  className="bg-white/80 border border-slate-200/80 hover:border-brand-red/30 hover:bg-brand-red/5 hover:text-brand-red px-3 py-1 rounded-xl transition-all cursor-pointer text-slate-600 font-medium shadow-2xs"
                 >
-                  <Search className="h-3.5 w-3.5" />
-                  <span>Buscar</span>
+                  {term}
                 </button>
-              </div>
+              ))}
+            </div>
 
-              {/* Suggestions / Tags */}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="font-semibold text-slate-400">Popular:</span>
-                {['Colchones', 'Heladeras', 'Televisores', 'Lavarropas', 'Aires'].map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => handleQuickSearch(term)}
-                    className="bg-white/80 border border-slate-200/80 hover:border-brand-red/30 hover:bg-brand-red/5 hover:text-brand-red px-2.5 py-1 rounded-xl transition-all cursor-pointer text-slate-600 font-medium"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </form>
-
-            <div className="pt-2 flex flex-wrap gap-4">
+            <div className="pt-3 flex flex-wrap gap-4">
               <Link
                 href="/catalogo"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-8 py-4 text-sm font-semibold text-white hover:bg-brand-red-dark shadow-[0_4px_20px_rgba(228,20,20,0.25)] hover:shadow-[0_6px_25px_rgba(228,20,20,0.35)] transition-all duration-300 transform hover:-translate-y-0.5 group"
