@@ -261,6 +261,20 @@ router.post('/', async (req, res, next) => {
       },
     });
 
+    // Automatically purge sync logs older than 7 days to avoid inflating the database
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      await prisma.syncLog.deleteMany({
+        where: {
+          startedAt: {
+            lt: sevenDaysAgo,
+          },
+        },
+      });
+    } catch (purgeErr) {
+      console.error('Error auto-purging old sync logs:', purgeErr);
+    }
+
     res.json({
       success: true,
       data: {

@@ -33,7 +33,18 @@ async function bootstrap() {
   startImageWatcher();
 }
 
+// Global safety handlers to prevent process termination on unhandled errors/rejections
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception detected (process preserved):', { error: error.message, stack: error.stack });
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  logger.error('Unhandled Rejection detected (process preserved):', {
+    reason: reason?.message || reason,
+    stack: reason?.stack,
+  });
+});
+
 bootstrap().catch((error) => {
   logger.error('Fatal error bootstrapping middleware', { error: error.message, stack: error.stack });
-  process.exit(1);
 });

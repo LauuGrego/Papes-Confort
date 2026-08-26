@@ -134,16 +134,16 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 md:h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo and Text */}
-        <Link href="/" className="flex items-center gap-3 group shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
           <img
             src="/images/logo/isotipo.svg"
             alt="Isotipo Papes Confort"
-            className="h-[45px] w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
+            className="h-9 w-9 sm:h-[45px] sm:w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
           />
           <div className="flex flex-col">
-            <span className="font-display text-base sm:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
+            <span className="font-display text-sm sm:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
               PAPES CONFORT
             </span>
             <span className="hidden sm:block text-xs tracking-widest text-slate-500 uppercase font-light -mt-0.5 whitespace-nowrap">
@@ -421,34 +421,6 @@ export default function Header() {
 
                 {/* Dropdown Menu Box */}
                 <div className="absolute right-0 mt-2.5 w-72 origin-top-right rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 z-20 flex flex-col gap-1 max-h-[85vh] overflow-y-auto custom-scrollbar">
-                  {/* Buscador Móvil */}
-                  <form
-                    onSubmit={(e) => {
-                      setMenuOpen(false);
-                      handleSearch(e);
-                    }}
-                    className="relative flex items-center mb-1 group"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Buscar en el sitio..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/50 focus:bg-white transition-all"
-                    />
-                    <Search className="absolute left-3 h-3.5 w-3.5 text-slate-400 group-focus-within:text-brand-red transition-colors" />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-                        aria-label="Limpiar búsqueda"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </form>
-
                   {/* Navegación móvil */}
                   <div className="border-b border-slate-100 pb-2 mb-2 flex flex-col gap-1">
                     <Link
@@ -640,6 +612,30 @@ export default function Header() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Barra de búsqueda Móvil (Visible siempre en pantalla en dispositivos móviles) */}
+      <div className="md:hidden px-4 pb-3 pt-0.5">
+        <form onSubmit={handleSearch} className="relative flex items-center group w-full">
+          <input
+            type="text"
+            placeholder="Buscar marcas, rubros, productos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-slate-50/90 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/50 focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all duration-200 shadow-2xs"
+          />
+          <Search className="absolute left-3 h-3.5 w-3.5 text-slate-400 group-focus-within:text-brand-red transition-colors" />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </form>
       </div>
     </header>
   );
