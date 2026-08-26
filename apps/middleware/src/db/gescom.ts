@@ -14,6 +14,10 @@ export const gescomPool = mysql.createPool({
   queueLimit: 0,
 });
 
+gescomPool.pool.on('error', (err: any) => {
+  logger.error('GesCom MySQL Pool Error:', { error: err.message });
+});
+
 export async function testGescomConnection(): Promise<boolean> {
   try {
     const connection = await gescomPool.getConnection();

@@ -136,6 +136,10 @@ export async function startImageWatcher() {
     },
   });
 
+  watcher.on('error', (error) => {
+    logger.error('[Realtime Watcher] FSWatcher error encountered:', { error: error.message });
+  });
+
   watcher.on('add', async (filePath) => {
     try {
       const filename = path.basename(filePath);
