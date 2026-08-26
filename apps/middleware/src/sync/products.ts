@@ -30,9 +30,16 @@ interface GescomStockRow extends RowDataPacket {
 }
 
 import { loadSyncState, saveSyncState } from './state';
+import { cleanGescomText } from '../utils/encoding';
 
 function computeProductHash(row: GescomStockRow, listPrice: number): string {
-  const dataString = `${row.ACod}|${row.ADes || ''}|${row.AValor || ''}|${row.AVenta}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${row.RubroName || ''}|${row.SubrubroName || ''}|${row.BrandName || ''}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${row.ANota || ''}`;
+  const name = cleanGescomText(row.ADes) || '';
+  const note = cleanGescomText(row.ANota) || '';
+  const rubroName = cleanGescomText(row.RubroName) || '';
+  const subrubroName = cleanGescomText(row.SubrubroName) || '';
+  const brandName = cleanGescomText(row.BrandName) || '';
+
+  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -97,24 +104,22 @@ export async function syncProductsFromGescom() {
       }
 
       const rawStock = Number(row.AExis) || 0;
-      const name = String(row.ADes || '').trim();
+      const name = cleanGescomText(row.ADes) || '';
+      const description = cleanGescomText(row.ANota);
 
       const barcode = row.ABarra && String(row.ABarra).trim() ? String(row.ABarra).trim() : undefined;
       const ivaPercent = row.AIVA !== null && row.AIVA !== undefined ? Number(row.AIVA) : undefined;
-      const unit = row.AUNI && String(row.AUNI).trim() ? String(row.AUNI).trim() : undefined;
+      const unit = cleanGescomText(row.AUNI);
 
       // Extract descriptive names with fallbacks to code strings
-      const rubro = row.RubroName && String(row.RubroName).trim() 
-        ? String(row.RubroName).trim() 
-        : (row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined);
+      const rubro = cleanGescomText(row.RubroName)
+        || (row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined);
 
-      const subrubro = row.SubrubroName && String(row.SubrubroName).trim() 
-        ? String(row.SubrubroName).trim() 
-        : (row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined);
+      const subrubro = cleanGescomText(row.SubrubroName)
+        || (row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined);
 
-      const brandName = row.BrandName && String(row.BrandName).trim() 
-        ? String(row.BrandName).trim() 
-        : (row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined);
+      const brandName = cleanGescomText(row.BrandName)
+        || (row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined);
 
       const isActive = Number(row.ANOVENTA) !== 1 && Number(row.ADESACT) !== 1;
 
@@ -122,7 +127,7 @@ export async function syncProductsFromGescom() {
         sku,
         gescomName: name,
         name,
-        description: row.ANota && String(row.ANota).trim() ? String(row.ANota).trim() : undefined,
+        description,
         basePrice,
         listPrice,
         stock: rawStock,

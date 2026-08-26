@@ -8,6 +8,7 @@ export const gescomPool = mysql.createPool({
   user: config.gescomDb.user,
   password: config.gescomDb.password,
   database: config.gescomDb.database,
+  charset: 'latin1',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
