@@ -37,4 +37,29 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.delete('/', async (req, res, next) => {
+  try {
+    const days = req.query.days ? parseInt(req.query.days as string, 10) : 7;
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const deleted = await prisma.syncLog.deleteMany({
+      where: {
+        startedAt: {
+          lt: cutoffDate,
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        deletedCount: deleted.count,
+        cutoffDate,
+      },
+    } as ApiResponse);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
