@@ -85,6 +85,8 @@ async function main() {
       await copyTable('warranties', tx.warranty, prodPrisma.warranty);
       await copyTable('settings', tx.setting, prodPrisma.setting);
       await copyTable('sync_logs', tx.syncLog, prodPrisma.syncLog);
+      await copyTable('offers', tx.offer, prodPrisma.offer);
+      await copyTable('offer_products', tx.offerProduct, prodPrisma.offerProduct);
 
       console.log('    Restaurando restricciones de claves foráneas...');
       await tx.$executeRawUnsafe("SET session_replication_role = 'origin';");
