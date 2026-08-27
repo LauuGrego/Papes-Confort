@@ -31,7 +31,9 @@ export interface PaginatedResponse<T> {
 export interface UserPayload {
   id: string;
   email: string;
-  role: UserRole;
+  role: UserRole | 'CUSTOMER';
+  type: 'admin' | 'customer';
+  name?: string;
 }
 
 // ==========================================
@@ -150,6 +152,7 @@ export interface PromotionDto {
 export interface CartDto {
   id: string;
   sessionId: string;
+  customerId?: string | null;
   status: CartStatus;
   items: CartItemDto[];
   subtotal: number;       // Campo computado: sum(item.total)
@@ -270,16 +273,81 @@ export type SettingsMap = Record<SettingKey, string | number | boolean>;
 // 3. Payloads (Requests / Auth / ABMs)
 // ==========================================
 
+export interface CustomerDto {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  cuilCuit: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postalCode: string | null;
+  marketingOptIn: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // Autenticación
 export interface LoginPayload {
   email: string;
   password?: string; // opcional si se implementa login sin contraseña (magic links) o estándar
 }
 
+export interface RegisterCustomerPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  cuilCuit?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  marketingOptIn?: boolean;
+}
+
+export interface RegisterConfirmPayload {
+  email: string;
+  code: string;
+}
+
+export interface UpdateCustomerPayload {
+  name?: string;
+  phone?: string | null;
+  cuilCuit?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+  marketingOptIn?: boolean;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordConfirmPayload {
+  code: string;
+}
+
+export interface ChangeEmailRequestPayload {
+  newEmail: string;
+  currentPassword: string;
+}
+
+export interface ChangeEmailConfirmPayload {
+  code: string;
+}
+
 export interface LoginResponseDto {
   user: UserPayload;
   token: string;
+  customer?: CustomerDto;
 }
+
+export type CustomerAuthResponseDto = LoginResponseDto;
 
 // Checkout
 export interface CheckoutPayload {

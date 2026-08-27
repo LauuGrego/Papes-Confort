@@ -21,8 +21,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Prisma
-packages/database/prisma/migrations/
 
 # Logs
 *.log

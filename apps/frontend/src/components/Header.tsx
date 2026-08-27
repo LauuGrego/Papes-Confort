@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  ShoppingBag,
+  ShoppingCart,
   User,
   LayoutDashboard,
   LogOut,
@@ -17,6 +17,7 @@ import {
   Award,
   Sparkles,
   Search,
+  Package,
 } from 'lucide-react';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
@@ -47,8 +48,9 @@ interface Brand {
 
 export default function Header() {
   const { totalItems, load } = useCartStore();
-  const { isAuthenticated, clearAuth } = useAuthStore();
+  const { user, customer, isAuthenticated, clearAuth } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -79,16 +81,23 @@ export default function Header() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      if (user?.type === 'customer') {
+        await fetchApi('/api/customer/auth/logout', { method: 'POST' });
+      } else {
+        await fetchApi('/api/auth/logout', { method: 'POST' });
+      }
+    } catch {}
+    clearAuth();
+    if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/mi-cuenta'))) {
+      router.push('/');
+    }
+  };
+
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    if (isAuthenticated && pathname && !pathname.startsWith('/admin')) {
-      fetchApi('/api/auth/logout', { method: 'POST' });
-      clearAuth();
-    }
-  }, [pathname, isAuthenticated, clearAuth]);
 
   useEffect(() => {
     if (pathname && pathname.startsWith('/admin')) return;
@@ -120,12 +129,6 @@ export default function Header() {
       window.removeEventListener('offers-updated', handleOffersUpdated);
     };
   }, [pathname]);
-
-  const handleLogout = async () => {
-    await fetchApi('/api/auth/logout', { method: 'POST' });
-    clearAuth();
-    window.location.href = '/';
-  };
 
   // Hide store header on admin pages so admin layout renders its own single header & sidebar
   if (pathname?.startsWith('/admin')) {
@@ -350,7 +353,7 @@ export default function Header() {
             className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
             aria-label="Carrito de compras"
           >
-            <ShoppingBag className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+            <ShoppingCart className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
             {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
                 {totalItems}
@@ -358,34 +361,95 @@ export default function Header() {
             )}
           </Link>
 
-          {/* Autenticación / Panel Admin */}
+          {/* Autenticación / Cuenta / Panel Admin */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
-              <Link
-                href="/admin"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 group"
-                title="Panel de Administración"
-                aria-label="Panel de Administración"
-              >
-                <LayoutDashboard className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 group cursor-pointer"
-                title="Cerrar Sesión"
-                aria-label="Cerrar Sesión"
-              >
-                <LogOut className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-              </button>
-            </div>
+            user?.type === 'admin' ? (
+              <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                <Link
+                  href="/admin"
+                  className="flex h-10 px-3.5 items-center gap-2 rounded-full border border-brand-red/20 hover:border-brand-red bg-brand-red/5 hover:bg-brand-red text-brand-red hover:text-white transition-all duration-200 text-xs font-bold shadow-sm"
+                  title="Panel de Administración"
+                  aria-label="Panel de Administración"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Panel Admin</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-all duration-200 cursor-pointer"
+                  title="Cerrar Sesión"
+                  aria-label="Cerrar Sesión"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative border-l border-slate-100 pl-3">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex h-10 items-center gap-2 px-3.5 rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer group"
+                  aria-expanded={userDropdownOpen}
+                  aria-label="Menú de usuario"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">
+                    <User className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="max-w-[100px] truncate">
+                    {customer?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Mi Cuenta'}
+                  </span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {userDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black/5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                        <p className="text-xs font-bold text-brand-black truncate">
+                          {customer?.name || user?.name || 'Cliente'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                      </div>
+                      <Link
+                        href="/mi-cuenta"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-colors"
+                      >
+                        <User className="h-4 w-4" />
+                        Mis Datos
+                      </Link>
+                      <Link
+                        href="/mi-cuenta/pedidos"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-colors"
+                      >
+                        <Package className="h-4 w-4" />
+                        Mis Pedidos
+                      </Link>
+                      <div className="my-1 border-t border-slate-100" />
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors w-full text-left cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4 text-red-400" />
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
           ) : (
             <Link
-              href="/admin/login"
+              href="/ingresar"
               className="flex h-10 px-4 items-center justify-center gap-2 rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red bg-slate-50 hover:bg-slate-100 group shrink-0"
-              aria-label="Ingresar al Panel de Control"
+              aria-label="Ingresar a mi cuenta"
             >
               <User className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-              <span className="hidden sm:inline">Acceso Admin</span>
+              <span>Ingresar</span>
             </Link>
           )}
         </div>
@@ -565,7 +629,7 @@ export default function Header() {
                     className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <ShoppingBag className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                      <ShoppingCart className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
                       <span>Mi Carrito</span>
                     </div>
                     {totalItems > 0 && (
@@ -575,37 +639,70 @@ export default function Header() {
                     )}
                   </Link>
 
-                  {/* Autenticación / Panel */}
+                  {/* Autenticación / Cuenta / Panel */}
                   {isAuthenticated ? (
+                    user?.type === 'admin' ? (
+                      <>
+                        <Link
+                          href="/admin"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
+                        >
+                          <LayoutDashboard className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                          <span>Panel Admin</span>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50 transition-all text-left w-full cursor-pointer group"
+                        >
+                          <LogOut className="h-4.5 w-4.5 text-red-400 group-hover:text-red-500 transition-colors" />
+                          <span>Cerrar Sesión</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          href="/mi-cuenta"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
+                        >
+                          <User className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                          <span>Mi Cuenta ({customer?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Perfil'})</span>
+                        </Link>
+                        <Link
+                          href="/mi-cuenta/pedidos"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
+                        >
+                          <Package className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                          <span>Mis Pedidos</span>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50 transition-all text-left w-full cursor-pointer group"
+                        >
+                          <LogOut className="h-4.5 w-4.5 text-red-400 group-hover:text-red-500 transition-colors" />
+                          <span>Cerrar Sesión</span>
+                        </button>
+                      </>
+                    )
+                  ) : (
                     <>
                       <Link
-                        href="/admin"
+                        href="/ingresar"
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
                       >
-                        <LayoutDashboard className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
-                        <span>Panel Admin</span>
+                        <User className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                        <span>Ingresar / Crear Cuenta</span>
                       </Link>
-                      <button
-                        onClick={() => {
-                          setMenuOpen(false);
-                          handleLogout();
-                        }}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50 transition-all text-left w-full cursor-pointer group"
-                      >
-                        <LogOut className="h-4.5 w-4.5 text-red-400 group-hover:text-red-500 transition-colors" />
-                        <span>Cerrar Sesión</span>
-                      </button>
                     </>
-                  ) : (
-                    <Link
-                      href="/admin/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
-                    >
-                      <User className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
-                      <span>Acceso Admin</span>
-                    </Link>
                   )}
                 </div>
               </>
