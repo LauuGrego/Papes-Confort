@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  ShoppingBag,
+  ShoppingCart,
   User,
   LayoutDashboard,
   LogOut,
@@ -350,7 +350,7 @@ export default function Header() {
             className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
             aria-label="Carrito de compras"
           >
-            <ShoppingBag className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+            <ShoppingCart className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
             {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
                 {totalItems}
@@ -565,7 +565,7 @@ export default function Header() {
                     className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
                   >
                     <div className="flex items-center gap-3">
-                      <ShoppingBag className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                      <ShoppingCart className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
                       <span>Mi Carrito</span>
                     </div>
                     {totalItems > 0 && (

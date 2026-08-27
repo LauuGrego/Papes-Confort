@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search, X, ShoppingCart } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
@@ -380,7 +380,10 @@ export default function ProductDetailPage() {
                 ) : product.stockVisible <= 0 ? (
                   'Sin stock disponible'
                 ) : (
-                  'Agregar al Carrito'
+                  <>
+                    <ShoppingCart className="h-5 w-5 shrink-0" />
+                    Agregar al Carrito
+                  </>
                 )}
               </button>
 
