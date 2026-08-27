@@ -29,7 +29,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated, clearAuth } = useAuthStore();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -51,13 +51,16 @@ export default function AdminLayout({
       return;
     }
 
-    if (!isAuthenticated) {
-      clearAuth();
-      router.push('/admin/login');
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!isAuthenticated || user?.type !== 'admin') {
+      router.replace('/ingresar?redirect=/admin');
     } else {
       setCheckingAuth(false);
     }
-  }, [isAuthenticated, pathname, router, clearAuth]);
+  }, [isAuthenticated, user, hasHydrated, pathname, router]);
 
   const handleLogout = async () => {
     await fetchApi('/api/auth/logout', { method: 'POST' });

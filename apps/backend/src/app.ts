@@ -17,6 +17,8 @@ import settingsRouter from './routes/settings';
 import cartRouter from './routes/cart';
 import offersRouter from './routes/offers';
 import adminOffersRouter from './routes/admin/offers';
+import customerAuthRouter from './routes/customer-auth';
+import customerAccountRouter from './routes/customer-account';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -37,6 +39,8 @@ app.use(passport.initialize());
 // Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/customer/auth', customerAuthRouter);
+app.use('/api/customer/account', customerAccountRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/brands', brandsRouter);

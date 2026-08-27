@@ -5,6 +5,12 @@ export const UserRole = {
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
+export const SessionType = {
+  ADMIN: 'admin',
+  CUSTOMER: 'customer',
+} as const;
+export type SessionType = (typeof SessionType)[keyof typeof SessionType];
+
 export const OrderStatus = {
   PENDING_GATEWAY: 'PENDING_GATEWAY',
   PENDING_PAYMENT: 'PENDING_PAYMENT',

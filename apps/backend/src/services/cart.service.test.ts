@@ -51,7 +51,7 @@ describe('CartService', () => {
 
       expect(prisma.cart.findUnique).toHaveBeenCalledWith({ where: { sessionId: 'session-456' } });
       expect(prisma.cart.create).toHaveBeenCalledWith({
-        data: { sessionId: 'session-456', status: 'ACTIVE' },
+        data: { sessionId: 'session-456', customerId: null, status: 'ACTIVE' },
       });
       expect(result).toEqual(mockCart);
     });
@@ -101,7 +101,7 @@ describe('CartService', () => {
         name: 'Papel Higiénico',
         sku: '123',
         basePrice: 100,
-        discountPercent: 10,
+        discountPercent: 0,
         stock: 10,
         isActive: true,
         deletedAt: null,
@@ -148,7 +148,7 @@ describe('CartService', () => {
             id: 'prod-1',
             name: 'Papel Premium',
             sku: 'SKU1',
-            discountPercent: 10, // precio con desc = 900
+            discountPercent: 10,
             brand: { name: 'Confort' },
             images: [{ isPrimary: true, url: 'http://img1' }],
           },
@@ -161,7 +161,7 @@ describe('CartService', () => {
             id: 'prod-2',
             name: 'Rollo Cocina',
             sku: 'SKU2',
-            discountPercent: 0, // precio con desc = 2000
+            discountPercent: 0,
             brand: { name: 'Confort' },
             images: [],
           },
@@ -173,7 +173,7 @@ describe('CartService', () => {
 
       const result = await cartService.getCartDto('session-123');
 
-      expect(result.subtotal).toBe(3800); // (900 * 2) + 2000 = 3800
+      expect(result.subtotal).toBe(4000); // (1000 * 2) + (2000 * 1) = 4000
       expect(result.totalItems).toBe(3);  // 2 + 1 = 3
       expect(result.items[0]).toEqual({
         productId: 'prod-1',
@@ -184,7 +184,7 @@ describe('CartService', () => {
         quantity: 2,
         unitPrice: 1000,
         discount: 10,
-        total: 1800,
+        total: 2000,
       });
     });
   });

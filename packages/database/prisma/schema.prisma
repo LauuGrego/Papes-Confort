@@ -250,14 +250,17 @@ model BankPromotion {
 model Cart {
   id            String     @id @default(uuid())
   sessionId     String     @unique @map("session_id")
+  customerId    String?    @map("customer_id")
   customerEmail String?    @map("customer_email")
   status        CartStatus @default(ACTIVE)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
+  customer      Customer?  @relation(fields: [customerId], references: [id])
   items         CartItem[]
 
   @@index([sessionId])
+  @@index([customerId])
   @@map("carts")
 }
 
@@ -275,21 +278,29 @@ model CartItem {
 }
 
 model Customer {
-  id         String    @id @default(uuid())
-  name       String
-  email      String    @unique
-  phone      String?
-  address    String?
-  city       String?
-  province   String?
-  postalCode String?   @map("postal_code")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  deletedAt  DateTime? @map("deleted_at")
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  password          String
+  phone             String?
+  cuilCuit          String?   @map("cuil_cuit")
+  address           String?
+  city              String?
+  province          String?
+  postalCode        String?   @map("postal_code")
+  marketingOptIn    Boolean   @default(false) @map("marketing_opt_in")
+  isActive          Boolean   @default(true) @map("is_active")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
 
-  orders     Order[]
-  warranties Warranty[]
+  carts             Cart[]
+  orders            Order[]
+  warranties        Warranty[]
 
   @@index([email])
+  @@index([cuilCuit])
   @@map("customers")
 }
 

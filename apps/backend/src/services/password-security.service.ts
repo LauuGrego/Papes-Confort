@@ -1,7 +1,12 @@
 import crypto from 'crypto';
 import { SECURITY_CONFIG } from '../config/security';
 
-export type SecurityActionType = 'PASSWORD_CHANGE' | 'EMAIL_CHANGE';
+export type SecurityActionType =
+  | 'PASSWORD_CHANGE'
+  | 'EMAIL_CHANGE'
+  | 'CUSTOMER_REGISTRATION'
+  | 'CUSTOMER_PASSWORD_CHANGE'
+  | 'CUSTOMER_EMAIL_CHANGE';
 
 interface PendingSecurityAction {
   codeHash: string;
