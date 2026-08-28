@@ -8,6 +8,7 @@ import { fetchApi } from '../../lib/api';
 import { LoginResponseDto } from '@papes-confort/shared';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -150,6 +151,19 @@ function LoginForm() {
           )}
         </button>
       </form>
+
+      {/* Separador */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">o continuar con</span>
+        </div>
+      </div>
+
+      {/* Botón Google */}
+      <GoogleAuthButton mode="login" />
 
       <div className="mt-8 pt-6 border-t border-slate-100 text-center">
         <p className="text-xs text-slate-500">

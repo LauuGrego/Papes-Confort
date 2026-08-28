@@ -277,6 +277,9 @@ export interface CustomerDto {
   id: string;
   name: string;
   email: string;
+  googleId?: string | null;
+  avatarUrl?: string | null;
+  hasPassword?: boolean;
   phone: string | null;
   cuilCuit: string | null;
   address: string | null;
@@ -292,6 +295,11 @@ export interface CustomerDto {
 export interface LoginPayload {
   email: string;
   password?: string; // opcional si se implementa login sin contraseña (magic links) o estándar
+}
+
+export interface GoogleAuthPayload {
+  credential?: string;
+  code?: string;
 }
 
 export interface RegisterCustomerPayload {

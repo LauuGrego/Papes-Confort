@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Open_Sans } from 'next/font/google';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import GoogleAuthProvider from '../components/GoogleAuthProvider';
 import './globals.css';
 
 const openSans = Open_Sans({
@@ -104,11 +105,13 @@ export default function RootLayout({
         />
       </head>
       <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased">
-        <Header />
-        <main className="grow">
-          {children}
-        </main>
-        <Footer />
+        <GoogleAuthProvider>
+          <Header />
+          <main className="grow">
+            {children}
+          </main>
+          <Footer />
+        </GoogleAuthProvider>
       </body>
     </html>
   );

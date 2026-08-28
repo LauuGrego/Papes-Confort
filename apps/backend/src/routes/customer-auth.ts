@@ -2,6 +2,7 @@ import { Router } from 'express';
 import passport from 'passport';
 import { prisma } from '@papes-confort/database';
 import { hash } from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import {
   ApiResponse,
   CustomerAuthResponseDto,
@@ -9,6 +10,7 @@ import {
   RegisterCustomerPayload,
   RegisterConfirmPayload,
   UserPayload,
+  GoogleAuthPayload,
   isValidCuilCuit,
   cleanCuilCuit,
 } from '@papes-confort/shared';
@@ -21,6 +23,25 @@ import { requireCustomer } from '../middleware/auth';
 import { passwordSecurityService } from '../services/password-security.service';
 
 const router = Router();
+const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID || undefined);
+
+async function verifyGoogleToken(idToken: string) {
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: env.GOOGLE_CLIENT_ID ? [env.GOOGLE_CLIENT_ID] : undefined,
+  });
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) {
+    throw new Error('No se pudo obtener la información de la cuenta de Google.');
+  }
+  return {
+    googleId: payload.sub,
+    email: payload.email.toLowerCase().trim(),
+    name: payload.name || payload.given_name || payload.email.split('@')[0],
+    picture: payload.picture || null,
+    emailVerified: payload.email_verified,
+  };
+}
 
 // POST /api/customer/auth/register-request (Paso 1: Valida datos y envía código al email)
 router.post('/register-request', async (req, res, next) => {
@@ -458,6 +479,108 @@ router.post('/login', (req, res, next) => {
       next(error);
     }
   })(req, res, next);
+});
+
+// POST /api/customer/auth/google (Autenticación / Registro con Google)
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body as GoogleAuthPayload;
+    if (!credential || !credential.trim()) {
+      res.status(400).json({ success: false, error: 'El token de Google es requerido.' } as ApiResponse);
+      return;
+    }
+
+    const googleUser = await verifyGoogleToken(credential);
+
+    // Buscar si ya existe el cliente por googleId o email
+    let customer = await prisma.customer.findFirst({
+      where: {
+        OR: [
+          { googleId: googleUser.googleId },
+          { email: googleUser.email },
+        ],
+      },
+    });
+
+    if (customer) {
+      if (!customer.isActive || customer.deletedAt !== null) {
+        res.status(403).json({
+          success: false,
+          error: 'Tu cuenta se encuentra inhabilitada. Comunícate con atención al cliente.',
+        } as ApiResponse);
+        return;
+      }
+
+      // Actualizar si no tenía googleId o avatar vinculados
+      const needsUpdate = !customer.googleId || (!customer.avatarUrl && googleUser.picture);
+      if (needsUpdate) {
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: {
+            googleId: customer.googleId || googleUser.googleId,
+            avatarUrl: customer.avatarUrl || googleUser.picture,
+          },
+        });
+      }
+    } else {
+      // Crear nuevo cliente
+      customer = await prisma.customer.create({
+        data: {
+          name: googleUser.name,
+          email: googleUser.email,
+          googleId: googleUser.googleId,
+          avatarUrl: googleUser.picture,
+          isActive: true,
+          marketingOptIn: true,
+        },
+      });
+
+      // Enviar correo de bienvenida en segundo plano
+      sendCustomerWelcomeEmail({
+        name: customer.name,
+        email: customer.email,
+      }).catch(() => {});
+    }
+
+    const userPayload: UserPayload = {
+      id: customer.id,
+      email: customer.email,
+      name: customer.name,
+      role: 'CUSTOMER',
+      type: 'customer',
+    };
+
+    const accessToken = generateAccessToken(userPayload);
+    const refreshToken = generateRefreshToken(userPayload);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Merge de carrito si existe sesión previa
+    const sessionId = req.cookies?.papes_cart;
+    if (sessionId) {
+      await mergeCart(sessionId, customer.id).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      data: {
+        token: accessToken,
+        user: userPayload,
+        customer: mapCustomerToDto(customer),
+      },
+    } as ApiResponse<CustomerAuthResponseDto>);
+  } catch (error: any) {
+    console.error('Google Auth Error:', error);
+    res.status(401).json({
+      success: false,
+      error: error?.message || 'Error al autenticar con Google. Inténtalo nuevamente.',
+    } as ApiResponse);
+  }
 });
 
 // POST /api/customer/auth/logout

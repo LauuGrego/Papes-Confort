@@ -18,6 +18,7 @@ import { fetchApi } from '../../lib/api';
 import { CustomerAuthResponseDto, isValidCuilCuit, formatCuilCuit } from '@papes-confort/shared';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 
 function RegisterForm() {
   const router = useRouter();
@@ -224,12 +225,28 @@ function RegisterForm() {
 
       {/* PASO 1: Formulario de datos */}
       {step === 1 && (
-        <form onSubmit={handleRequestCode} className="space-y-4">
-          {/* Nombre y Apellido */}
+        <div className="space-y-6">
+          {/* Botón Registro con Google */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Nombre y Apellido *
-            </label>
+            <GoogleAuthButton mode="register" />
+          </div>
+
+          {/* Separador */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">o completar con tus datos</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleRequestCode} className="space-y-4">
+            {/* Nombre y Apellido */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Nombre y Apellido *
+              </label>
             <input
               type="text"
               required
@@ -377,6 +394,7 @@ function RegisterForm() {
             )}
           </button>
         </form>
+        </div>
       )}
 
       {/* PASO 2: Ingreso de código de 6 dígitos */}
