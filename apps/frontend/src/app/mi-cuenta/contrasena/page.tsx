@@ -106,7 +106,7 @@ export default function SeguridadPage() {
       if (res.success) {
         setPasswordStep(2);
         setPasswordCooldown(60);
-        setSuccessMessage(`Hemos enviado un código de 6 dígitos a tu correo actual (${user?.email}).`);
+        setSuccessMessage(`Hemos enviado un código de 6 dígitos a tu correo (${user?.email}).`);
       } else {
         setErrorMessage(res.error || 'No se pudo enviar el código de confirmación.');
       }
