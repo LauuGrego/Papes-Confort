@@ -6,7 +6,7 @@ async function getSafetyStock(): Promise<number> {
 }
 
 export async function getOrCreateCart(sessionId: string, customerId?: string | null) {
-  // Si viene customerId, buscar carrito activo por customerId
+  // Si viene customerId, buscar carrito activo por Id
   if (customerId) {
     let customerCart = await prisma.cart.findFirst({
       where: { customerId, status: 'ACTIVE' },
