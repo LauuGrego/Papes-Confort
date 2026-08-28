@@ -34,3 +34,5 @@ coverage/
 
 #Info BDD
 .txt
+.vercel
+.env*
