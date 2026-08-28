@@ -281,7 +281,9 @@ model Customer {
   id                String    @id @default(uuid())
   name              String
   email             String    @unique
-  password          String
+  password          String?
+  googleId          String?   @unique @map("google_id")
+  avatarUrl         String?   @map("avatar_url")
   phone             String?
   cuilCuit          String?   @map("cuil_cuit")
   address           String?
@@ -301,6 +303,7 @@ model Customer {
 
   @@index([email])
   @@index([cuilCuit])
+  @@index([googleId])
   @@map("customers")
 }
 
