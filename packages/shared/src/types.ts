@@ -300,6 +300,19 @@ export interface LoginPayload {
 export interface GoogleAuthPayload {
   credential?: string;
   code?: string;
+  password?: string;
+}
+
+export interface GoogleAuthResponseDto {
+  user?: UserPayload;
+  token?: string;
+  customer?: CustomerDto;
+  requiresPassword?: boolean;
+  tempUser?: {
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
 }
 
 export interface RegisterCustomerPayload {
@@ -332,7 +345,7 @@ export interface UpdateCustomerPayload {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword: string;
+  currentPassword?: string;
   newPassword: string;
 }
 
@@ -353,6 +366,12 @@ export interface LoginResponseDto {
   user: UserPayload;
   token: string;
   customer?: CustomerDto;
+  requiresPassword?: boolean;
+  tempUser?: {
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
 }
 
 export type CustomerAuthResponseDto = LoginResponseDto;

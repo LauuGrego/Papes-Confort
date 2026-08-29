@@ -42,3 +42,26 @@ body {
 .hover-underline-reveal:hover::after {
   transform: scaleX(1);
 }
+
+/* Google Auth Button Centering & Responsiveness */
+.google-btn-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+.google-btn-container > div {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+  max-width: 100% !important;
+}
+
+.google-btn-container iframe {
+  margin: 0 auto !important;
+  max-width: 100% !important;
+  display: block !important;
+}

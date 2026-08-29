@@ -18,7 +18,9 @@ import { useAuthStore } from '../../../stores/auth';
 
 export default function SeguridadPage() {
   const router = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const { user, customer, clearAuth } = useAuthStore();
+
+  const hasNoExistingPassword = customer?.hasPassword === false;
 
   const [activeTab, setActiveTab] = useState<'password' | 'email'>('password');
 
@@ -76,7 +78,7 @@ export default function SeguridadPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!currentPassword || !newPassword) {
+    if ((!hasNoExistingPassword && !currentPassword) || !newPassword) {
       setErrorMessage('Por favor completa todos los campos.');
       return;
     }
@@ -98,7 +100,7 @@ export default function SeguridadPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          currentPassword,
+          currentPassword: hasNoExistingPassword ? undefined : currentPassword,
           newPassword,
         }),
       });
@@ -256,7 +258,7 @@ export default function SeguridadPage() {
           }`}
         >
           <Lock className="h-3.5 w-3.5" />
-          <span>Cambiar Contraseña</span>
+          <span>{hasNoExistingPassword ? 'Definir Contraseña' : 'Cambiar Contraseña'}</span>
         </button>
 
         <button
@@ -286,34 +288,36 @@ export default function SeguridadPage() {
         </div>
       )}
 
-      {/* TAB 1: CAMBIAR CONTRASEÑA */}
+      {/* TAB 1: CAMBIAR / DEFINIR CONTRASEÑA */}
       {activeTab === 'password' && (
         <>
           {passwordStep === 1 ? (
             <form onSubmit={handleRequestPasswordCode} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Contraseña Actual *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showCurrent ? 'text' : 'password'}
-                    required
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Ingresa tu contraseña actual"
-                    className="w-full px-4 py-2.5 pr-10 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs font-medium text-brand-black outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                    tabIndex={-1}
-                  >
-                    {showCurrent ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </button>
+              {!hasNoExistingPassword && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Contraseña Actual *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrent ? 'text' : 'password'}
+                      required
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Ingresa tu contraseña actual"
+                      className="w-full px-4 py-2.5 pr-10 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs font-medium text-brand-black outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent(!showCurrent)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      tabIndex={-1}
+                    >
+                      {showCurrent ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
