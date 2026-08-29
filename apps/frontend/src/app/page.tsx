@@ -1,14 +1,38 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, MapPin } from 'lucide-react';
 import PaymentMethods from '../components/PaymentMethods';
 import FlyersCarousel from '../components/FlyersCarousel';
+import { HomeHeroBannerDto, DEFAULT_HERO_BANNER } from '@papes-confort/shared';
+import { fetchApi } from '../lib/api';
 
 export default function HomePage() {
   const router = useRouter();
+  const [heroBanner, setHeroBanner] = useState<HomeHeroBannerDto>(DEFAULT_HERO_BANNER);
+
+  useEffect(() => {
+    async function loadHeroBanner() {
+      try {
+        const res = await fetchApi<{ home_hero_banner?: string }>('/api/settings/public');
+        if (res.success && res.data?.home_hero_banner) {
+          try {
+            const parsed = JSON.parse(res.data.home_hero_banner);
+            if (parsed && typeof parsed === 'object') {
+              setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, ...parsed }));
+            }
+          } catch (e) {
+            console.error('Error al parsear home_hero_banner:', e);
+          }
+        }
+      } catch (err) {
+        console.error('Error al cargar banner de portada:', err);
+      }
+    }
+    loadHeroBanner();
+  }, []);
 
   const handleQuickSearch = (term: string) => {
     router.push(`/catalogo?search=${encodeURIComponent(term)}`);
@@ -60,7 +84,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Hero right content (Edificio integrated into background) */}
+          {/* Hero right content (Main Hero Banner) */}
           <div className="lg:col-span-6 relative flex items-center justify-center">
             <div className="relative w-full max-w-lg lg:max-w-none">
               {/* Soft ambient glow behind building image */}
@@ -68,22 +92,42 @@ export default function HomePage() {
 
               {/* Integrated building image with smooth blend */}
               <div className="relative overflow-hidden rounded-3xl shadow-lg border border-slate-200/60 bg-gradient-to-b from-slate-100 to-white">
-                <img
-                  src="/images/edificio.webp"
-                  alt="Edificio Papes Confort en Basavilbaso"
-                  className="w-full h-auto max-h-[460px] object-cover object-center transition-transform duration-700 ease-out hover:scale-[1.02]"
-                />
+                {heroBanner.linkUrl ? (
+                  <Link href={heroBanner.linkUrl} className="block w-full h-full group">
+                    <img
+                      src={heroBanner.imageUrl || '/images/edificio.webp'}
+                      alt={heroBanner.title || 'Edificio Papes Confort en Basavilbaso'}
+                      style={{
+                        objectFit: heroBanner.objectFit || 'cover',
+                        objectPosition: `${heroBanner.objectPositionX ?? 50}% ${heroBanner.objectPositionY ?? 50}%`,
+                      }}
+                      className="w-full h-auto max-h-[460px] transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                    />
+                  </Link>
+                ) : (
+                  <img
+                    src={heroBanner.imageUrl || '/images/edificio.webp'}
+                    alt={heroBanner.title || 'Edificio Papes Confort en Basavilbaso'}
+                    style={{
+                      objectFit: heroBanner.objectFit || 'cover',
+                      objectPosition: `${heroBanner.objectPositionX ?? 50}% ${heroBanner.objectPositionY ?? 50}%`,
+                    }}
+                    className="w-full h-auto max-h-[460px] transition-transform duration-700 ease-out hover:scale-[1.02]"
+                  />
+                )}
                 
                 {/* Soft bottom gradient overlay for seamless background transition */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-100/90 via-transparent to-transparent pointer-events-none" />
 
                 {/* Floating subtle location pill */}
-                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/80 shadow-md flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-brand-red shrink-0" />
-                  <span className="text-xs font-bold text-brand-black tracking-wide">
-                    Basavilbaso, Entre Ríos
-                  </span>
-                </div>
+                {heroBanner.showBadge !== false && (
+                  <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/80 shadow-md flex items-center gap-2 pointer-events-none">
+                    <MapPin className="h-4 w-4 text-brand-red shrink-0" />
+                    <span className="text-xs font-bold text-brand-black tracking-wide">
+                      {heroBanner.badgeText || 'Basavilbaso, Entre Ríos'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

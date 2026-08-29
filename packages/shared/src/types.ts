@@ -267,6 +267,28 @@ export interface PaymentFeatureCardDto {
   sortOrder: number;
 }
 
+export interface HomeHeroBannerDto {
+  imageUrl: string;
+  title?: string;
+  badgeText?: string;
+  showBadge?: boolean;
+  linkUrl?: string;
+  objectFit?: 'cover' | 'contain';
+  objectPositionX?: number;
+  objectPositionY?: number;
+}
+
+export const DEFAULT_HERO_BANNER: HomeHeroBannerDto = {
+  imageUrl: '/images/edificio.webp',
+  title: 'Edificio Papes Confort en Basavilbaso',
+  badgeText: 'Basavilbaso, Entre Ríos',
+  showBadge: true,
+  linkUrl: '',
+  objectFit: 'cover',
+  objectPositionX: 50,
+  objectPositionY: 50,
+};
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================
