@@ -267,6 +267,28 @@ export interface PaymentFeatureCardDto {
   sortOrder: number;
 }
 
+export interface HomeHeroBannerDto {
+  imageUrl: string;
+  title?: string;
+  badgeText?: string;
+  showBadge?: boolean;
+  linkUrl?: string;
+  objectFit?: 'cover' | 'contain';
+  objectPositionX?: number;
+  objectPositionY?: number;
+}
+
+export const DEFAULT_HERO_BANNER: HomeHeroBannerDto = {
+  imageUrl: '/images/edificio.webp',
+  title: 'Edificio Papes Confort en Basavilbaso',
+  badgeText: 'Basavilbaso, Entre Ríos',
+  showBadge: true,
+  linkUrl: '',
+  objectFit: 'cover',
+  objectPositionX: 50,
+  objectPositionY: 50,
+};
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================
@@ -300,6 +322,19 @@ export interface LoginPayload {
 export interface GoogleAuthPayload {
   credential?: string;
   code?: string;
+  password?: string;
+}
+
+export interface GoogleAuthResponseDto {
+  user?: UserPayload;
+  token?: string;
+  customer?: CustomerDto;
+  requiresPassword?: boolean;
+  tempUser?: {
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
 }
 
 export interface RegisterCustomerPayload {
@@ -332,7 +367,7 @@ export interface UpdateCustomerPayload {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword: string;
+  currentPassword?: string;
   newPassword: string;
 }
 
@@ -353,6 +388,12 @@ export interface LoginResponseDto {
   user: UserPayload;
   token: string;
   customer?: CustomerDto;
+  requiresPassword?: boolean;
+  tempUser?: {
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
 }
 
 export type CustomerAuthResponseDto = LoginResponseDto;

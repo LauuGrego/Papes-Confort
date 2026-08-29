@@ -5,7 +5,7 @@ import { env } from '../config/env';
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens';
 import { ApiResponse, LoginResponseDto, UserPayload, GoogleAuthPayload } from '@papes-confort/shared';
 import { prisma } from '@papes-confort/database';
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { mergeCart } from '../services/cart.service';
 import { mapCustomerToDto } from '../services/customer.service';
 import { sendCustomerWelcomeEmail } from '../services/email.service';
@@ -137,26 +137,99 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// POST /api/auth/google (Unified / Customer Google Auth)
+// POST /api/auth/google (Unified / Admin & Customer Google Auth)
 router.post('/google', async (req, res) => {
   try {
-    const { credential } = req.body as GoogleAuthPayload;
+    const { credential, password } = req.body as GoogleAuthPayload;
     if (!credential || !credential.trim()) {
       res.status(400).json({ success: false, error: 'El token de Google es requerido.' } as ApiResponse);
       return;
     }
 
     const googleUser = await verifyGoogleToken(credential);
+    const cleanEmail = googleUser.email.toLowerCase().trim();
 
-    // Buscar si ya existe el cliente por googleId o email
+    // 1. Si es Administrador (prisma.user), loguear directamente como Admin
+    const adminUser = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (adminUser) {
+      if (!adminUser.isActive || adminUser.deletedAt !== null) {
+        res.status(403).json({
+          success: false,
+          error: 'Tu cuenta de administrador se encuentra inhabilitada.',
+        } as ApiResponse);
+        return;
+      }
+
+      const payload: UserPayload = {
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: adminUser.role,
+        type: 'admin',
+      };
+
+      const accessToken = generateAccessToken(payload);
+      const refreshToken = generateRefreshToken(payload);
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          user: payload,
+          token: accessToken,
+        },
+      } as ApiResponse<LoginResponseDto>);
+      return;
+    }
+
+    // 2. Si es Cliente, buscar si ya existe
     let customer = await prisma.customer.findFirst({
       where: {
         OR: [
           { googleId: googleUser.googleId },
-          { email: googleUser.email },
+          { email: cleanEmail },
         ],
       },
     });
+
+    const needsPassword = !customer || !customer.password;
+
+    // Si el usuario no tiene contraseña y no la envió, solicitarla
+    if (needsPassword && !password) {
+      res.json({
+        success: true,
+        data: {
+          requiresPassword: true,
+          tempUser: {
+            name: googleUser.name,
+            email: cleanEmail,
+            avatarUrl: googleUser.picture,
+          },
+        } as any,
+      } as ApiResponse<LoginResponseDto>);
+      return;
+    }
+
+    let hashedPassword: string | null = null;
+    if (password) {
+      if (password.length < 6) {
+        res.status(400).json({
+          success: false,
+          error: 'La contraseña debe tener al menos 6 caracteres.',
+        } as ApiResponse);
+        return;
+      }
+      hashedPassword = await hash(password, 12);
+    }
 
     if (customer) {
       if (!customer.isActive || customer.deletedAt !== null) {
@@ -167,23 +240,22 @@ router.post('/google', async (req, res) => {
         return;
       }
 
-      const needsUpdate = !customer.googleId || (!customer.avatarUrl && googleUser.picture);
-      if (needsUpdate) {
-        customer = await prisma.customer.update({
-          where: { id: customer.id },
-          data: {
-            googleId: customer.googleId || googleUser.googleId,
-            avatarUrl: customer.avatarUrl || googleUser.picture,
-          },
-        });
-      }
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: {
+          googleId: customer.googleId || googleUser.googleId,
+          avatarUrl: customer.avatarUrl || googleUser.picture,
+          password: customer.password || hashedPassword || undefined,
+        },
+      });
     } else {
       customer = await prisma.customer.create({
         data: {
           name: googleUser.name,
-          email: googleUser.email,
+          email: cleanEmail,
           googleId: googleUser.googleId,
           avatarUrl: googleUser.picture,
+          password: hashedPassword,
           isActive: true,
           marketingOptIn: true,
         },

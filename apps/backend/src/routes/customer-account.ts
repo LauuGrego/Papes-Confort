@@ -89,18 +89,27 @@ router.post('/change-password-request', async (req, res, next) => {
       where: { id: user.id },
     });
 
-    if (!customer || !customer.password) {
+    if (!customer) {
       res.status(404).json({ success: false, error: 'Cliente no encontrado.' } as ApiResponse);
       return;
     }
 
-    const isMatch = await compare(currentPassword, customer.password);
-    if (!isMatch) {
-      res.status(401).json({
-        success: false,
-        error: 'La contraseña actual ingresada es incorrecta.',
-      } as ApiResponse);
-      return;
+    if (customer.password) {
+      if (!currentPassword) {
+        res.status(400).json({
+          success: false,
+          error: 'Por favor ingresa tu contraseña actual.',
+        } as ApiResponse);
+        return;
+      }
+      const isMatch = await compare(currentPassword, customer.password);
+      if (!isMatch) {
+        res.status(401).json({
+          success: false,
+          error: 'La contraseña actual ingresada es incorrecta.',
+        } as ApiResponse);
+        return;
+      }
     }
 
     const newPasswordHash = await hash(newPassword, 12);

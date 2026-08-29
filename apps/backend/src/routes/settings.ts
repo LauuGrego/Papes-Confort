@@ -10,7 +10,7 @@ router.get('/public', async (_req, res, next) => {
     const settings = await prisma.setting.findMany({
       where: {
         key: {
-          in: ['whatsapp_number', 'home_flyers', 'home_payment_cards'],
+          in: ['whatsapp_number', 'home_flyers', 'home_payment_cards', 'home_hero_banner'],
         },
       },
     });
@@ -19,6 +19,7 @@ router.get('/public', async (_req, res, next) => {
       whatsapp_number: '',
       home_flyers: '',
       home_payment_cards: '',
+      home_hero_banner: '',
     };
 
     settings.forEach((s) => {

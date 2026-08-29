@@ -24,9 +24,21 @@ import {
   Smartphone,
   CreditCard,
   Move,
+  MapPin,
+  RotateCcw,
+  Upload,
+  Link as LinkIcon,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
-import { HomeFlyerDto, PaymentFeatureCardDto, FlyerAspectRatio, FlyerObjectFit} from '@papes-confort/shared';
+import {
+  HomeFlyerDto,
+  PaymentFeatureCardDto,
+  FlyerAspectRatio,
+  FlyerObjectFit,
+  HomeHeroBannerDto,
+  DEFAULT_HERO_BANNER,
+} from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
   {
@@ -76,6 +88,7 @@ function AdminConfiguracionContent() {
 
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [heroSaveLoading, setHeroSaveLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -83,6 +96,52 @@ function AdminConfiguracionContent() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
   const [paymentCards, setPaymentCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_PAYMENT_CARDS);
+
+  // Hero Main Banner State (Foto principal de la portada)
+  const [heroBanner, setHeroBanner] = useState<HomeHeroBannerDto>(DEFAULT_HERO_BANNER);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
+
+  // Drag State para Hero Banner
+  const heroPreviewContainerRef = useRef<HTMLDivElement>(null);
+  const [isDraggingHero, setIsDraggingHero] = useState(false);
+  const [dragStartHeroPos, setDragStartHeroPos] = useState<{ x: number; y: number; startX: number; startY: number } | null>(null);
+
+  const handleHeroDragStart = (clientX: number, clientY: number) => {
+    if (!heroBanner.imageUrl) return;
+    setIsDraggingHero(true);
+    setDragStartHeroPos({
+      x: clientX,
+      y: clientY,
+      startX: heroBanner.objectPositionX ?? 50,
+      startY: heroBanner.objectPositionY ?? 50,
+    });
+  };
+
+  const handleHeroDragMove = (clientX: number, clientY: number) => {
+    if (!isDraggingHero || !dragStartHeroPos || !heroPreviewContainerRef.current) return;
+    const rect = heroPreviewContainerRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const deltaX = clientX - dragStartHeroPos.x;
+    const deltaY = clientY - dragStartHeroPos.y;
+
+    const percentDeltaX = -(deltaX / rect.width) * 100;
+    const percentDeltaY = -(deltaY / rect.height) * 100;
+
+    const newX = Math.max(0, Math.min(100, Math.round(dragStartHeroPos.startX + percentDeltaX)));
+    const newY = Math.max(0, Math.min(100, Math.round(dragStartHeroPos.startY + percentDeltaY)));
+
+    setHeroBanner((prev: HomeHeroBannerDto) => ({
+      ...prev,
+      objectPositionX: newX,
+      objectPositionY: newY,
+    }));
+  };
+
+  const handleHeroDragEnd = () => {
+    setIsDraggingHero(false);
+    setDragStartHeroPos(null);
+  };
 
   // Modal State para Banners Flyers
   const [isFlyerModalOpen, setIsFlyerModalOpen] = useState(false);
@@ -167,6 +226,16 @@ function AdminConfiguracionContent() {
       if (res.success && res.data) {
         setSafetyStock(res.data.safety_stock || '1');
         setWhatsappNumber(res.data.whatsapp_number || '');
+        if (res.data.home_hero_banner) {
+          try {
+            const parsed = JSON.parse(res.data.home_hero_banner);
+            if (parsed && typeof parsed === 'object') {
+              setHeroBanner({ ...DEFAULT_HERO_BANNER, ...parsed });
+            }
+          } catch (e) {
+            console.error('Error al parsear home_hero_banner de DB:', e);
+          }
+        }
         if (res.data.home_flyers) {
           try {
             const parsed = JSON.parse(res.data.home_flyers);
@@ -193,19 +262,25 @@ function AdminConfiguracionContent() {
     loadSettings();
   }, []);
 
-  const saveSettings = async (updatedFlyers?: HomeFlyerDto[], updatedCards?: PaymentFeatureCardDto[]) => {
+  const saveSettings = async (
+    updatedFlyers?: HomeFlyerDto[],
+    updatedCards?: PaymentFeatureCardDto[],
+    updatedHeroBanner?: HomeHeroBannerDto
+  ) => {
     setSaveLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
     const flyersToSave = updatedFlyers || flyers;
     const cardsToSave = updatedCards || paymentCards;
+    const heroToSave = updatedHeroBanner || heroBanner;
 
     const body = {
       safety_stock: safetyStock,
       whatsapp_number: whatsappNumber,
       home_flyers: JSON.stringify(flyersToSave),
       home_payment_cards: JSON.stringify(cardsToSave),
+      home_hero_banner: JSON.stringify(heroToSave),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -219,6 +294,74 @@ function AdminConfiguracionContent() {
       setErrorMsg(res.error || 'Error al guardar las configuraciones.');
     }
     setSaveLoading(false);
+  };
+
+  const handleSaveHeroBanner = async (customBanner?: HomeHeroBannerDto) => {
+    setHeroSaveLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    const target = customBanner || heroBanner;
+
+    const body = {
+      safety_stock: safetyStock,
+      whatsapp_number: whatsappNumber,
+      home_flyers: JSON.stringify(flyers),
+      home_payment_cards: JSON.stringify(paymentCards),
+      home_hero_banner: JSON.stringify(target),
+    };
+
+    const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    if (res.success) {
+      setSuccessMsg('Banner principal de portada actualizado con éxito.');
+    } else {
+      setErrorMsg(res.error || 'Error al guardar el banner principal.');
+    }
+    setHeroSaveLoading(false);
+  };
+
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingHeroImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64Data }),
+        });
+
+        if (res.success && res.data?.url) {
+          const newUrl = res.data.url;
+          setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, imageUrl: newUrl }));
+        } else {
+          if (res.error === 'Unauthorized' || res.error?.includes('Unauthorized')) {
+            alert('Tu sesión de administrador ha expirado. Por favor, vuelve a iniciar sesión.');
+            window.location.href = '/admin/login';
+          } else {
+            alert(res.error || 'Error al subir la imagen.');
+          }
+        }
+        setUploadingHeroImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error al subir imagen del hero banner:', err);
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const handleResetHeroBanner = async () => {
+    if (!confirm('¿Deseas restaurar la foto y configuración original del edificio por defecto?')) return;
+    setHeroBanner(DEFAULT_HERO_BANNER);
+    await handleSaveHeroBanner(DEFAULT_HERO_BANNER);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -666,20 +809,324 @@ function AdminConfiguracionContent() {
 
       {/* TAB 1: Banners de Portada */}
       {activeTab === 'banners' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
+        <div className="space-y-10">
+          {/* SECCIÓN 1: FOTO / BANNER PRINCIPAL DEL HERO */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-brand-red" />
+                  <h2 className="text-lg font-extrabold text-slate-800">Banner Principal de Portada (Hero)</h2>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Personaliza la foto principal que se muestra en el encabezado de la tienda (junto al lema &quot;Llevamos el confort que tu hogar merece&quot;).
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetHeroBanner}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
+                  title="Restaurar valores y foto original del edificio"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Foto por Defecto</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveHeroBanner()}
+                  disabled={heroSaveLoading}
+                  className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-md shadow-brand-red/20 disabled:opacity-60 cursor-pointer"
+                >
+                  {heroSaveLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-3.5 w-3.5" />
+                      <span>Guardar Banner Principal</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={openNewFlyerModal}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Nuevo Banner</span>
-            </button>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Form Controls */}
+              <div className="lg:col-span-7 space-y-5">
+                {/* Image Upload & URL */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Imagen del Banner *
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-stretch gap-3">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={heroBanner.imageUrl}
+                        onChange={(e) => setHeroBanner({ ...heroBanner, imageUrl: e.target.value })}
+                        placeholder="https://ejemplo.com/banner.jpg o /images/edificio.webp"
+                        className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all font-mono"
+                      />
+                    </div>
+                    <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0">
+                      {uploadingHeroImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <span>{uploadingHeroImage ? 'Subiendo...' : 'Subir Archivo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeroImageUpload}
+                        disabled={uploadingHeroImage}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1.5">
+                    Recomendado: Imágenes horizontales o cuadradas en alta resolución (.webp, .jpg, .png).
+                  </p>
+                </div>
+
+                {/* Título y Enlace de Destino */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Título / Texto Alternativo
+                    </label>
+                    <input
+                      type="text"
+                      value={heroBanner.title || ''}
+                      onChange={(e) => setHeroBanner({ ...heroBanner, title: e.target.value })}
+                      placeholder="Ej: Edificio Papes Confort"
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Enlace al hacer clic (opcional)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={heroBanner.linkUrl || ''}
+                        onChange={(e) => setHeroBanner({ ...heroBanner, linkUrl: e.target.value })}
+                        placeholder="Ej: /catalogo o /ofertas"
+                        className="w-full px-4 py-2.5 pl-8 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
+                      />
+                      <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge flotante de ubicación */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-brand-red" />
+                      <span className="text-xs font-bold text-slate-700">Etiqueta Flotante / Badge de Ubicación</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={heroBanner.showBadge !== false}
+                        onChange={(e) => setHeroBanner({ ...heroBanner, showBadge: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-red"></div>
+                    </label>
+                  </div>
+
+                  {heroBanner.showBadge !== false && (
+                    <div>
+                      <input
+                        type="text"
+                        value={heroBanner.badgeText || ''}
+                        onChange={(e) => setHeroBanner({ ...heroBanner, badgeText: e.target.value })}
+                        placeholder="Ej: Basavilbaso, Entre Ríos"
+                        className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 transition-all"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Aparece en la esquina inferior izquierda de la imagen con diseño traslúcido y el ícono de ubicación.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Ajustes de Encuadre & Posición */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Modo de Ajuste
+                      </span>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Arrastra la foto en la vista previa a la derecha para encuadrarla.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, objectFit: 'cover' }))}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          heroBanner.objectFit !== 'contain'
+                            ? 'bg-brand-red text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Cover (Llenar)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, objectFit: 'contain' }))}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          heroBanner.objectFit === 'contain'
+                            ? 'bg-brand-red text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Contain (Completa)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50">
+                    <div className="flex items-center gap-2">
+                      <Move className="h-3.5 w-3.5 text-brand-red" />
+                      <span className="text-xs text-slate-600 font-medium">
+                        Posición actual: <strong className="font-mono text-slate-900">X: {heroBanner.objectPositionX ?? 50}% | Y: {heroBanner.objectPositionY ?? 50}%</strong>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHeroBanner((prev: HomeHeroBannerDto) => ({
+                          ...prev,
+                          objectPositionX: 50,
+                          objectPositionY: 50,
+                        }))
+                      }
+                      className="text-[11px] font-bold text-slate-500 hover:text-brand-red transition-colors cursor-pointer"
+                    >
+                      Centrar (50% / 50%)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview Box con Arrastre Interactivo */}
+              <div className="lg:col-span-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Move className="h-3.5 w-3.5 text-brand-red" />
+                    <span>Vista Previa & Encuadre</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Arrastrá para reubicar
+                  </span>
+                </div>
+
+                <div
+                  ref={heroPreviewContainerRef}
+                  onMouseDown={(e) => handleHeroDragStart(e.clientX, e.clientY)}
+                  onMouseMove={(e) => handleHeroDragMove(e.clientX, e.clientY)}
+                  onMouseUp={handleHeroDragEnd}
+                  onMouseLeave={handleHeroDragEnd}
+                  onTouchStart={(e) => {
+                    if (e.touches.length > 0) {
+                      handleHeroDragStart(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length > 0) {
+                      handleHeroDragMove(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                  }}
+                  onTouchEnd={handleHeroDragEnd}
+                  onTouchCancel={handleHeroDragEnd}
+                  className={`relative overflow-hidden rounded-3xl shadow-lg border-2 bg-gradient-to-b from-slate-100 to-white aspect-[4/3] max-h-[380px] flex items-center justify-center select-none touch-none transition-all group ${
+                    isDraggingHero
+                      ? 'cursor-grabbing border-brand-red ring-4 ring-brand-red/20'
+                      : 'cursor-grab border-slate-200/80 hover:border-brand-red/60 shadow-md'
+                  }`}
+                >
+                  {/* Floating drag indicator badge */}
+                  {heroBanner.imageUrl && (
+                    <div className="absolute top-3 left-3 z-30 bg-slate-900/80 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 pointer-events-none flex items-center gap-1.5 shadow-md">
+                      <Move className="h-3 w-3 text-rose-400 animate-pulse" />
+                      <span>{isDraggingHero ? 'Arrastrando foto...' : 'Arrastrá la foto para encuadrar'}</span>
+                    </div>
+                  )}
+
+                  {heroBanner.imageUrl ? (
+                    <img
+                      src={heroBanner.imageUrl}
+                      alt={heroBanner.title || 'Banner Principal'}
+                      draggable={false}
+                      style={{
+                        objectFit: heroBanner.objectFit || 'cover',
+                        objectPosition: `${heroBanner.objectPositionX ?? 50}% ${heroBanner.objectPositionY ?? 50}%`,
+                      }}
+                      className="w-full h-full select-none pointer-events-none transition-all duration-75"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                      <ImageIcon className="h-10 w-10 text-slate-300 mb-2" />
+                      <span className="text-xs font-bold">Sin imagen configurada</span>
+                    </div>
+                  )}
+
+                  {/* Soft bottom gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent pointer-events-none" />
+
+                  {/* Floating location pill preview */}
+                  {heroBanner.showBadge !== false && (
+                    <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-slate-200/80 shadow-md flex items-center gap-2 pointer-events-none z-20">
+                      <MapPin className="h-3.5 w-3.5 text-brand-red shrink-0" />
+                      <span className="text-xs font-bold text-brand-black tracking-wide">
+                        {heroBanner.badgeText || 'Basavilbaso, Entre Ríos'}
+                      </span>
+                    </div>
+                  )}
+
+                  {heroBanner.linkUrl && (
+                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1 border border-white/20 pointer-events-none z-20">
+                      <LinkIcon className="h-3 w-3" />
+                      <span>{heroBanner.linkUrl}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* SECCIÓN 2: CARRUSEL DE BANNERS PROMOCIONALES */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Banners rotativos secundarios que se muestran encima de la sección principal.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={openNewFlyerModal}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Nuevo Banner</span>
+              </button>
+            </div>
 
           {/* Grilla de Banners Configurados */}
           {flyers.length === 0 ? (
@@ -786,6 +1233,7 @@ function AdminConfiguracionContent() {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
 
