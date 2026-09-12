@@ -12,6 +12,7 @@ import {
   X,
   Tag,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Layers,
   Award,
@@ -58,6 +59,21 @@ export default function Header() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [offers, setOffers] = useState<OfferDto[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Dropdown expansion states (in-place expand instead of navigating to catalog)
+  const [showAllFamilies, setShowAllFamilies] = useState(false);
+  const [showAllBrands, setShowAllBrands] = useState(false);
+  const [expandedFamilies, setExpandedFamilies] = useState<Record<string, boolean>>({});
+
+  const [showAllFamiliesMobile, setShowAllFamiliesMobile] = useState(false);
+  const [showAllBrandsMobile, setShowAllBrandsMobile] = useState(false);
+
+  const toggleFamilyExpand = (familyId: string) => {
+    setExpandedFamilies((prev) => ({
+      ...prev,
+      [familyId]: !prev[familyId],
+    }));
+  };
 
   // Mobile accordion state
   const [mobileExpandedSection, setMobileExpandedSection] = useState<'ofertas' | 'rubros' | 'marcas' | null>(null);
@@ -227,122 +243,179 @@ export default function Header() {
 
           {/* DESPLEGABLE: Rubros y Subrubros */}
           <div className="relative group py-6">
-            <Link
-              href="/catalogo"
-              className="text-slate-600 hover:text-brand-red transition-colors duration-200 flex items-center gap-1.5 cursor-pointer py-1"
+            <button
+              type="button"
+              className="text-slate-600 hover:text-brand-red transition-colors duration-200 flex items-center gap-1.5 cursor-pointer py-1 select-none"
             >
               <span>Rubros y Subrubros</span>
               <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400 group-hover:text-brand-red" />
-            </Link>
+            </button>
 
-            <div className="absolute -left-16 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="w-[620px] max-h-[480px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-5 shadow-xl ring-1 ring-black/5 custom-scrollbar">
-                <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div className="absolute right-[-40px] lg:right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="w-[430px] max-h-[440px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-4 shadow-xl ring-1 ring-black/5 custom-scrollbar">
+                <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2 text-slate-700">
                     <Layers className="h-4 w-4 text-brand-red" />
-                    <span className="font-display font-extrabold text-xs tracking-wider uppercase">
+                    <span className="font-display font-extrabold text-[11px] tracking-wider uppercase">
                       Rubros y Categorías
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-medium">
-                    {families.length} Rubros disponibles
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {families.length} Rubros
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  {families.map((fam) => (
-                    <div key={fam.id} className="space-y-2">
-                      <Link
-                        href={`/catalogo?type=${fam.slug}`}
-                        className="inline-flex items-center justify-between w-full text-sm font-bold text-slate-800 hover:text-brand-red transition-colors group/fam"
-                      >
-                        <span>{fam.name}</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold group-hover/fam:bg-brand-red/10 group-hover/fam:text-brand-red">
-                          {fam.productCount}
-                        </span>
-                      </Link>
+                <div className="grid grid-cols-2 gap-4">
+                  {(showAllFamilies ? families : families.slice(0, 4)).map((fam) => {
+                    const isExpanded = !!expandedFamilies[fam.id];
+                    const displayedCats = isExpanded ? fam.categories : fam.categories.slice(0, 3);
+                    const remainingCats = fam.categories.length - 3;
 
-                      {fam.categories.length > 0 && (
-                        <div className="flex flex-col gap-1 pl-2 border-l-2 border-slate-100 ml-1">
-                          {fam.categories.map((cat) => (
-                            <Link
-                              key={cat.id}
-                              href={`/catalogo?type=${fam.slug}&categoryId=${cat.id}`}
-                              className="text-xs text-slate-500 hover:text-brand-red hover:translate-x-0.5 transition-all py-0.5 flex items-center justify-between"
-                            >
-                              <span>{cat.name}</span>
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                ({cat.productCount})
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
+                    return (
+                      <div key={fam.id} className="space-y-1.5">
+                        {fam.categories.length > 3 ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleFamilyExpand(fam.id)}
+                            className="inline-flex items-center justify-between w-full text-xs font-bold text-slate-800 hover:text-brand-red transition-colors cursor-pointer text-left group/fam"
+                          >
+                            <span className="truncate pr-1">{fam.name}</span>
+                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold group-hover/fam:bg-brand-red/10 group-hover/fam:text-brand-red shrink-0">
+                              {fam.productCount}
+                            </span>
+                          </button>
+                        ) : (
+                          <div className="inline-flex items-center justify-between w-full text-xs font-bold text-slate-800 select-none">
+                            <span className="truncate pr-1">{fam.name}</span>
+                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold shrink-0">
+                              {fam.productCount}
+                            </span>
+                          </div>
+                        )}
+
+                        {fam.categories.length > 0 && (
+                          <div className="flex flex-col gap-0.5 pl-2 border-l-2 border-slate-100 ml-0.5">
+                            {displayedCats.map((cat) => (
+                              <Link
+                                key={cat.id}
+                                href={`/catalogo?type=${fam.slug}&categoryId=${cat.id}`}
+                                className="text-[11px] text-slate-500 hover:text-brand-red hover:translate-x-0.5 transition-all py-0.5 flex items-center justify-between"
+                              >
+                                <span className="truncate pr-1">{cat.name}</span>
+                                <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                                  ({cat.productCount})
+                                </span>
+                              </Link>
+                            ))}
+                            {fam.categories.length > 3 && (
+                              <button
+                                type="button"
+                                onClick={() => toggleFamilyExpand(fam.id)}
+                                className="text-[10px] font-semibold text-brand-red hover:text-brand-red-dark transition-colors py-0.5 flex items-center gap-0.5 cursor-pointer text-left"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <span>Ver menos</span>
+                                    <ChevronUp className="h-2.5 w-2.5" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Ver más ({remainingCats})</span>
+                                    <ChevronDown className="h-2.5 w-2.5" />
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {families.length > 4 && (
+                  <div className="border-t border-slate-100 mt-3 pt-2.5 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFamilies(!showAllFamilies)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-red hover:text-brand-red-dark transition-colors cursor-pointer"
+                    >
+                      <span>
+                        {showAllFamilies
+                          ? 'Mostrar menos rubros'
+                          : `Ver todos los rubros (+${families.length - 4})`}
+                      </span>
+                      {showAllFamilies ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
                       )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t border-slate-100 mt-5 pt-3 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Encontrá todo para tu hogar</span>
-                  <Link
-                    href="/catalogo"
-                    className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-brand-red hover:gap-2 transition-all"
-                  >
-                    Ver todo el catálogo
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* DESPLEGABLE: Marcas */}
           <div className="relative group py-6">
-            <Link
-              href="/catalogo"
-              className="text-slate-600 hover:text-brand-red transition-colors duration-200 flex items-center gap-1.5 cursor-pointer py-1"
+            <button
+              type="button"
+              className="text-slate-600 hover:text-brand-red transition-colors duration-200 flex items-center gap-1.5 cursor-pointer py-1 select-none"
             >
               <span>Marcas</span>
               <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400 group-hover:text-brand-red" />
-            </Link>
+            </button>
 
-            <div className="absolute -left-12 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="w-80 max-h-[420px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-4 shadow-xl ring-1 ring-black/5 custom-scrollbar">
-                <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
+            <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="w-72 max-h-[380px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-3.5 shadow-xl ring-1 ring-black/5 custom-scrollbar">
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
                   <div className="flex items-center gap-2 text-slate-700">
                     <Award className="h-4 w-4 text-brand-red" />
-                    <span className="font-display font-extrabold text-xs tracking-wider uppercase">
+                    <span className="font-display font-extrabold text-[11px] tracking-wider uppercase">
                       Nuestras Marcas
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium">
                     {brands.length} Marcas
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5">
-                  {brands.map((brand) => (
+                <div className="grid grid-cols-2 gap-1">
+                  {(showAllBrands ? brands : brands.slice(0, 6)).map((brand) => (
                     <Link
                       key={brand.id}
                       href={`/catalogo?brandId=${brand.id}`}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-brand-red hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 hover:text-brand-red hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
                     >
-                      <span className="truncate">{brand.name}</span>
-                      <span className="text-[10px] text-slate-400 font-normal ml-1">
+                      <span className="truncate text-[11px]">{brand.name}</span>
+                      <span className="text-[9px] text-slate-400 font-normal ml-1">
                         ({brand.productCount})
                       </span>
                     </Link>
                   ))}
                 </div>
 
-                <div className="border-t border-slate-100 mt-4 pt-2.5 text-center">
-                  <Link
-                    href="/catalogo"
-                    className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-brand-red hover:underline"
-                  >
-                    Filtrar por marca en catálogo
-                  </Link>
-                </div>
+                {brands.length > 6 && (
+                  <div className="border-t border-slate-100 mt-3 pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllBrands(!showAllBrands)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-red hover:text-brand-red-dark transition-colors cursor-pointer"
+                    >
+                      <span>
+                        {showAllBrands
+                          ? 'Mostrar menos marcas'
+                          : `Ver todas las marcas (+${brands.length - 6})`}
+                      </span>
+                      {showAllBrands ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -558,31 +631,84 @@ export default function Header() {
                       </button>
 
                       {mobileExpandedSection === 'rubros' && (
-                        <div className="pl-4 pr-2 py-1 flex flex-col gap-2 border-l-2 border-slate-100 ml-4 my-1 max-h-60 overflow-y-auto custom-scrollbar">
-                          {families.map((fam) => (
-                            <div key={fam.id} className="flex flex-col gap-1">
-                              <Link
-                                href={`/catalogo?type=${fam.slug}`}
-                                onClick={() => setMenuOpen(false)}
-                                className="text-xs font-bold text-slate-800 hover:text-brand-red py-1 flex items-center justify-between"
-                              >
-                                <span>{fam.name}</span>
-                                <span className="text-[10px] text-slate-400 font-normal">
-                                  ({fam.productCount})
-                                </span>
-                              </Link>
-                              {fam.categories.map((cat) => (
-                                <Link
-                                  key={cat.id}
-                                  href={`/catalogo?type=${fam.slug}&categoryId=${cat.id}`}
-                                  onClick={() => setMenuOpen(false)}
-                                  className="text-[11px] text-slate-500 hover:text-brand-red pl-3 py-0.5"
-                                >
-                                  • {cat.name}
-                                </Link>
-                              ))}
-                            </div>
-                          ))}
+                        <div className="pl-4 pr-2 py-1 flex flex-col gap-2 border-l-2 border-slate-100 ml-4 my-1 max-h-72 overflow-y-auto custom-scrollbar">
+                          {(showAllFamiliesMobile ? families : families.slice(0, 5)).map((fam) => {
+                            const isExpanded = !!expandedFamilies[fam.id];
+                            const displayedCats = isExpanded ? fam.categories : fam.categories.slice(0, 4);
+                            const remainingCats = fam.categories.length - 4;
+
+                            return (
+                              <div key={fam.id} className="flex flex-col gap-1">
+                                {fam.categories.length > 4 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleFamilyExpand(fam.id)}
+                                    className="text-xs font-bold text-slate-800 hover:text-brand-red py-1 flex items-center justify-between text-left cursor-pointer"
+                                  >
+                                    <span>{fam.name}</span>
+                                    <span className="text-[10px] text-slate-400 font-normal">
+                                      ({fam.productCount})
+                                    </span>
+                                  </button>
+                                ) : (
+                                  <div className="text-xs font-bold text-slate-800 py-1 flex items-center justify-between select-none">
+                                    <span>{fam.name}</span>
+                                    <span className="text-[10px] text-slate-400 font-normal">
+                                      ({fam.productCount})
+                                    </span>
+                                  </div>
+                                )}
+                                {displayedCats.map((cat) => (
+                                  <Link
+                                    key={cat.id}
+                                    href={`/catalogo?type=${fam.slug}&categoryId=${cat.id}`}
+                                    onClick={() => setMenuOpen(false)}
+                                    className="text-[11px] text-slate-500 hover:text-brand-red pl-3 py-0.5"
+                                  >
+                                    • {cat.name}
+                                  </Link>
+                                ))}
+                                {fam.categories.length > 4 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleFamilyExpand(fam.id)}
+                                    className="text-[10px] font-semibold text-brand-red pl-3 py-0.5 flex items-center gap-1 cursor-pointer text-left"
+                                  >
+                                    {isExpanded ? (
+                                      <>
+                                        <span>Ver menos</span>
+                                        <ChevronUp className="h-2.5 w-2.5" />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>+ Ver más ({remainingCats})</span>
+                                        <ChevronDown className="h-2.5 w-2.5" />
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {families.length > 5 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllFamiliesMobile(!showAllFamiliesMobile)}
+                              className="inline-flex items-center justify-between mt-1 px-3 py-2 rounded-xl bg-brand-red/5 text-brand-red text-xs font-bold border border-brand-red/15 hover:bg-brand-red/10 transition-all cursor-pointer"
+                            >
+                              <span>
+                                {showAllFamiliesMobile
+                                  ? 'Mostrar menos rubros'
+                                  : `Ver todos los rubros (+${families.length - 5})`}
+                              </span>
+                              {showAllFamiliesMobile ? (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -606,17 +732,37 @@ export default function Header() {
                       </button>
 
                       {mobileExpandedSection === 'marcas' && (
-                        <div className="pl-4 pr-2 py-1 grid grid-cols-2 gap-1 border-l-2 border-slate-100 ml-4 my-1 max-h-48 overflow-y-auto custom-scrollbar">
-                          {brands.map((brand) => (
-                            <Link
-                              key={brand.id}
-                              href={`/catalogo?brandId=${brand.id}`}
-                              onClick={() => setMenuOpen(false)}
-                              className="text-xs text-slate-600 hover:text-brand-red py-1 truncate"
+                        <div className="pl-4 pr-2 py-1 flex flex-col gap-1 border-l-2 border-slate-100 ml-4 my-1 max-h-60 overflow-y-auto custom-scrollbar">
+                          <div className="grid grid-cols-2 gap-1">
+                            {(showAllBrandsMobile ? brands : brands.slice(0, 6)).map((brand) => (
+                              <Link
+                                key={brand.id}
+                                href={`/catalogo?brandId=${brand.id}`}
+                                onClick={() => setMenuOpen(false)}
+                                className="text-xs text-slate-600 hover:text-brand-red py-1 truncate"
+                              >
+                                {brand.name}
+                              </Link>
+                            ))}
+                          </div>
+                          {brands.length > 6 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllBrandsMobile(!showAllBrandsMobile)}
+                              className="inline-flex items-center justify-between mt-1 px-3 py-2 rounded-xl bg-brand-red/5 text-brand-red text-xs font-bold border border-brand-red/15 hover:bg-brand-red/10 transition-all cursor-pointer"
                             >
-                              {brand.name}
-                            </Link>
-                          ))}
+                              <span>
+                                {showAllBrandsMobile
+                                  ? 'Mostrar menos marcas'
+                                  : `Ver todas las marcas (+${brands.length - 6})`}
+                              </span>
+                              {showAllBrandsMobile ? (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

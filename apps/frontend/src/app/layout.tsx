@@ -93,7 +93,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${openSans.variable}`} suppressHydrationWarning>
+    <html lang="es" className={`${openSans.variable} overflow-x-hidden`} suppressHydrationWarning>
       <head>
         <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -106,7 +106,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased">
+      <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased overflow-x-hidden">
         <GoogleAuthProvider>
           <Header />
           <main className="grow">
