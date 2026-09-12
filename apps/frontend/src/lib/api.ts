@@ -30,6 +30,9 @@ export async function fetchApi<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        useAuthStore.getState().clearAuth();
+      }
       return {
         success: false,
         error: data.error || `HTTP error! status: ${response.status}`,

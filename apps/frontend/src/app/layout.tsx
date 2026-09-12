@@ -13,14 +13,15 @@ const openSans = Open_Sans({
 
 const SITE_URL = 'https://www.papesconfort.com.ar';
 
+const SITE_DESCRIPTION = 'Encontrá los mejores electrodomésticos, tecnología, climatización y artículos para el hogar en Papes Confort. Servicio y calidad asegurados en Basavilbaso.';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Papes Confort | Servicio y Calidad Asegurados',
-  description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+  description: SITE_DESCRIPTION,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/icon-48.png', type: 'image/png', sizes: '48x48' },
       { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
       { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Papes Confort | Servicio y Calidad Asegurados',
-    description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: 'Papes Confort',
     images: [
@@ -94,6 +95,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${openSans.variable}`} suppressHydrationWarning>
       <head>
+        <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
         <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
