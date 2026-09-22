@@ -246,6 +246,7 @@ export interface HomeFlyerDto {
   title: string;
   subtitle?: string;
   imageUrl?: string;
+  images?: string[];
   badge?: string;
   linkUrl?: string;
   buttonText?: string;
@@ -269,24 +270,228 @@ export interface PaymentFeatureCardDto {
 
 export interface HomeHeroBannerDto {
   imageUrl: string;
-  title?: string;
+  images?: string[];
   badgeText?: string;
-  showBadge?: boolean;
+  title?: string;
+  subtitle?: string;
+  primaryBtnText?: string;
+  primaryBtnUrl?: string;
+  secondaryBtnText?: string;
+  secondaryBtnUrl?: string;
+  searchTags?: string[];
   linkUrl?: string;
+  showBadge?: boolean;
   objectFit?: 'cover' | 'contain';
   objectPositionX?: number;
   objectPositionY?: number;
 }
 
 export const DEFAULT_HERO_BANNER: HomeHeroBannerDto = {
-  imageUrl: '/images/edificio.webp',
-  title: 'Edificio Papes Confort en Basavilbaso',
-  badgeText: 'Basavilbaso, Entre Ríos',
-  showBadge: true,
+  imageUrl: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184609/papes-confort/landing/hero_home_ambience.jpg',
+  badgeText: 'Confort para todos los días',
+  title: 'TODO PARA EQUIPAR TU HOGAR',
+  subtitle: 'Electrodomésticos, climatización y confort para todos los días con la calidez y el respaldo de siempre.',
+  primaryBtnText: 'Ver Catálogo',
+  primaryBtnUrl: '/catalogo',
+  secondaryBtnText: 'Ver Ofertas',
+  secondaryBtnUrl: '#oferta-semanal',
+  searchTags: ['Heladeras', 'Lavarropas', 'Smart TV', 'Colchones', 'Aires'],
   linkUrl: '',
+  showBadge: true,
   objectFit: 'cover',
   objectPositionX: 50,
   objectPositionY: 50,
+};
+
+export interface HomeCategoryCardDto {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  href: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export const DEFAULT_CATEGORY_CARDS: HomeCategoryCardDto[] = [
+  {
+    id: 'heladeras',
+    name: 'Heladeras',
+    description: 'No frost, inverter y frigobares',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg',
+    href: '/catalogo?search=heladera',
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'lavarropas',
+    name: 'Lavarropas',
+    description: 'Carga frontal, superior y secarropas',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184612/papes-confort/landing/cat_lavarropas.jpg',
+    href: '/catalogo?search=lavarropas',
+    isActive: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'television',
+    name: 'Televisión',
+    description: 'Smart TV 4K, audio y barras de sonido',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184613/papes-confort/landing/cat_television.jpg',
+    href: '/catalogo?search=tv',
+    isActive: true,
+    sortOrder: 3,
+  },
+  {
+    id: 'climatizacion',
+    name: 'Climatización',
+    description: 'Aires acondicionados frío/calor',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184614/papes-confort/landing/cat_climatizacion.jpg',
+    href: '/catalogo?search=aire',
+    isActive: true,
+    sortOrder: 4,
+  },
+  {
+    id: 'colchones',
+    name: 'Colchones',
+    description: 'Sommiers, 1 y 2 plazas, almohadas',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184615/papes-confort/landing/cat_colchones.jpg',
+    href: '/catalogo?search=colchon',
+    isActive: true,
+    sortOrder: 5,
+  },
+  {
+    id: 'cocinas',
+    name: 'Cocinas',
+    description: 'Cocinas a gas, anafes y hornos empotrables',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184616/papes-confort/landing/cat_cocinas.jpg',
+    href: '/catalogo?search=cocina',
+    isActive: true,
+    sortOrder: 6,
+  },
+  {
+    id: 'pequenos',
+    name: 'Pequeños Electro',
+    description: 'Cafeteras, licuadoras, tostadoras y más',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184617/papes-confort/landing/cat_pequenos.jpg',
+    href: '/catalogo?search=electro',
+    isActive: true,
+    sortOrder: 7,
+  },
+  {
+    id: 'hogar',
+    name: 'Hogar & Confort',
+    description: 'Ventiladores, calefacción y bazar',
+    image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184618/papes-confort/landing/cat_hogar.jpg',
+    href: '/catalogo?search=hogar',
+    isActive: true,
+    sortOrder: 8,
+  },
+];
+
+export interface HomeWeeklyOfferDto {
+  badge: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  tagCategory: string;
+  productHeadline: string;
+  cuotasText: string;
+  cashDiscountText: string;
+  warrantyText: string;
+  linkText: string;
+  linkUrl: string;
+  mainCtaText: string;
+  mainCtaUrl: string;
+  isActive: boolean;
+}
+
+export const DEFAULT_WEEKLY_OFFER: HomeWeeklyOfferDto = {
+  badge: 'Oportunidad de la semana',
+  title: 'OFERTAS DE LA SEMANA',
+  subtitle: 'Aprovechá precios especiales y planes de financiación exclusivos en productos seleccionados para renovar el confort de tu hogar.',
+  imageUrl: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184614/papes-confort/landing/cat_climatizacion.jpg',
+  tagCategory: 'Climatización y Confort',
+  productHeadline: 'Equipá tu casa con la mejor tecnología en frío/calor',
+  cuotasText: 'Hasta 12 cuotas fijas',
+  cashDiscountText: 'Descuento al contado',
+  warrantyText: 'Garantía oficial',
+  linkText: 'Ver modelos',
+  linkUrl: '/catalogo?search=aire',
+  mainCtaText: 'Ver Todas las Ofertas',
+  mainCtaUrl: '/catalogo',
+  isActive: true,
+};
+
+export interface HomeTrustBarItemDto {
+  id: string;
+  icon: 'truck' | 'credit-card' | 'percent' | 'shield';
+  title: string;
+  description: string;
+  href: string;
+  isActive: boolean;
+}
+
+export const DEFAULT_TRUST_BAR: HomeTrustBarItemDto[] = [
+  {
+    id: 'envios',
+    icon: 'truck',
+    title: 'Envíos a todo el país',
+    description: 'Entregas seguras y seguimiento',
+    href: '/catalogo',
+    isActive: true,
+  },
+  {
+    id: 'cuotas',
+    icon: 'credit-card',
+    title: 'Financiación a tu medida',
+    description: 'Hasta 12 cuotas con tarjetas',
+    href: '#medios-de-pago',
+    isActive: true,
+  },
+  {
+    id: 'ofertas',
+    icon: 'percent',
+    title: 'Precios especiales',
+    description: 'Descuentos y promos de la semana',
+    href: '#oferta-semanal',
+    isActive: true,
+  },
+  {
+    id: 'garantia',
+    icon: 'shield',
+    title: 'Garantía oficial',
+    description: 'Respaldo directo de marcas líderes',
+    href: '#sobre-nosotros',
+    isActive: true,
+  },
+];
+
+export interface HomeAboutDto {
+  badge: string;
+  title: string;
+  titleHighlight: string;
+  description: string;
+  imageUrl: string;
+  storeLocation: string;
+  whatsappMessage: string;
+  primaryBtnText: string;
+  secondaryBtnText: string;
+  secondaryBtnUrl: string;
+  isActive: boolean;
+}
+
+export const DEFAULT_ABOUT_SECTION: HomeAboutDto = {
+  badge: 'Nuestra Historia & Compromiso',
+  title: 'Más que electrodomésticos,',
+  titleHighlight: 'confort para tu vida',
+  description: 'En Papes Confort creemos que comprar para tu casa debe ser una experiencia simple, transparente y cercana. Desde nuestro local en Basavilbaso, Entre Ríos, te acompañamos para elegir el producto que mejor se adapta a tus necesidades y a tu presupuesto.',
+  imageUrl: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184619/papes-confort/landing/edificio_central.webp',
+  storeLocation: 'Basavilbaso, Entre Ríos • Atención personalizada',
+  whatsappMessage: '¡Hola Papes Confort! Me gustaría hacerles una consulta sobre sus productos y envíos.',
+  primaryBtnText: 'Contactar a un asesor por WhatsApp',
+  secondaryBtnText: 'Ver catálogo completo',
+  secondaryBtnUrl: '/catalogo',
+  isActive: true,
 };
 
 export type SettingsMap = Record<SettingKey, string | number | boolean>;

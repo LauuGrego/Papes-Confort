@@ -13,11 +13,11 @@ const openSans = Open_Sans({
 
 const SITE_URL = 'https://www.papesconfort.com.ar';
 
-const SITE_DESCRIPTION = 'Encontrá los mejores electrodomésticos, tecnología, climatización y artículos para el hogar en Papes Confort. Servicio y calidad asegurados en Basavilbaso.';
+const SITE_DESCRIPTION = 'Todo para equipar tu hogar. Electrodomésticos, climatización y confort para todos los días con la calidez y el respaldo de siempre en Basavilbaso, Entre Ríos.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Papes Confort | Servicio y Calidad Asegurados',
+  title: 'Papes Confort — Confort para todos los días | Electrodomésticos y Hogar',
   description: SITE_DESCRIPTION,
   icons: {
     icon: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'Papes Confort | Servicio y Calidad Asegurados',
+    title: 'Papes Confort — Confort para todos los días',
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: 'Papes Confort',

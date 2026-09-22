@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
 import {
@@ -17,20 +17,20 @@ import {
   ArrowDown,
   Image as ImageIcon,
   MessageSquare,
-  ShieldCheck,
   Save,
   Lock,
   Mail,
-  Smartphone,
   CreditCard,
-  Move,
   MapPin,
   RotateCcw,
   Upload,
-  Link as LinkIcon,
   Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
+import AdminCategoriesConfig from '../../../../components/admin/AdminCategoriesConfig';
+import AdminWeeklyOfferConfig from '../../../../components/admin/AdminWeeklyOfferConfig';
+import AdminTrustBarConfig from '../../../../components/admin/AdminTrustBarConfig';
+import AdminAboutConfig from '../../../../components/admin/AdminAboutConfig';
 import {
   HomeFlyerDto,
   PaymentFeatureCardDto,
@@ -38,6 +38,14 @@ import {
   FlyerObjectFit,
   HomeHeroBannerDto,
   DEFAULT_HERO_BANNER,
+  HomeCategoryCardDto,
+  DEFAULT_CATEGORY_CARDS,
+  HomeWeeklyOfferDto,
+  DEFAULT_WEEKLY_OFFER,
+  HomeTrustBarItemDto,
+  DEFAULT_TRUST_BAR,
+  HomeAboutDto,
+  DEFAULT_ABOUT_SECTION,
 } from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
@@ -83,8 +91,30 @@ const DEFAULT_PAYMENT_CARDS: PaymentFeatureCardDto[] = [
 
 function AdminConfiguracionContent() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as 'banners' | 'payment_cards' | 'general' | 'security') || 'banners';
-  const [activeTab, setActiveTab] = useState<'banners' | 'payment_cards' | 'general' | 'security'>(initialTab);
+  type TabType =
+    | 'landing'
+    | 'hero'
+    | 'banners'
+    | 'flyers'
+    | 'categories'
+    | 'weekly_offer'
+    | 'trust_bar'
+    | 'about'
+    | 'payment_cards'
+    | 'general'
+    | 'security';
+  const paramTab = searchParams.get('tab') as TabType;
+  const initialTab = paramTab || 'landing';
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  useEffect(() => {
+    const rawTab = searchParams.get('tab') as TabType;
+    if (rawTab) {
+      setActiveTab(rawTab);
+    }
+  }, [searchParams]);
+
+
 
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -97,101 +127,28 @@ function AdminConfiguracionContent() {
   const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
   const [paymentCards, setPaymentCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_PAYMENT_CARDS);
 
+  // Landing Components States
+  const [categoryCards, setCategoryCards] = useState<HomeCategoryCardDto[]>(DEFAULT_CATEGORY_CARDS);
+  const [weeklyOffer, setWeeklyOffer] = useState<HomeWeeklyOfferDto>(DEFAULT_WEEKLY_OFFER);
+  const [trustBarItems, setTrustBarItems] = useState<HomeTrustBarItemDto[]>(DEFAULT_TRUST_BAR);
+  const [aboutConfig, setAboutConfig] = useState<HomeAboutDto>(DEFAULT_ABOUT_SECTION);
+
   // Hero Main Banner State (Foto principal de la portada)
   const [heroBanner, setHeroBanner] = useState<HomeHeroBannerDto>(DEFAULT_HERO_BANNER);
   const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
-
-  // Drag State para Hero Banner
-  const heroPreviewContainerRef = useRef<HTMLDivElement>(null);
-  const [isDraggingHero, setIsDraggingHero] = useState(false);
-  const [dragStartHeroPos, setDragStartHeroPos] = useState<{ x: number; y: number; startX: number; startY: number } | null>(null);
-
-  const handleHeroDragStart = (clientX: number, clientY: number) => {
-    if (!heroBanner.imageUrl) return;
-    setIsDraggingHero(true);
-    setDragStartHeroPos({
-      x: clientX,
-      y: clientY,
-      startX: heroBanner.objectPositionX ?? 50,
-      startY: heroBanner.objectPositionY ?? 50,
-    });
-  };
-
-  const handleHeroDragMove = (clientX: number, clientY: number) => {
-    if (!isDraggingHero || !dragStartHeroPos || !heroPreviewContainerRef.current) return;
-    const rect = heroPreviewContainerRef.current.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-
-    const deltaX = clientX - dragStartHeroPos.x;
-    const deltaY = clientY - dragStartHeroPos.y;
-
-    const percentDeltaX = -(deltaX / rect.width) * 100;
-    const percentDeltaY = -(deltaY / rect.height) * 100;
-
-    const newX = Math.max(0, Math.min(100, Math.round(dragStartHeroPos.startX + percentDeltaX)));
-    const newY = Math.max(0, Math.min(100, Math.round(dragStartHeroPos.startY + percentDeltaY)));
-
-    setHeroBanner((prev: HomeHeroBannerDto) => ({
-      ...prev,
-      objectPositionX: newX,
-      objectPositionY: newY,
-    }));
-  };
-
-  const handleHeroDragEnd = () => {
-    setIsDraggingHero(false);
-    setDragStartHeroPos(null);
-  };
 
   // Modal State para Banners Flyers
   const [isFlyerModalOpen, setIsFlyerModalOpen] = useState(false);
   const [editingFlyer, setEditingFlyer] = useState<HomeFlyerDto | null>(null);
   const [flyerTitle, setFlyerTitle] = useState('');
   const [flyerImageUrl, setFlyerImageUrl] = useState('');
+  const [flyerImages, setFlyerImages] = useState<string[]>([]);
   const [flyerIsActive, setFlyerIsActive] = useState(true);
   const [flyerAspectRatio, setFlyerAspectRatio] = useState<FlyerAspectRatio>('ultrawide');
   const [flyerObjectFit, setFlyerObjectFit] = useState<FlyerObjectFit>('cover');
   const [flyerObjectPositionX, setFlyerObjectPositionX] = useState<number>(50);
   const [flyerObjectPositionY, setFlyerObjectPositionY] = useState<number>(50);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  const previewContainerRef = useRef<HTMLDivElement>(null);
-  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
-  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number; startX: number; startY: number } | null>(null);
-
-  const handleBannerDragStart = (clientX: number, clientY: number) => {
-    if (!flyerImageUrl) return;
-    setIsDraggingBanner(true);
-    setDragStartPos({
-      x: clientX,
-      y: clientY,
-      startX: flyerObjectPositionX,
-      startY: flyerObjectPositionY,
-    });
-  };
-
-  const handleBannerDragMove = (clientX: number, clientY: number) => {
-    if (!isDraggingBanner || !dragStartPos || !previewContainerRef.current) return;
-    const rect = previewContainerRef.current.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-
-    const deltaX = clientX - dragStartPos.x;
-    const deltaY = clientY - dragStartPos.y;
-
-    const percentDeltaX = -(deltaX / rect.width) * 100;
-    const percentDeltaY = -(deltaY / rect.height) * 100;
-
-    const newX = Math.max(0, Math.min(100, Math.round(dragStartPos.startX + percentDeltaX)));
-    const newY = Math.max(0, Math.min(100, Math.round(dragStartPos.startY + percentDeltaY)));
-
-    setFlyerObjectPositionX(newX);
-    setFlyerObjectPositionY(newY);
-  };
-
-  const handleBannerDragEnd = () => {
-    setIsDraggingBanner(false);
-    setDragStartPos(null);
-  };
 
   // Modal State para Tarjetas Informativas
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
@@ -256,6 +213,46 @@ function AdminConfiguracionContent() {
             console.error('Error al parsear home_payment_cards de DB:', e);
           }
         }
+        if (res.data.home_category_cards) {
+          try {
+            const parsed = JSON.parse(res.data.home_category_cards);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCategoryCards(parsed);
+            }
+          } catch (e) {
+            console.error('Error al parsear home_category_cards de DB:', e);
+          }
+        }
+        if (res.data.home_weekly_offer) {
+          try {
+            const parsed = JSON.parse(res.data.home_weekly_offer);
+            if (parsed && typeof parsed === 'object') {
+              setWeeklyOffer({ ...DEFAULT_WEEKLY_OFFER, ...parsed });
+            }
+          } catch (e) {
+            console.error('Error al parsear home_weekly_offer de DB:', e);
+          }
+        }
+        if (res.data.home_trust_bar) {
+          try {
+            const parsed = JSON.parse(res.data.home_trust_bar);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTrustBarItems(parsed);
+            }
+          } catch (e) {
+            console.error('Error al parsear home_trust_bar de DB:', e);
+          }
+        }
+        if (res.data.home_about) {
+          try {
+            const parsed = JSON.parse(res.data.home_about);
+            if (parsed && typeof parsed === 'object') {
+              setAboutConfig({ ...DEFAULT_ABOUT_SECTION, ...parsed });
+            }
+          } catch (e) {
+            console.error('Error al parsear home_about de DB:', e);
+          }
+        }
       }
       setLoading(false);
     }
@@ -265,7 +262,11 @@ function AdminConfiguracionContent() {
   const saveSettings = async (
     updatedFlyers?: HomeFlyerDto[],
     updatedCards?: PaymentFeatureCardDto[],
-    updatedHeroBanner?: HomeHeroBannerDto
+    updatedHeroBanner?: HomeHeroBannerDto,
+    updatedCategories?: HomeCategoryCardDto[],
+    updatedWeeklyOffer?: HomeWeeklyOfferDto,
+    updatedTrustBar?: HomeTrustBarItemDto[],
+    updatedAbout?: HomeAboutDto
   ) => {
     setSaveLoading(true);
     setSuccessMsg(null);
@@ -274,6 +275,10 @@ function AdminConfiguracionContent() {
     const flyersToSave = updatedFlyers || flyers;
     const cardsToSave = updatedCards || paymentCards;
     const heroToSave = updatedHeroBanner || heroBanner;
+    const categoriesToSave = updatedCategories || categoryCards;
+    const weeklyOfferToSave = updatedWeeklyOffer || weeklyOffer;
+    const trustBarToSave = updatedTrustBar || trustBarItems;
+    const aboutToSave = updatedAbout || aboutConfig;
 
     const body = {
       safety_stock: safetyStock,
@@ -281,6 +286,10 @@ function AdminConfiguracionContent() {
       home_flyers: JSON.stringify(flyersToSave),
       home_payment_cards: JSON.stringify(cardsToSave),
       home_hero_banner: JSON.stringify(heroToSave),
+      home_category_cards: JSON.stringify(categoriesToSave),
+      home_weekly_offer: JSON.stringify(weeklyOfferToSave),
+      home_trust_bar: JSON.stringify(trustBarToSave),
+      home_about: JSON.stringify(aboutToSave),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -340,11 +349,20 @@ function AdminConfiguracionContent() {
 
         if (res.success && res.data?.url) {
           const newUrl = res.data.url;
-          setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, imageUrl: newUrl }));
+          setHeroBanner((prev: HomeHeroBannerDto) => {
+            const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (prev.imageUrl ? [prev.imageUrl] : []);
+            const updatedImgs = [...currentImgs, newUrl];
+            return {
+              ...prev,
+              imageUrl: prev.imageUrl || newUrl,
+              images: updatedImgs,
+            };
+          });
         } else {
           if (res.error === 'Unauthorized' || res.error?.includes('Unauthorized')) {
             alert('Tu sesión de administrador ha expirado. Por favor, vuelve a iniciar sesión.');
-            window.location.href = '/admin/login';
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/ingresar?redirect=${returnUrl}`;
           } else {
             alert(res.error || 'Error al subir la imagen.');
           }
@@ -356,6 +374,19 @@ function AdminConfiguracionContent() {
       console.error('Error al subir imagen del hero banner:', err);
       setUploadingHeroImage(false);
     }
+  };
+
+  const handleRemoveHeroImage = (indexToRemove: number) => {
+    setHeroBanner((prev: HomeHeroBannerDto) => {
+      const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (prev.imageUrl ? [prev.imageUrl] : []);
+      const updatedImgs = currentImgs.filter((_, idx) => idx !== indexToRemove);
+      const newMain = updatedImgs[0] || DEFAULT_HERO_BANNER.imageUrl;
+      return {
+        ...prev,
+        imageUrl: newMain,
+        images: updatedImgs,
+      };
+    });
   };
 
   const handleResetHeroBanner = async () => {
@@ -379,11 +410,16 @@ function AdminConfiguracionContent() {
         });
 
         if (res.success && res.data?.url) {
-          setFlyerImageUrl(res.data.url);
+          const newUrl = res.data.url;
+          setFlyerImages((prev) => [...prev, newUrl]);
+          if (!flyerImageUrl) {
+            setFlyerImageUrl(newUrl);
+          }
         } else {
           if (res.error === 'Unauthorized' || res.error?.includes('Unauthorized')) {
             alert('Tu sesión de administrador ha expirado. Por favor, vuelve a iniciar sesión.');
-            window.location.href = '/admin/login';
+            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/ingresar?redirect=${returnUrl}`;
           } else {
             alert(res.error || 'Error al subir la imagen.');
           }
@@ -398,11 +434,24 @@ function AdminConfiguracionContent() {
     }
   };
 
+  const handleRemoveFlyerImage = (indexToRemove: number) => {
+    setFlyerImages((prev) => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      if (updated.length > 0) {
+        setFlyerImageUrl(updated[0]);
+      } else {
+        setFlyerImageUrl('');
+      }
+      return updated;
+    });
+  };
+
   // Flyer CRUD operations
   const openNewFlyerModal = () => {
     setEditingFlyer(null);
     setFlyerTitle('');
     setFlyerImageUrl('');
+    setFlyerImages([]);
     setFlyerIsActive(true);
     setFlyerAspectRatio('ultrawide');
     setFlyerObjectFit('cover');
@@ -415,6 +464,10 @@ function AdminConfiguracionContent() {
     setEditingFlyer(flyer);
     setFlyerTitle(flyer.title || '');
     setFlyerImageUrl(flyer.imageUrl || '');
+    const imgs = flyer.images && flyer.images.length > 0
+      ? flyer.images
+      : (flyer.imageUrl ? [flyer.imageUrl] : []);
+    setFlyerImages(imgs);
     setFlyerIsActive(flyer.isActive);
     setFlyerAspectRatio(flyer.aspectRatio || 'ultrawide');
     setFlyerObjectFit(flyer.objectFit || 'cover');
@@ -441,6 +494,8 @@ function AdminConfiguracionContent() {
     e.preventDefault();
     let newFlyersList: HomeFlyerDto[] = [];
     const formattedPosition = `${flyerObjectPositionX}% ${flyerObjectPositionY}%`;
+    const finalImages = flyerImages.filter((img) => img && img.trim() !== '');
+    const mainImageUrl = finalImages[0] || flyerImageUrl;
 
     if (editingFlyer) {
       newFlyersList = flyers.map((f) =>
@@ -448,7 +503,8 @@ function AdminConfiguracionContent() {
           ? {
               ...f,
               title: flyerTitle,
-              imageUrl: flyerImageUrl,
+              imageUrl: mainImageUrl,
+              images: finalImages,
               linkUrl: '/catalogo',
               isActive: flyerIsActive,
               aspectRatio: flyerAspectRatio,
@@ -463,7 +519,8 @@ function AdminConfiguracionContent() {
       const newFlyer: HomeFlyerDto = {
         id: `flyer-${Date.now()}`,
         title: flyerTitle,
-        imageUrl: flyerImageUrl,
+        imageUrl: mainImageUrl,
+        images: finalImages,
         linkUrl: '/catalogo',
         isActive: flyerIsActive,
         sortOrder: flyers.length + 1,
@@ -721,75 +778,46 @@ function AdminConfiguracionContent() {
 
   return (
     <div className="space-y-8">
-      {/* Encabezado Principal */}
+      {/* Encabezado Dinámico de Sección */}
       <div>
         <h1 className="font-display text-3xl font-extrabold text-brand-black tracking-tight">
-          Configuración del Sistema
+          {activeTab === 'general'
+            ? 'WhatsApp y Atención Comercial'
+            : activeTab === 'security'
+            ? 'Seguridad y Accesos Admin'
+            : activeTab === 'flyers' || activeTab === 'banners'
+            ? 'Carrusel de Banners Promocionales'
+            : activeTab === 'categories'
+            ? 'Categorías Destacadas'
+            : activeTab === 'weekly_offer'
+            ? 'Oferta de la Semana'
+            : activeTab === 'trust_bar'
+            ? 'Barra de Beneficios'
+            : activeTab === 'payment_cards'
+            ? 'Tarjetas Informativas y Medios de Pago'
+            : activeTab === 'about'
+            ? 'Sección Sobre Nosotros'
+            : 'Hero Principal de Portada'}
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Gestiona los banners promocionales, tarjetas informativas de la portada, vías de contacto comercial y credenciales de acceso.
+          {activeTab === 'general'
+            ? 'Configura el número oficial de atención al cliente por WhatsApp y el stock de seguridad.'
+            : activeTab === 'security'
+            ? 'Administra la contraseña y el correo de notificaciones del administrador.'
+            : activeTab === 'flyers' || activeTab === 'banners'
+            ? 'Administra los banners publicitarios y afiches promocionales rotativos de la portada.'
+            : activeTab === 'categories'
+            ? 'Personaliza las categorías principales con accesos rápidos e imágenes de portada.'
+            : activeTab === 'weekly_offer'
+            ? 'Configura la oferta destacada semanal con cuenta regresiva y banner promocional.'
+            : activeTab === 'trust_bar'
+            ? 'Administra los beneficios de confianza (envíos, garantía, cuotas) de la barra superior.'
+            : activeTab === 'payment_cards'
+            ? 'Personaliza las tarjetas de beneficios de pagos (bancos, transferencias, QR).'
+            : activeTab === 'about'
+            ? 'Edita la reseña histórica, valores y fotos de la sucursal del bloque Sobre Nosotros.'
+            : 'Personaliza la foto principal del encabezado, titular H1, subtítulo, botones y etiquetas.'}
         </p>
-      </div>
-
-      {/* Tabs de Navegación de Configuración */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('banners')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'banners'
-              ? 'bg-brand-red text-white shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-          }`}
-        >
-          <ImageIcon className="h-4 w-4" />
-          <span>Banners de Portada</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-            activeTab === 'banners' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-          }`}>
-            {flyers.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('payment_cards')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'payment_cards'
-              ? 'bg-brand-red text-white shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-          }`}
-        >
-          <CreditCard className="h-4 w-4" />
-          <span>Tarjetas Informativas</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-            activeTab === 'payment_cards' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-          }`}>
-            {paymentCards.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'general'
-              ? 'bg-brand-red text-white shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-          }`}
-        >
-          <Smartphone className="h-4 w-4" />
-          <span>WhatsApp y Atención</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'security'
-              ? 'bg-brand-red text-white shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-          }`}
-        >
-          <ShieldCheck className="h-4 w-4" />
-          <span>Seguridad de Cuenta</span>
-        </button>
       </div>
 
       {/* Alertas de Respuesta */}
@@ -807,10 +835,10 @@ function AdminConfiguracionContent() {
         </div>
       )}
 
-      {/* TAB 1: Banners de Portada */}
-      {activeTab === 'banners' && (
+      {/* TAB: Hero Banner Principal */}
+      {(activeTab === 'landing' || activeTab === 'hero') && (
         <div className="space-y-10">
-          {/* SECCIÓN 1: FOTO / BANNER PRINCIPAL DEL HERO */}
+          {/* FOTO / BANNER PRINCIPAL DEL HERO */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
@@ -858,28 +886,95 @@ function AdminConfiguracionContent() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Form Controls */}
               <div className="lg:col-span-7 space-y-5">
-                {/* Image Upload & URL */}
+                {/* Image Upload File */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                     Imagen del Banner *
                   </label>
-                  <div className="flex flex-col sm:flex-row items-stretch gap-3">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={heroBanner.imageUrl}
-                        onChange={(e) => setHeroBanner({ ...heroBanner, imageUrl: e.target.value })}
-                        placeholder="https://ejemplo.com/banner.jpg o /images/edificio.webp"
-                        className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all font-mono"
-                      />
-                    </div>
-                    <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0">
+                  <label className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
+                    {uploadingHeroImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span>{uploadingHeroImage ? 'Subiendo foto a Cloudinary...' : 'Subir Foto de Banner (Archivo)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleHeroImageUpload}
+                      disabled={uploadingHeroImage}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-[11px] text-slate-400 mt-1.5">
+                    Las fotos se suben únicamente como archivo desde tu dispositivo (.webp, .jpg, .png).
+                  </p>
+                </div>
+
+                {/* Galería / Carrusel Multi-Imagen del Hero Banner */}
+                <div className="space-y-2 pt-1 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block">
+                      Imágenes del Carrusel Hero (Multi-Imagen)
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {(heroBanner.images || []).length} foto(s) configurada(s)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {(heroBanner.images && heroBanner.images.length > 0
+                      ? heroBanner.images
+                      : [heroBanner.imageUrl || DEFAULT_HERO_BANNER.imageUrl]
+                    ).map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className={`relative group rounded-2xl overflow-hidden border-2 transition-all ${
+                          heroBanner.imageUrl === imgUrl
+                            ? 'border-brand-red ring-2 ring-brand-red/20 shadow-xs'
+                            : 'border-slate-200 bg-slate-50'
+                        }`}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Hero foto ${idx + 1}`}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setHeroBanner({ ...heroBanner, imageUrl: imgUrl })}
+                            className="px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer"
+                          >
+                            Principal
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHeroImage(idx)}
+                            className="p-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer"
+                            title="Eliminar del carrusel"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {heroBanner.imageUrl === imgUrl && (
+                          <span className="absolute top-1 left-1 bg-brand-red text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs">
+                            Principal
+                          </span>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Botón para subir nueva foto al Hero */}
+                    <label className="border-2 border-dashed border-slate-200 hover:border-brand-red/60 rounded-2xl h-20 flex flex-col items-center justify-center gap-1 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-all text-slate-400 hover:text-brand-red">
                       {uploadingHeroImage ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
                       ) : (
-                        <Upload className="h-4 w-4" />
+                        <>
+                          <Plus className="h-4 w-4" />
+                          <span className="text-[10px] font-bold">+ Agregar foto</span>
+                        </>
                       )}
-                      <span>{uploadingHeroImage ? 'Subiendo...' : 'Subir Archivo'}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -889,41 +984,89 @@ function AdminConfiguracionContent() {
                       />
                     </label>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">
-                    Recomendado: Imágenes horizontales o cuadradas en alta resolución (.webp, .jpg, .png).
-                  </p>
                 </div>
 
-                {/* Título y Enlace de Destino */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Título y Subtítulo */}
+                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Título / Texto Alternativo
+                      Titular Principal (H1)
                     </label>
                     <input
                       type="text"
                       value={heroBanner.title || ''}
                       onChange={(e) => setHeroBanner({ ...heroBanner, title: e.target.value })}
-                      placeholder="Ej: Edificio Papes Confort"
-                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
+                      placeholder="TODO PARA EQUIPAR TU HOGAR"
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs font-bold text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Enlace al hacer clic (opcional)
+                      Subtítulo / Bajada Editorial
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={heroBanner.linkUrl || ''}
-                        onChange={(e) => setHeroBanner({ ...heroBanner, linkUrl: e.target.value })}
-                        placeholder="Ej: /catalogo o /ofertas"
-                        className="w-full px-4 py-2.5 pl-8 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
-                      />
-                      <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                    </div>
+                    <textarea
+                      rows={2}
+                      value={heroBanner.subtitle || ''}
+                      onChange={(e) => setHeroBanner({ ...heroBanner, subtitle: e.target.value })}
+                      placeholder="Electrodomésticos, climatización y confort para todos los días con la calidez y el respaldo de siempre."
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all resize-none"
+                    />
                   </div>
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                      Texto Botón Principal (Rojo)
+                    </span>
+                    <input
+                      type="text"
+                      value={heroBanner.primaryBtnText || ''}
+                      onChange={(e) => setHeroBanner({ ...heroBanner, primaryBtnText: e.target.value })}
+                      placeholder="Ver Catálogo"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:border-brand-red"
+                    />
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                      Texto Botón Secundario (Blanco)
+                    </span>
+                    <input
+                      type="text"
+                      value={heroBanner.secondaryBtnText || ''}
+                      onChange={(e) => setHeroBanner({ ...heroBanner, secondaryBtnText: e.target.value })}
+                      placeholder="Ver Ofertas"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 outline-none focus:border-brand-red"
+                    />
+                  </div>
+                </div>
+
+                {/* Tendencias / Tags de Búsqueda Popular */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tendencias / Búsquedas Rápidas (separadas por coma)
+                  </label>
+                  <input
+                    type="text"
+                    value={heroBanner.searchTags ? heroBanner.searchTags.join(', ') : ''}
+                    onChange={(e) =>
+                      setHeroBanner({
+                        ...heroBanner,
+                        searchTags: e.target.value
+                          .split(',')
+                          .map((t) => t.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder="Heladeras, Lavarropas, Smart TV, Colchones, Aires"
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Cada palabra o frase generará un botón de búsqueda directa en la portada.
+                  </p>
                 </div>
 
                 {/* Badge flotante de ubicación */}
@@ -959,124 +1102,21 @@ function AdminConfiguracionContent() {
                     </div>
                   )}
                 </div>
-
-                {/* Ajustes de Encuadre & Posición */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                        Modo de Ajuste
-                      </span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Arrastra la foto en la vista previa a la derecha para encuadrarla.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, objectFit: 'cover' }))}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                          heroBanner.objectFit !== 'contain'
-                            ? 'bg-brand-red text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        Cover (Llenar)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setHeroBanner((prev: HomeHeroBannerDto) => ({ ...prev, objectFit: 'contain' }))}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                          heroBanner.objectFit === 'contain'
-                            ? 'bg-brand-red text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        Contain (Completa)
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50">
-                    <div className="flex items-center gap-2">
-                      <Move className="h-3.5 w-3.5 text-brand-red" />
-                      <span className="text-xs text-slate-600 font-medium">
-                        Posición actual: <strong className="font-mono text-slate-900">X: {heroBanner.objectPositionX ?? 50}% | Y: {heroBanner.objectPositionY ?? 50}%</strong>
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setHeroBanner((prev: HomeHeroBannerDto) => ({
-                          ...prev,
-                          objectPositionX: 50,
-                          objectPositionY: 50,
-                        }))
-                      }
-                      className="text-[11px] font-bold text-slate-500 hover:text-brand-red transition-colors cursor-pointer"
-                    >
-                      Centrar (50% / 50%)
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              {/* Live Preview Box con Arrastre Interactivo */}
+              {/* Live Preview Box */}
               <div className="lg:col-span-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Move className="h-3.5 w-3.5 text-brand-red" />
-                    <span>Vista Previa & Encuadre</span>
-                  </span>
-                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    Arrastrá para reubicar
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <ImageIcon className="h-3.5 w-3.5 text-brand-red" />
+                  <span>Vista Previa del Banner</span>
+                </span>
 
-                <div
-                  ref={heroPreviewContainerRef}
-                  onMouseDown={(e) => handleHeroDragStart(e.clientX, e.clientY)}
-                  onMouseMove={(e) => handleHeroDragMove(e.clientX, e.clientY)}
-                  onMouseUp={handleHeroDragEnd}
-                  onMouseLeave={handleHeroDragEnd}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) {
-                      handleHeroDragStart(e.touches[0].clientX, e.touches[0].clientY);
-                    }
-                  }}
-                  onTouchMove={(e) => {
-                    if (e.touches.length > 0) {
-                      handleHeroDragMove(e.touches[0].clientX, e.touches[0].clientY);
-                    }
-                  }}
-                  onTouchEnd={handleHeroDragEnd}
-                  onTouchCancel={handleHeroDragEnd}
-                  className={`relative overflow-hidden rounded-3xl shadow-lg border-2 bg-gradient-to-b from-slate-100 to-white aspect-[4/3] max-h-[380px] flex items-center justify-center select-none touch-none transition-all group ${
-                    isDraggingHero
-                      ? 'cursor-grabbing border-brand-red ring-4 ring-brand-red/20'
-                      : 'cursor-grab border-slate-200/80 hover:border-brand-red/60 shadow-md'
-                  }`}
-                >
-                  {/* Floating drag indicator badge */}
-                  {heroBanner.imageUrl && (
-                    <div className="absolute top-3 left-3 z-30 bg-slate-900/80 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 pointer-events-none flex items-center gap-1.5 shadow-md">
-                      <Move className="h-3 w-3 text-rose-400 animate-pulse" />
-                      <span>{isDraggingHero ? 'Arrastrando foto...' : 'Arrastrá la foto para encuadrar'}</span>
-                    </div>
-                  )}
-
+                <div className="relative overflow-hidden rounded-3xl shadow-lg border border-slate-200/80 bg-slate-100 aspect-[16/10] max-h-[380px] flex items-center justify-center">
                   {heroBanner.imageUrl ? (
                     <img
                       src={heroBanner.imageUrl}
                       alt={heroBanner.title || 'Banner Principal'}
-                      draggable={false}
-                      style={{
-                        objectFit: heroBanner.objectFit || 'cover',
-                        objectPosition: `${heroBanner.objectPositionX ?? 50}% ${heroBanner.objectPositionY ?? 50}%`,
-                      }}
-                      className="w-full h-full select-none pointer-events-none transition-all duration-75"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
@@ -1097,20 +1137,16 @@ function AdminConfiguracionContent() {
                       </span>
                     </div>
                   )}
-
-                  {heroBanner.linkUrl && (
-                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1 border border-white/20 pointer-events-none z-20">
-                      <LinkIcon className="h-3 w-3" />
-                      <span>{heroBanner.linkUrl}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* SECCIÓN 2: CARRUSEL DE BANNERS PROMOCIONALES */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+      {/* TAB: Carrusel de Banners Promocionales (Flyers) */}
+      {(activeTab === 'banners' || activeTab === 'flyers') && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
                 <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
@@ -1233,11 +1269,42 @@ function AdminConfiguracionContent() {
               ))}
             </div>
           )}
-          </div>
         </div>
       )}
 
-      {/* TAB 2: Tarjetas Informativas de Beneficios */}
+      {/* TAB: Categorías Principales */}
+      {activeTab === 'categories' && (
+        <AdminCategoriesConfig
+          initialCards={categoryCards}
+          onSaved={(newCards) => setCategoryCards(newCards)}
+        />
+      )}
+
+      {/* TAB: Oferta de la Semana */}
+      {activeTab === 'weekly_offer' && (
+        <AdminWeeklyOfferConfig
+          initialConfig={weeklyOffer}
+          onSaved={(newOffer) => setWeeklyOffer(newOffer)}
+        />
+      )}
+
+      {/* TAB: Barra de Beneficios */}
+      {activeTab === 'trust_bar' && (
+        <AdminTrustBarConfig
+          initialItems={trustBarItems}
+          onSaved={(newItems) => setTrustBarItems(newItems)}
+        />
+      )}
+
+      {/* TAB: Sobre Nosotros */}
+      {activeTab === 'about' && (
+        <AdminAboutConfig
+          initialConfig={aboutConfig}
+          onSaved={(newAbout) => setAboutConfig(newAbout)}
+        />
+      )}
+
+      {/* TAB: Tarjetas Informativas de Beneficios */}
       {activeTab === 'payment_cards' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1644,56 +1711,85 @@ function AdminConfiguracionContent() {
                 />
               </div>
 
-              {/* Adjuntar Imagen del Flyer */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  Imagen del Banner (Adjuntar archivo)
-                </label>
-                
-                <div className="space-y-3">
-                  {flyerImageUrl ? (
-                    <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2.5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <img src={flyerImageUrl} alt="Preview" className="h-14 w-24 object-cover rounded-xl border border-slate-200 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">Imagen adjunta cargada</p>
-                          <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
-                            <CheckCircle className="h-3 w-3 shrink-0" /> Lista para la portada
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setFlyerImageUrl('')}
-                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-colors cursor-pointer shrink-0"
+              {/* Galería / Carrusel Multi-Imagen del Banner */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                    Imágenes del Banner (Carrusel Multi-Imagen) *
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {flyerImages.length} foto(s) agregada(s)
+                  </span>
+                </div>
+
+                {flyerImages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {flyerImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className={`relative group rounded-2xl overflow-hidden border-2 transition-all ${
+                          flyerImageUrl === imgUrl
+                            ? 'border-brand-red ring-2 ring-brand-red/20 shadow-xs'
+                            : 'border-slate-200 bg-slate-50'
+                        }`}
                       >
-                        Quitar
-                      </button>
+                        <img
+                          src={imgUrl}
+                          alt={`Flyer foto ${idx + 1}`}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setFlyerImageUrl(imgUrl)}
+                            className="px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer"
+                          >
+                            Principal
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFlyerImage(idx)}
+                            className="p-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer"
+                            title="Quitar foto"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {flyerImageUrl === imgUrl && (
+                          <span className="absolute top-1 left-1 bg-brand-red text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs">
+                            Principal
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="relative border-2 border-dashed border-slate-200 hover:border-brand-red/40 rounded-2xl p-5 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors group">
+                  {uploadingImage ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-2">
+                      <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
+                      <span className="text-xs font-bold text-slate-600">Subiendo imagen a Cloudinary...</span>
                     </div>
                   ) : (
-                    <div className="relative border-2 border-dashed border-slate-200 hover:border-brand-red/40 rounded-2xl p-6 text-center bg-slate-50/50 transition-colors group">
-                      {uploadingImage ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-2">
-                          <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
-                          <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
-                        </div>
-                      ) : (
-                        <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
-                          <ImageIcon className="h-8 w-8 text-slate-400 group-hover:text-brand-red transition-colors" />
-                          <div className="space-y-1">
-                            <span className="text-xs font-bold text-brand-red hover:underline block">
-                              Haz clic aquí para seleccionar y adjuntar la imagen del banner
-                            </span>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
-                    </div>
+                    <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                      <ImageIcon className="h-7 w-7 text-slate-400 group-hover:text-brand-red transition-colors" />
+                      <div className="space-y-1">
+                        <span className="text-xs font-bold text-brand-red hover:underline block">
+                          + Adjuntar foto a este carrusel (Subida instantánea a Cloudinary)
+                        </span>
+                        <span className="text-[10px] text-slate-400 block">
+                          Podés subir múltiples imágenes para que roten automáticamente en el carrusel de este banner
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                        className="hidden"
+                      />
+                    </label>
                   )}
                 </div>
               </div>
@@ -1783,115 +1879,6 @@ function AdminConfiguracionContent() {
                     </div>
                     <span className="text-[10px] text-slate-400">Destacado de mayor altura</span>
                   </button>
-                </div>
-              </div>
-
-              {/* Modo de Ajuste (object-fit) */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  Modo de Ajuste
-                </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
-                  <button
-                    type="button"
-                    onClick={() => setFlyerObjectFit('cover')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      flyerObjectFit === 'cover'
-                        ? 'bg-white text-slate-800 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Recortar y Llenar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFlyerObjectFit('contain')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      flyerObjectFit === 'contain'
-                        ? 'bg-white text-slate-800 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Ajustar Entera sin Recorte
-                  </button>
-                </div>
-              </div>
-
-              {/* LIENZO DE ARRASTRE INTERACTIVO DIRECTO (MOUSE & TÁCTIL) */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Move className="h-3.5 w-3.5 text-brand-red" />
-                    <span>Ajuste de Posición (Haz clic/toca y arrastra la foto)</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFlyerObjectPositionX(50);
-                      setFlyerObjectPositionY(50);
-                    }}
-                    className="text-[11px] font-bold text-brand-red hover:underline cursor-pointer"
-                  >
-                    Centrar (50% / 50%)
-                  </button>
-                </div>
-
-                {/* Contenedor Interactivo con Eventos de Arrastre */}
-                <div className="w-full flex justify-center items-center bg-transparent p-1">
-                  <div
-                    ref={previewContainerRef}
-                    onMouseDown={(e) => handleBannerDragStart(e.clientX, e.clientY)}
-                    onMouseMove={(e) => handleBannerDragMove(e.clientX, e.clientY)}
-                    onMouseUp={handleBannerDragEnd}
-                    onMouseLeave={handleBannerDragEnd}
-                    onTouchStart={(e) => {
-                      if (e.touches.length > 0) handleBannerDragStart(e.touches[0].clientX, e.touches[0].clientY);
-                    }}
-                    onTouchMove={(e) => {
-                      if (e.touches.length > 0) handleBannerDragMove(e.touches[0].clientX, e.touches[0].clientY);
-                    }}
-                    onTouchEnd={handleBannerDragEnd}
-                    onTouchCancel={handleBannerDragEnd}
-                    className={`w-full relative overflow-hidden flex justify-center items-center transition-all mx-auto select-none touch-none rounded-2xl border-2 border-slate-300 group ${
-                      isDraggingBanner ? 'cursor-grabbing border-brand-red ring-2 ring-brand-red/20' : 'cursor-grab hover:border-brand-red/60'
-                    } ${
-                      flyerAspectRatio === 'wide'
-                        ? 'aspect-[16/9]'
-                        : flyerAspectRatio === 'compact'
-                        ? 'aspect-[2.5/1]'
-                        : flyerAspectRatio === 'tall'
-                        ? 'aspect-[3/2]'
-                        : 'aspect-[4.5/1]'
-                    }`}
-                  >
-                    {/* Badge ayuda flotante */}
-                    {flyerImageUrl && (
-                      <div className="absolute top-2.5 right-2.5 z-20 bg-slate-900/80 text-white text-[10px] font-bold px-3 py-1 rounded-full backdrop-blur-md border border-white/20 pointer-events-none flex items-center gap-1.5 shadow-md">
-                        <Move className="h-3 w-3 text-rose-400 animate-pulse" />
-                        <span>{isDraggingBanner ? 'Arrastrando...' : 'Arrastra la foto para ubicarla'}</span>
-                      </div>
-                    )}
-
-                    {flyerImageUrl ? (
-                      <img
-                        src={flyerImageUrl}
-                        alt="Ajuste Interactivo"
-                        draggable={false}
-                        style={{
-                          objectFit: flyerObjectFit,
-                          objectPosition: `${flyerObjectPositionX}% ${flyerObjectPositionY}%`,
-                        }}
-                        className={`transition-all duration-75 select-none ${
-                          flyerObjectFit === 'contain' ? 'w-auto h-full mx-auto' : 'w-full h-full'
-                        }`}
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-xl flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-slate-50">
-                        <ImageIcon className="h-6 w-6 opacity-40 mb-1" />
-                        <span className="text-[11px] font-bold">Adjunta una imagen arriba para arrastrar y encuadrar</span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
 

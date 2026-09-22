@@ -2,12 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { HomeFlyerDto } from '@papes-confort/shared';
+import { HomeFlyerDto, FlyerAspectRatio, FlyerObjectFit } from '@papes-confort/shared';
 import { fetchApi } from '../lib/api';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+interface FlyerSlideItem {
+  id: string;
+  flyerId: string;
+  title: string;
+  imageUrl: string;
+  linkUrl: string;
+  aspectRatio?: FlyerAspectRatio;
+  objectFit?: FlyerObjectFit;
+  objectPositionX?: number;
+  objectPositionY?: number;
+  objectPosition?: string;
+}
+
 export default function FlyersCarousel() {
-  const [flyers, setFlyers] = useState<HomeFlyerDto[]>([]);
+  const [slides, setSlides] = useState<FlyerSlideItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -23,10 +36,34 @@ export default function FlyersCarousel() {
           try {
             const parsed: HomeFlyerDto[] = JSON.parse(res.data.home_flyers);
             const activeFlyers = parsed
-              .filter((f) => f.isActive && f.imageUrl && f.imageUrl.trim() !== '')
+              .filter((f) => f.isActive)
               .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-            setFlyers(activeFlyers);
+            const generatedSlides: FlyerSlideItem[] = [];
+            activeFlyers.forEach((f) => {
+              const imgList = (
+                f.images && f.images.length > 0
+                  ? f.images
+                  : [f.imageUrl || '']
+              ).filter((img) => img && img.trim() !== '');
+
+              imgList.forEach((imgUrl, imgIdx) => {
+                generatedSlides.push({
+                  id: `${f.id}-${imgIdx}`,
+                  flyerId: f.id,
+                  title: f.title || 'Banner promocional Papes Confort',
+                  imageUrl: imgUrl,
+                  linkUrl: f.linkUrl || '/catalogo',
+                  aspectRatio: f.aspectRatio,
+                  objectFit: f.objectFit,
+                  objectPositionX: f.objectPositionX,
+                  objectPositionY: f.objectPositionY,
+                  objectPosition: f.objectPosition,
+                });
+              });
+            });
+
+            setSlides(generatedSlides);
           } catch (e) {
             console.error('Error al parsear home_flyers de la base de datos:', e);
           }
@@ -40,21 +77,21 @@ export default function FlyersCarousel() {
 
   // Timer auto-play setup (cada 5 segundos)
   useEffect(() => {
-    if (flyers.length <= 1 || isPaused) return;
+    if (slides.length <= 1 || isPaused) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev === flyers.length - 1 ? 0 : prev + 1));
+      setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [flyers.length, isPaused]);
+  }, [slides.length, isPaused]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? flyers.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev === flyers.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -80,13 +117,13 @@ export default function FlyersCarousel() {
     setTouchEnd(null);
   };
 
-  // Si no hay flyers configurados o activos con imagen en la base de datos, no se muestra nada
-  if (flyers.length === 0) return null;
+  // Si no hay slides configurados o activos, no se muestra nada
+  if (slides.length === 0) return null;
 
-  const currentFlyer = flyers[currentIndex];
+  const currentSlide = slides[currentIndex];
 
   const aspectClass = (() => {
-    switch (currentFlyer.aspectRatio) {
+    switch (currentSlide.aspectRatio) {
       case 'wide':
         return 'aspect-[16/9] max-h-[320px] sm:max-h-[420px]';
       case 'compact':
@@ -100,19 +137,19 @@ export default function FlyersCarousel() {
   })();
 
   const objectPositionStyle = (() => {
-    if (currentFlyer.objectPositionX !== undefined && currentFlyer.objectPositionY !== undefined) {
-      return `${currentFlyer.objectPositionX}% ${currentFlyer.objectPositionY}%`;
+    if (currentSlide.objectPositionX !== undefined && currentSlide.objectPositionY !== undefined) {
+      return `${currentSlide.objectPositionX}% ${currentSlide.objectPositionY}%`;
     }
-    if (currentFlyer.objectPosition) {
-      return currentFlyer.objectPosition.replace('-', ' ');
+    if (currentSlide.objectPosition) {
+      return currentSlide.objectPosition.replace('-', ' ');
     }
     return '50% 50%';
   })();
 
-  const objectFitClass = currentFlyer.objectFit === 'contain' ? 'object-contain w-auto h-full mx-auto' : 'object-cover w-full h-full';
+  const objectFitClass = currentSlide.objectFit === 'contain' ? 'object-contain w-auto h-full mx-auto' : 'object-cover w-full h-full';
 
   return (
-    <div className="w-full bg-transparent flex justify-center items-center">
+    <div className="w-full bg-transparent flex justify-center items-center py-3 sm:py-4">
       <div className="w-full max-w-7xl px-4 sm:px-6 flex justify-center items-center">
         <div
           className={`relative overflow-hidden group w-full mx-auto flex items-center justify-center ${aspectClass}`}
@@ -123,17 +160,18 @@ export default function FlyersCarousel() {
           onTouchEnd={handleTouchEnd}
         >
           {/* Banner Cliqueable */}
-          <Link href={currentFlyer.linkUrl || '/catalogo'} className="w-full h-full flex items-center justify-center relative z-10">
+          <Link href={currentSlide.linkUrl || '/catalogo'} className="w-full h-full flex items-center justify-center relative z-10">
             <img
-              src={currentFlyer.imageUrl}
-              alt={currentFlyer.title || 'Banner promocional Papes Confort'}
+              key={currentSlide.id}
+              src={currentSlide.imageUrl}
+              alt={currentSlide.title}
               style={{ objectPosition: objectPositionStyle }}
-              className={`rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md ${objectFitClass} transition-transform duration-700 hover:scale-[1.01]`}
+              className={`rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md ${objectFitClass} transition-transform duration-700 hover:scale-[1.01] animate-in fade-in duration-300`}
             />
           </Link>
 
-          {/* Flecha de Navegación Izquierda (Botón Circular Blanco) */}
-          {flyers.length > 1 && (
+          {/* Flecha de Navegación Izquierda */}
+          {slides.length > 1 && (
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -147,8 +185,8 @@ export default function FlyersCarousel() {
             </button>
           )}
 
-          {/* Flecha de Navegación Derecha (Botón Circular Blanco) */}
-          {flyers.length > 1 && (
+          {/* Flecha de Navegación Derecha */}
+          {slides.length > 1 && (
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -163,9 +201,9 @@ export default function FlyersCarousel() {
           )}
 
           {/* Indicadores de Posición / Puntos */}
-          {flyers.length > 1 && (
+          {slides.length > 1 && (
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 z-20">
-              {flyers.map((_, idx) => (
+              {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={(e) => {
@@ -186,3 +224,4 @@ export default function FlyersCarousel() {
     </div>
   );
 }
+

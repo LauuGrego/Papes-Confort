@@ -18,6 +18,7 @@ import {
   Award,
   Sparkles,
   Search,
+  Heart,
   Package,
 } from 'lucide-react';
 import { useCartStore } from '../stores/cart';
@@ -153,7 +154,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
-      <div className="mx-auto flex h-16 md:h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo and Text */}
         <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
           <img
@@ -171,87 +172,26 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* Barra de búsqueda (Escritorio) - Ubicada entre el logo y los links de acceso */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xs lg:max-w-sm xl:max-w-md mx-4 lg:mx-6 relative items-center group">
-          <input
-            type="text"
-            placeholder="Buscar marcas, rubros, productos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 rounded-2xl border border-slate-200 bg-slate-50/80 text-xs sm:text-sm text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/50 focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all duration-200 shadow-2xs"
-          />
-          <Search className="absolute left-3.5 h-4 w-4 text-slate-400 group-focus-within:text-brand-red transition-colors" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </form>
-
-        {/* Navigation links & Actions (Desktop) */}
-        <div className="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-medium tracking-wide shrink-0">
+        {/* Navegación Principal (Desktop) */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold tracking-wide">
           <Link
             href="/"
-            className="text-slate-600 hover:text-brand-red hover-underline-reveal transition-colors duration-200"
+            className="text-slate-700 hover:text-brand-red hover-underline-reveal transition-colors duration-200"
           >
             Inicio
           </Link>
 
-          {/* DESPLEGABLE: Ofertas (Solo ofertas dinámicas existentes) */}
-          {offers.length > 0 && (
-            <div className="relative group py-6">
-              <Link
-                href={`/catalogo?offer=${offers[0].slug}`}
-                className="text-brand-red font-semibold hover:text-brand-red-dark transition-colors duration-200 flex items-center gap-1.5 bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/15 hover:bg-brand-red/10 cursor-pointer"
-              >
-                <Tag className="h-3.5 w-3.5" />
-                <span>Ofertas</span>
-                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
-              </Link>
-
-              <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="w-64 rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 flex flex-col gap-1">
-                  {offers.map((offer) => (
-                    <Link
-                      key={offer.id}
-                      href={`/catalogo?offer=${offer.slug}`}
-                      className="flex items-center justify-between p-3 rounded-2xl hover:bg-brand-red/5 text-slate-700 hover:text-brand-red transition-colors group/item"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Sparkles className="h-4 w-4 text-brand-red shrink-0" />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold truncate">{offer.name}</span>
-                          {offer.discountPercent > 0 && (
-                            <span className="text-[10px] text-brand-red font-semibold">
-                              {offer.discountPercent}% OFF
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform shrink-0" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* DESPLEGABLE: Rubros y Subrubros */}
+          {/* DESPLEGABLE: Categorías (Rubros y Subrubros) */}
           <div className="relative group py-6">
             <button
               type="button"
               className="text-slate-600 hover:text-brand-red transition-colors duration-200 flex items-center gap-1.5 cursor-pointer py-1 select-none"
             >
-              <span>Rubros y Subrubros</span>
+              <span>Categorías</span>
               <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400 group-hover:text-brand-red" />
             </button>
 
-            <div className="absolute right-[-40px] lg:right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="w-[430px] max-h-[440px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-4 shadow-xl ring-1 ring-black/5 custom-scrollbar">
                 <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2 text-slate-700">
@@ -367,7 +307,7 @@ export default function Header() {
               <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400 group-hover:text-brand-red" />
             </button>
 
-            <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="w-72 max-h-[380px] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-3.5 shadow-xl ring-1 ring-black/5 custom-scrollbar">
                 <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
                   <div className="flex items-center gap-2 text-slate-700">
@@ -420,24 +360,52 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Carrito */}
-          <Link
-            href="/carrito"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
-            aria-label="Carrito de compras"
-          >
-            <ShoppingCart className="h-5 w-5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
-                {totalItems}
-              </span>
-            )}
-          </Link>
+          {/* DESPLEGABLE: Ofertas (Solo si existen ofertas activas) */}
+          {offers.length > 0 && (
+            <div className="relative group py-6">
+              <Link
+                href={`/catalogo?offer=${offers[0].slug}`}
+                className="text-brand-red font-semibold hover:text-brand-red-dark transition-colors duration-200 flex items-center gap-1.5 bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/15 hover:bg-brand-red/10 cursor-pointer"
+              >
+                <Tag className="h-3.5 w-3.5" />
+                <span>Ofertas</span>
+                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
+              </Link>
 
+              <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="w-64 rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 flex flex-col gap-1">
+                  {offers.map((offer) => (
+                    <Link
+                      key={offer.id}
+                      href={`/catalogo?offer=${offer.slug}`}
+                      className="flex items-center justify-between p-3 rounded-2xl hover:bg-brand-red/5 text-slate-700 hover:text-brand-red transition-colors group/item"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Sparkles className="h-4 w-4 text-brand-red shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold truncate">{offer.name}</span>
+                          {offer.discountPercent > 0 && (
+                            <span className="text-[10px] text-brand-red font-semibold">
+                              {offer.discountPercent}% OFF
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover/item:translate-x-1 transition-transform shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </nav>
+
+        {/* Acciones de usuario (Desktop): Mi Cuenta · Favoritos · Carrito */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           {/* Autenticación / Cuenta / Panel Admin */}
           {isAuthenticated ? (
             user?.type === 'admin' ? (
-              <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+              <div className="flex items-center gap-2">
                 <Link
                   href="/admin"
                   className="flex h-10 px-3.5 items-center gap-2 rounded-full border border-brand-red/20 hover:border-brand-red bg-brand-red/5 hover:bg-brand-red text-brand-red hover:text-white transition-all duration-200 text-xs font-bold shadow-sm"
@@ -457,7 +425,7 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="relative border-l border-slate-100 pl-3">
+              <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex h-10 items-center gap-2 px-3.5 rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer group"
@@ -521,34 +489,65 @@ export default function Header() {
               className="flex h-10 px-4 items-center justify-center gap-2 rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red bg-slate-50 hover:bg-slate-100 group shrink-0"
               aria-label="Ingresar a mi cuenta"
             >
-              <User className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-              <span>Ingresar</span>
+              <User className="h-4 w-4 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+              <span>Mi Cuenta</span>
             </Link>
           )}
+
+          {/* Favoritos (♡ SVG) */}
+          <Link
+            href="/catalogo"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
+            title="Mis Favoritos"
+            aria-label="Mis Favoritos"
+          >
+            <Heart className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+          </Link>
+
+          {/* Carrito (🛒 SVG) */}
+          <Link
+            href="/carrito"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
+            aria-label="Carrito de compras"
+          >
+            <ShoppingCart className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100">
+                {totalItems}
+              </span>
+            )}
+          </Link>
         </div>
 
-        {/* Action icons (Mobile menu toggle button) */}
-        <div className="flex items-center md:hidden">
+        {/* Acciones móviles: Carrito + Menú */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Link
+            href="/carrito"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all"
+            aria-label="Carrito de compras"
+          >
+            <ShoppingCart className="h-4.5 w-4.5" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+                {totalItems}
+              </span>
+            )}
+          </Link>
 
-          {/* VISTA MÓVIL: Botón de menú desplegable único */}
-          <div className="relative md:hidden">
+          {/* VISTA MÓVIL: Botón de menú desplegable */}
+          <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-10 px-4 items-center justify-center gap-2 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
+              className="flex h-10 px-3.5 items-center justify-center gap-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
               aria-expanded={menuOpen}
               aria-label="Menú del sitio"
             >
               {menuOpen ? (
-                <X className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors" />
+                <X className="h-4 w-4 text-slate-600 group-hover:text-brand-red transition-colors" />
               ) : (
-                <Menu className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors" />
+                <Menu className="h-4 w-4 text-slate-600 group-hover:text-brand-red transition-colors" />
               )}
               <span className="hidden sm:inline">Menú</span>
-              {totalItems > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white">
-                  {totalItems}
-                </span>
-              )}
             </button>
 
             {menuOpen && (
@@ -857,28 +856,30 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Barra de búsqueda Móvil (Visible siempre en pantalla en dispositivos móviles) */}
-      <div className="md:hidden px-4 pb-3 pt-0.5">
-        <form onSubmit={handleSearch} className="relative flex items-center group w-full">
-          <input
-            type="text"
-            placeholder="Buscar marcas, rubros, productos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-slate-50/90 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red/50 focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all duration-200 shadow-2xs"
-          />
-          <Search className="absolute left-3 h-3.5 w-3.5 text-slate-400 group-focus-within:text-brand-red transition-colors" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </form>
+      {/* Nivel 2: Buscador grande y protagonista */}
+      <div className="border-t border-slate-100 bg-slate-50/50 py-2.5 px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl lg:max-w-3xl">
+          <form onSubmit={handleSearch} className="relative flex items-center group w-full">
+            <Search className="absolute left-4 h-4.5 w-4.5 text-slate-400 group-focus-within:text-brand-red transition-colors pointer-events-none" />
+            <input
+              type="text"
+              placeholder="¿Qué estás buscando? Buscá por producto, marca o categoría..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-10 py-2.5 text-xs sm:text-sm text-brand-black placeholder-slate-400 bg-white border border-slate-200 rounded-full shadow-2xs outline-none focus:border-brand-red/50 focus:ring-4 focus:ring-brand-red/10 transition-all duration-200"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 p-1 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
+        </div>
       </div>
     </header>
   );
