@@ -16,7 +16,7 @@ function AdminLoginRedirect() {
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-brand-red mb-3" />
-      <p className="text-xs text-slate-500 font-medium">Redirigiendo a inicio de sesión unificado...</p>
+      <p className="text-xs text-slate-500 font-medium">Redirigiendo a inicio de sesión</p>
     </div>
   );
 }
