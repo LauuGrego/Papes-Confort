@@ -113,7 +113,7 @@ function AdminConfiguracionContent() {
       setActiveTab(rawTab);
     }
   }, [searchParams]);
-
+ 
 
 
   const [loading, setLoading] = useState(true);

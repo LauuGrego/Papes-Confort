@@ -69,6 +69,8 @@ router.post('/', async (req, res, next) => {
           description,
           basePrice,
           listPrice,
+          discountPercent,
+          productType,
           stock,
           brandName,
           gescomId,
@@ -108,14 +110,13 @@ router.post('/', async (req, res, next) => {
           brandId = brand.id;
         }
 
-        // Handle family and category (taxonomy)
+        // Handle category from rubro/subrubro
+        let productCategoryId: string | null = null;
         let productFamilyId = defaultFamily.id;
-        let productCategoryId: string | undefined = undefined;
 
-        if (rubro && String(rubro).trim()) {
-          const trimmedRubro = String(rubro).trim();
-          const familyName = trimmedRubro;
-          const familySlug = slugify(familyName);
+        if (rubro && rubro.trim()) {
+          const trimmedRubro = rubro.trim();
+          const familySlug = slugify(trimmedRubro);
           let family = await prisma.productFamily.findUnique({
             where: { slug: familySlug },
           });
@@ -123,15 +124,15 @@ router.post('/', async (req, res, next) => {
           if (!family) {
             family = await prisma.productFamily.create({
               data: {
-                name: familyName,
-                slug: familySlug || `family-${Date.now()}-${trimmedRubro}`,
+                name: trimmedRubro,
+                slug: familySlug || `family-${Date.now()}`,
               },
             });
           }
           productFamilyId = family.id;
 
-          if (subrubro && String(subrubro).trim()) {
-            const trimmedSubrubro = String(subrubro).trim();
+          if (subrubro && subrubro.trim()) {
+            const trimmedSubrubro = subrubro.trim();
             const categoryName = trimmedSubrubro;
             // Avoid collisions between identical subrubro codes belonging to different rubros
             const categorySlug = slugify(`rubro-${trimmedRubro}-subrubro-${trimmedSubrubro}`);
@@ -155,12 +156,34 @@ router.post('/', async (req, res, next) => {
         const numericPrice = Number(basePrice);
         const numericListPrice = listPrice !== undefined && listPrice !== null ? Number(listPrice) : numericPrice;
         const numericStock = Number(stock);
+
+        const offerTitle = item.offerName || item.listDescription || item.LDes || item.listName;
+        const lPorc = item.LPorc !== undefined ? Number(item.LPorc) : undefined;
+
+        // Compute discount percent using formula: (listPrice - basePrice) / listPrice * 100 or LPorc
+        let computedDiscount = 0;
+        if (discountPercent !== undefined && discountPercent !== null) {
+          computedDiscount = Number(discountPercent);
+        } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
+          computedDiscount = Math.abs(Math.round(lPorc));
+        } else if (numericListPrice > numericPrice && numericListPrice > 0) {
+          computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
+        }
+
+        // Determine product type (OFFER if discount > 0 or offerTitle passed, else NORMAL or passed type)
+        let finalProductType = productType;
+        if (!finalProductType) {
+          finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
+        }
+
         const baseSlug = slugify(gescomName) || `prod-${sku}`;
         const finalSlug = `${baseSlug}-${sku.toLowerCase()}`;
 
         const existing = await prisma.product.findUnique({
           where: { sku: String(sku) },
         });
+
+        let targetProductId: string;
 
         if (existing) {
           const currentSpecs = (existing.specs as Record<string, any>) || {};
@@ -172,7 +195,7 @@ router.post('/', async (req, res, next) => {
             ...(subrubro !== undefined && { subrubro }),
           };
 
-          await prisma.product.update({
+          const updatedProduct = await prisma.product.update({
             where: { id: existing.id },
             data: {
               gescomName: String(gescomName),
@@ -181,6 +204,8 @@ router.post('/', async (req, res, next) => {
               ...(isActive !== undefined && { isActive: Boolean(isActive) }),
               basePrice: numericPrice,
               listPrice: numericListPrice,
+              discountPercent: computedDiscount,
+              productType: finalProductType as any,
               stock: numericStock,
               brandId,
               productFamilyId,
@@ -191,6 +216,7 @@ router.post('/', async (req, res, next) => {
               lastSyncAt: new Date(),
             },
           });
+          targetProductId = updatedProduct.id;
           productsUpdated++;
         } else {
           const newSpecs: Record<string, any> = {};
@@ -199,7 +225,7 @@ router.post('/', async (req, res, next) => {
           if (rubro !== undefined) newSpecs.rubro = rubro;
           if (subrubro !== undefined) newSpecs.subrubro = subrubro;
 
-          await prisma.product.create({
+          const createdProduct = await prisma.product.create({
             data: {
               sku: String(sku),
               gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
@@ -211,6 +237,8 @@ router.post('/', async (req, res, next) => {
               isActive: isActive !== undefined ? Boolean(isActive) : true,
               basePrice: numericPrice,
               listPrice: numericListPrice,
+              discountPercent: computedDiscount,
+              productType: finalProductType as any,
               stock: numericStock,
               brandId,
               productFamilyId,
@@ -219,7 +247,43 @@ router.post('/', async (req, res, next) => {
               lastSyncAt: new Date(),
             },
           });
+          targetProductId = createdProduct.id;
           productsCreated++;
+        }
+
+        // If list description (LDes / offerName) is provided, link product to the corresponding Offer
+        if (offerTitle && String(offerTitle).trim()) {
+          const trimmedOfferTitle = String(offerTitle).trim();
+          const offerSlug = slugify(trimmedOfferTitle) || `offer-${Date.now()}`;
+          let offer = await prisma.offer.findFirst({
+            where: { OR: [{ slug: offerSlug }, { name: trimmedOfferTitle }] },
+          });
+
+          if (!offer) {
+            offer = await prisma.offer.create({
+              data: {
+                name: trimmedOfferTitle,
+                slug: offerSlug,
+                description: `Lista de ofertas: ${trimmedOfferTitle}`,
+                discountPercent: computedDiscount > 0 ? computedDiscount : 0,
+                isActive: true,
+              },
+            });
+          }
+
+          await prisma.offerProduct.upsert({
+            where: {
+              offerId_productId: {
+                offerId: offer.id,
+                productId: targetProductId,
+              },
+            },
+            update: {},
+            create: {
+              offerId: offer.id,
+              productId: targetProductId,
+            },
+          });
         }
       } catch (err: any) {
         errors++;

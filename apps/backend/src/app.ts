@@ -13,6 +13,7 @@ import adminSettingsRouter from './routes/admin/settings';
 import adminSyncLogsRouter from './routes/admin/sync-logs';
 import syncProductsRouter from './routes/sync/products';
 import syncImagesRouter from './routes/sync/images';
+import syncOffersRouter from './routes/sync/offers';
 import settingsRouter from './routes/settings';
 import cartRouter from './routes/cart';
 import offersRouter from './routes/offers';
@@ -53,6 +54,7 @@ app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/admin/sync-logs', adminSyncLogsRouter);
 app.use('/api/sync/products', syncProductsRouter);
 app.use('/api/sync/images', syncImagesRouter);
+app.use('/api/sync/offers', syncOffersRouter);
 
 // Global Error Handler
 app.use(errorHandler);
