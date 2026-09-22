@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search, X, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, ArrowLeft, Truck, RotateCcw, AlertCircle, Search, X, ShoppingCart, Heart } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto } from '@papes-confort/shared';
 import Link from 'next/link';
 import { useCartStore } from '../../../stores/cart';
+import { useAuthStore } from '../../../stores/auth';
+import { useFavoritesStore } from '../../../stores/favorites';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -17,6 +19,22 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
+
+  const { user, customer, isAuthenticated } = useAuthStore();
+  const currentCustomerId = customer?.id || user?.id || '';
+  const isFav = useFavoritesStore((state) =>
+    isAuthenticated && product && currentCustomerId ? state.isFavorite(product.id, currentCustomerId) : false
+  );
+  const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+
+  const handleToggleFavorite = () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      router.push(`/ingresar?redirect=${encodeURIComponent(`/producto/${slug}`)}`);
+      return;
+    }
+    toggleFavorite(product, currentCustomerId);
+  };
 
   // Zoom states
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -403,6 +421,19 @@ export default function ProductDetailPage() {
                 </svg>
                 Consultar por WhatsApp
               </a>
+
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                className={`w-full inline-flex items-center justify-center gap-2.5 rounded-full py-3.5 px-6 text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
+                  isFav
+                    ? 'bg-brand-red/5 border-brand-red/20 text-brand-red hover:bg-brand-red/10'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-brand-red/30 hover:text-brand-red hover:bg-slate-50'
+                }`}
+              >
+                <Heart className={`h-4.5 w-4.5 transition-colors ${isFav ? 'text-brand-red fill-brand-red' : 'text-slate-400'}`} />
+                <span>{isFav ? 'En tus Favoritos' : 'Guardar en Favoritos'}</span>
+              </button>
             </div>
 
           {/* Key details checklist */}

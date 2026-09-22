@@ -2,15 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, Sparkles, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Plus, Loader2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useCartStore } from '../../stores/cart';
+import { useAuthStore } from '../../stores/auth';
+import { useFavoritesStore } from '../../stores/favorites';
 
 interface ProductCardProps {
   product: ProductDto;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
+  const { user, customer, isAuthenticated } = useAuthStore();
+  const currentCustomerId = customer?.id || user?.id || '';
+  const isFav = useFavoritesStore((state) =>
+    isAuthenticated && currentCustomerId ? state.isFavorite(product.id, currentCustomerId) : false
+  );
+  const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+
   const hasDiscount = product.discountPercent > 0;
   const images = product.images.length > 0 ? product.images : [{ url: '/images/logo/isotipo.svg', isPrimary: true }];
   const [currentImgIdx, setCurrentImgIdx] = React.useState(0);
@@ -24,6 +35,19 @@ export default function ProductCard({ product }: ProductCardProps) {
       currency: 'ARS',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      const redirectPath = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '/catalogo';
+      router.push(`/ingresar?redirect=${encodeURIComponent(redirectPath)}`);
+      return;
+    }
+
+    toggleFavorite(product, currentCustomerId);
   };
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -46,6 +70,22 @@ export default function ProductCard({ product }: ProductCardProps) {
       href={`/producto/${product.slug}`}
       className="group relative flex flex-col justify-between overflow-hidden rounded-2xl md:rounded-3xl border border-slate-100 bg-white p-2.5 md:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-red/20 hover:shadow-[0_20px_40px_rgba(228,20,20,0.06)]"
     >
+      {/* Botón Favorito Flotante */}
+      <button
+        type="button"
+        onClick={handleToggleFavorite}
+        className="absolute right-2 top-2 z-10 flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/80 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer group/fav"
+        title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+        aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+      >
+        <Heart
+          className={`h-3.5 w-3.5 md:h-4 md:w-4 transition-colors ${
+            isFav
+              ? 'text-brand-red fill-brand-red'
+              : 'text-slate-400 group-hover/fav:text-brand-red'
+          }`}
+        />
+      </button>
       <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
         {hasDiscount && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-red px-2 py-0.5 text-[8px] md:text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
