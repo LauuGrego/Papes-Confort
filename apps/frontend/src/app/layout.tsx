@@ -13,14 +13,15 @@ const openSans = Open_Sans({
 
 const SITE_URL = 'https://www.papesconfort.com.ar';
 
+const SITE_DESCRIPTION = 'Todo para equipar tu hogar. Electrodomésticos, climatización y confort para todos los días con la calidez y el respaldo de siempre en Basavilbaso, Entre Ríos.';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Papes Confort | Servicio y Calidad Asegurados',
-  description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+  title: 'Papes Confort — Confort para todos los días | Electrodomésticos y Hogar',
+  description: SITE_DESCRIPTION,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/icon-48.png', type: 'image/png', sizes: '48x48' },
       { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
       { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
@@ -31,8 +32,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'Papes Confort | Servicio y Calidad Asegurados',
-    description: 'Encuentra los mejores electrodomésticos, climatización y confort para tu hogar en Basavilbaso, Entre Ríos.',
+    title: 'Papes Confort — Confort para todos los días',
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: 'Papes Confort',
     images: [
@@ -92,8 +93,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${openSans.variable}`} suppressHydrationWarning>
+    <html lang="es" className={`${openSans.variable} overflow-x-hidden`} suppressHydrationWarning>
       <head>
+        <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
         <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
@@ -104,7 +106,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased">
+      <body className="flex flex-col min-h-screen bg-white text-brand-black antialiased overflow-x-hidden">
         <GoogleAuthProvider>
           <Header />
           <main className="grow">

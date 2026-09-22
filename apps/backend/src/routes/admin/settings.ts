@@ -113,6 +113,50 @@ router.post('/upload-flyer', async (req, res, next) => {
   }
 });
 
+// POST /api/admin/settings/upload-image (Sube cualquier imagen a Cloudinary)
+router.post('/upload-image', async (req, res, next) => {
+  try {
+    const { image, folder } = req.body;
+    if (!image) {
+      res.status(400).json({ success: false, error: 'No se envió ninguna imagen.' });
+      return;
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      res.status(500).json({
+        success: false,
+        error: 'Las credenciales de Cloudinary no están configuradas en el servidor.',
+      });
+      return;
+    }
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
+
+    const uploadResult = await cloudinary.uploader.upload(image, {
+      folder: folder || 'papes-confort/landing',
+    });
+
+    res.json({
+      success: true,
+      data: {
+        url: uploadResult.secure_url,
+      },
+    } as ApiResponse);
+  } catch (error: any) {
+    console.error('Error al subir imagen a Cloudinary:', error);
+    next(error);
+  }
+});
+
 // POST /api/admin/settings/change-password-request
 router.post('/change-password-request', async (req, res, next) => {
   try {

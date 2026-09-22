@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '../../../stores/auth';
 import { fetchApi } from '../../../lib/api';
 import Link from 'next/link';
 import {
   LayoutDashboard,
   ShoppingBag,
-  Settings,
   RefreshCw,
   LogOut,
   Loader2,
@@ -20,15 +19,18 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
+  Layers,
+  ShieldCheck,
+  Store,
+  MessageSquare,
+  Lock,
 } from 'lucide-react';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, hasHydrated, clearAuth } = useAuthStore();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -68,6 +70,23 @@ export default function AdminLayout({
     window.location.href = '/';
   };
 
+  const currentTab = searchParams.get('tab');
+
+  const isItemActive = (href: string) => {
+    const [basePath, query] = href.split('?');
+    if (pathname !== basePath) return false;
+    if (!query) return !currentTab;
+    const targetTab = new URLSearchParams(query).get('tab');
+    if (!targetTab) return true;
+    if (targetTab === 'hero' || targetTab === 'landing') {
+      return currentTab === 'hero' || currentTab === 'landing' || !currentTab;
+    }
+    if (targetTab === 'flyers' || targetTab === 'banners') {
+      return currentTab === 'flyers' || currentTab === 'banners';
+    }
+    return currentTab === targetTab;
+  };
+
   if (checkingAuth) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh] gap-4">
@@ -88,10 +107,19 @@ export default function AdminLayout({
     { href: '/admin/ofertas', label: 'Ofertas Destacadas', icon: Tag },
   ];
 
+  const landingNav = [
+    { href: '/admin/configuracion?tab=hero', label: 'Hero Principal', icon: Sparkles },
+    { href: '/admin/configuracion?tab=flyers', label: 'Flyers Promocionales', icon: ImageIcon },
+    { href: '/admin/configuracion?tab=categories', label: 'Categorías Destacadas', icon: Layers },
+    { href: '/admin/configuracion?tab=weekly_offer', label: 'Oferta de la Semana', icon: Tag },
+    { href: '/admin/configuracion?tab=trust_bar', label: 'Barra de Beneficios', icon: ShieldCheck },
+    { href: '/admin/configuracion?tab=payment_cards', label: 'Medios de Pago', icon: CreditCard },
+    { href: '/admin/configuracion?tab=about', label: 'Sobre Nosotros', icon: Store },
+  ];
+
   const systemNav = [
-    { href: '/admin/configuracion?tab=banners', label: 'Banners de Portada', icon: ImageIcon },
-    { href: '/admin/configuracion?tab=payment_cards', label: 'Tarjetas Informativas', icon: CreditCard },
-    { href: '/admin/configuracion?tab=general', label: 'Configuración General', icon: Settings },
+    { href: '/admin/configuracion?tab=general', label: 'WhatsApp y Atención', icon: MessageSquare },
+    { href: '/admin/configuracion?tab=security', label: 'Seguridad Admin', icon: Lock },
     { href: '/admin/sync-logs', label: 'Logs de Sincronización', icon: RefreshCw },
   ];
 
@@ -183,23 +211,49 @@ export default function AdminLayout({
                 </div>
               </div>
 
-              {/* Sección 2: Portada y Sistema */}
+              {/* Sección 2: Portada y Diseño */}
               <div className="space-y-2">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Portada & Sistema
+                  Portada & Diseño
                 </p>
                 <div className="space-y-1">
-                  {systemNav.map((item) => {
+                  {landingNav.map((item) => {
                     const Icon = item.icon;
-                    const isActive =
-                      pathname === item.href.split('?')[0] &&
-                      (!item.href.includes('tab=') || pathname.includes(item.href));
+                    const isActive = isItemActive(item.href);
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setIsSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-brand-navy text-white shadow-xs'
+                            : 'text-slate-700 bg-slate-50 border border-slate-100'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sección 3: Ajustes y Sistema */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Ajustes & Sistema
+                </p>
+                <div className="space-y-1">
+                  {systemNav.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isItemActive(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                           isActive
                             ? 'bg-brand-navy text-white shadow-xs'
                             : 'text-slate-700 bg-slate-50 border border-slate-100'
@@ -214,7 +268,7 @@ export default function AdminLayout({
               </div>
             </div>
 
-            {/* Mobile Admin Footer: User Email + Ver Tienda + Cerrar Sesión */}
+            {/* Mobile Admin Footer */}
             <div className="pt-6 border-t border-slate-100 space-y-3">
               {user && (
                 <div className="px-1">
@@ -287,20 +341,50 @@ export default function AdminLayout({
               })}
             </div>
 
-            {/* Sección 2: Portada y Sistema */}
+            {/* Sección 2: Portada y Diseño */}
             <div className="space-y-1.5">
               {!isCollapsed ? (
                 <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
-                  Portada & Sistema
+                  Portada & Diseño
                 </p>
               ) : (
-                <div className="my-2 border-t border-slate-100" title="Portada & Sistema" />
+                <div className="my-2 border-t border-slate-100" title="Portada & Diseño" />
+              )}
+              {landingNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = isItemActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={isCollapsed ? item.label : undefined}
+                    className={`flex items-center ${
+                      isCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-2.5'
+                    } rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                      isActive
+                        ? 'bg-brand-navy text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Sección 3: Ajustes y Sistema */}
+            <div className="space-y-1.5">
+              {!isCollapsed ? (
+                <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
+                  Ajustes & Sistema
+                </p>
+              ) : (
+                <div className="my-2 border-t border-slate-100" title="Ajustes & Sistema" />
               )}
               {systemNav.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  pathname === item.href.split('?')[0] &&
-                  (!item.href.includes('tab=') || pathname.includes(item.href));
+                const isActive = isItemActive(item.href);
                 return (
                   <Link
                     key={item.href}
@@ -345,12 +429,23 @@ export default function AdminLayout({
           </div>
         </aside>
 
-
         {/* Main Content Area */}
         <main className="flex-grow p-4 sm:p-6 md:p-10 overflow-y-auto">
           <div className="max-w-5xl mx-auto">{children}</div>
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Loader2 className="h-10 w-10 text-brand-red animate-spin" />
+      </div>
+    }>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </Suspense>
   );
 }

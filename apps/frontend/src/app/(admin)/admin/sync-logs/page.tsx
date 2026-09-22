@@ -8,13 +8,17 @@ import Pagination from '../../../../components/Pagination';
 export default function AdminSyncLogsPage() {
   const [loading, setLoading] = useState(true);
   const [logsData, setLogsData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const fetchLogs = async (pNum: number) => {
     setLoading(true);
+    setError(null);
     const res = await fetchApi<any>(`/api/admin/sync-logs?page=${pNum}&limit=10`);
     if (res.success && res.data) {
       setLogsData(res.data);
+    } else {
+      setError(res.error || 'Error al cargar los registros de sincronización.');
     }
     setLoading(false);
   };
@@ -52,16 +56,34 @@ export default function AdminSyncLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-brand-black">
-          Logs de Sincronización
-        </h1>
-        <p className="text-sm text-slate-400">
-          Historial de sincronización automática de stock y precios desde GesCom local.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold text-brand-black">
+            Logs de Sincronización
+          </h1>
+          <p className="text-sm text-slate-400">
+            Historial de sincronización automática de stock y precios desde GesCom local.
+          </p>
+        </div>
+        <button
+          onClick={() => fetchLogs(page)}
+          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+        >
+          Actualizar
+        </button>
       </div>
 
-      {logsData && logsData.items.length > 0 ? (
+      {error ? (
+        <div className="bg-rose-50 border border-rose-200 rounded-3xl p-8 text-center space-y-4">
+          <p className="text-sm font-semibold text-rose-600">{error}</p>
+          <button
+            onClick={() => fetchLogs(page)}
+            className="px-5 py-2.5 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-colors cursor-pointer"
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : logsData && logsData.items && logsData.items.length > 0 ? (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_5px_20px_rgba(0,0,0,0.01)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
