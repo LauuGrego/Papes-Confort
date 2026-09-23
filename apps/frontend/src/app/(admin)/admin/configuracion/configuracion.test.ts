@@ -8,7 +8,10 @@ import {
   HomeFlyerDto,
   HomeHeroBannerDto,
   PaymentFeatureCardDto,
+  DEFAULT_INSTALLMENTS_CONFIG,
+  InstallmentsConfigDto,
 } from '@papes-confort/shared';
+import { computeInstallmentAmount } from '../../../../stores/installments';
 
 describe('Admin Configuration & Landing Page Logic Tests', () => {
   describe('Hero Banner Configuration', () => {
@@ -173,6 +176,56 @@ describe('Admin Configuration & Landing Page Logic Tests', () => {
     it('should verify default about section', () => {
       expect(DEFAULT_ABOUT_SECTION.title).toBeDefined();
       expect(DEFAULT_ABOUT_SECTION.description).toBeDefined();
+    });
+  });
+
+  describe('Installments Configuration & Pricing Calculation Tests', () => {
+    it('should have correct default installments configuration based on Ale requirements', () => {
+      expect(DEFAULT_INSTALLMENTS_CONFIG.defaultInstallments).toBe(5);
+      expect(DEFAULT_INSTALLMENTS_CONFIG.bankPromoActive).toBe(true);
+      expect(DEFAULT_INSTALLMENTS_CONFIG.bankPromoName).toBe('Banco Nación');
+      expect(DEFAULT_INSTALLMENTS_CONFIG.bankPromoInstallments).toBe(9);
+    });
+
+    it('should correctly calculate standard installments on list price', () => {
+      const listPrice = 150000;
+      const installments = 5;
+      const installmentAmount = computeInstallmentAmount(listPrice, installments);
+
+      expect(installmentAmount).toBe(30000);
+    });
+
+    it('should correctly calculate special bank promo installments on list price', () => {
+      const listPrice = 150000;
+      const bankInstallments = 9;
+      const bankInstallmentAmount = computeInstallmentAmount(listPrice, bankInstallments);
+
+      // 150000 / 9 = 16666.666... -> rounded = 16667
+      expect(bankInstallmentAmount).toBe(16667);
+    });
+
+    it('should handle zero or negative installments gracefully', () => {
+      expect(computeInstallmentAmount(100000, 0)).toBe(0);
+      expect(computeInstallmentAmount(0, 5)).toBe(0);
+    });
+
+    it('should serialize and parse custom installments config in admin settings', () => {
+      const customConfig: InstallmentsConfigDto = {
+        defaultInstallments: 6,
+        bankPromoActive: true,
+        bankPromoName: 'Banco Macro',
+        bankPromoInstallments: 12,
+        bankPromoText: 'Hasta 12 cuotas sin interés con Macro',
+      };
+
+      const serialized = JSON.stringify(customConfig);
+      const parsed = JSON.parse(serialized);
+
+      expect(parsed.defaultInstallments).toBe(6);
+      expect(parsed.bankPromoName).toBe('Banco Macro');
+      expect(parsed.bankPromoInstallments).toBe(12);
+      expect(computeInstallmentAmount(120000, parsed.defaultInstallments)).toBe(20000);
+      expect(computeInstallmentAmount(120000, parsed.bankPromoInstallments)).toBe(10000);
     });
   });
 

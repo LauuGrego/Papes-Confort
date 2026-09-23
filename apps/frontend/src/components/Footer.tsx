@@ -21,7 +21,7 @@ import { fetchApi } from '../lib/api';
 export default function Footer() {
   const pathname = usePathname();
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
-  const [activeModal, setActiveModal] = useState<'terminos' | 'privacidad' | 'garantias' | null>(null);
+  const [activeModal, setActiveModal] = useState<'terminos' | 'privacidad' | 'garantias' | 'envios' | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -156,10 +156,14 @@ export default function Footer() {
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs sm:text-sm">
                 <li>
-                  <Link href="/catalogo" className="hover:text-white transition-colors duration-150 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('envios')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-2 text-left cursor-pointer"
+                  >
                     <Truck className="h-3.5 w-3.5 text-brand-red shrink-0" />
                     <span>Envíos y Entregas</span>
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <Link href="/#medios-de-pago" className="hover:text-white transition-colors duration-150 flex items-center gap-2">
@@ -339,6 +343,37 @@ export default function Footer() {
                   <p>
                     El plazo de garantía varía según la marca y tipo de producto (generalmente entre 6 y 12 meses). Ante cualquier inconveniente o consulta de servicio técnico, nuestro equipo te acompaña y asesora en la gestión con la red de servicios oficiales.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {activeModal === 'envios' && (
+              <div className="space-y-4">
+                <h3 className="font-display text-xl font-bold text-brand-black flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-brand-red" />
+                  <span>Formas de Entrega y Envíos</span>
+                </h3>
+                <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  <ul className="space-y-2.5">
+                    <li className="flex items-start gap-2.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                      <div>
+                        <strong className="font-bold text-slate-900 uppercase">RETIRO DEL LOCAL</strong> (sin cargo en nuestra casa central).
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                      <div>
+                        <strong className="font-bold text-slate-900 uppercase">ENVÍOS SIN CARGO DENTRO DEL RADIO URBANO</strong>.
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="h-2 w-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                      <div>
+                        <strong className="font-bold text-slate-900 uppercase">ENVÍOS A OTRAS LOCALIDADES A COORDINAR</strong>, por Correo Argentino - Andreani - Mostto o transporte a designar de acuerdo al tamaño y servicios de logísticas disponibles para la zona del domicilio de entrega.
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </div>
             )}
