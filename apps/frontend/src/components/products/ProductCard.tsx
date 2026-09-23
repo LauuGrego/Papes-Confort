@@ -4,8 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, Sparkles, Plus, Loader2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { useCartStore } from '../../stores/cart';
+import { ArrowRight, Heart } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
 import { useFavoritesStore } from '../../stores/favorites';
 
@@ -22,12 +21,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   );
   const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
 
-  const hasDiscount = product.discountPercent > 0;
   const images = product.images.length > 0 ? product.images : [{ url: '/images/logo/isotipo.svg', isPrimary: true }];
-  const [currentImgIdx, setCurrentImgIdx] = React.useState(0);
-  
-  const { addItem } = useCartStore();
-  const [isAdding, setIsAdding] = React.useState(false);
+  const mainImage = images[0]?.url || '/images/logo/isotipo.svg';
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -50,171 +45,91 @@ export default function ProductCard({ product }: ProductCardProps) {
     toggleFavorite(product, currentCustomerId);
   };
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (product.stockVisible <= 0 || isAdding) return;
-
-    setIsAdding(true);
-    try {
-      await addItem(product.id, 1);
-    } catch (err) {
-      console.error('Error al agregar rápido al carrito:', err);
-    } finally {
-      setIsAdding(false);
-    }
-  };
+  const listPrice = product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice;
+  const showListPrice = listPrice > product.finalPrice;
 
   return (
     <Link
       href={`/producto/${product.slug}`}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl md:rounded-3xl border border-slate-100 bg-white p-2.5 md:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.01)] transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-red/20 hover:shadow-[0_20px_40px_rgba(228,20,20,0.06)]"
+      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300"
     >
-      {/* Botón Favorito Flotante */}
-      <button
-        type="button"
-        onClick={handleToggleFavorite}
-        className="absolute right-2 top-2 z-10 flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/80 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer group/fav"
-        title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-        aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-      >
-        <Heart
-          className={`h-3.5 w-3.5 md:h-4 md:w-4 transition-colors ${
-            isFav
-              ? 'text-brand-red fill-brand-red'
-              : 'text-slate-400 group-hover/fav:text-brand-red'
-          }`}
-        />
-      </button>
-      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
-        {hasDiscount && (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-red px-2 py-0.5 text-[8px] md:text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
-            <Sparkles className="h-2.5 w-2.5 md:h-3 md:w-3 animate-pulse" />
-            {product.discountPercent}% <span className="hidden md:inline">OFF</span>
+      {/* Zona de Imagen 1:1 con Botón de Favorito y Badge Único */}
+      <div className="relative mb-3 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50/70 p-3 sm:p-4">
+        {/* Badge discreto único (máximo 1) */}
+        {product.discountPercent > 0 ? (
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs">
+            {product.discountPercent}% OFF
           </span>
-        )}
-        {product.isOutlet && (
-          <span className="inline-flex items-center rounded-full bg-brand-navy px-2 py-0.5 text-[8px] md:text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
+        ) : product.isOutlet ? (
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs">
             Outlet
           </span>
-        )}
-      </div>
+        ) : null}
 
-      <div className="relative mb-2 md:mb-4 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl md:rounded-2xl bg-slate-50 p-1 md:p-2 group/image">
+        {/* Botón Favorito Flotante */}
+        <button
+          type="button"
+          onClick={handleToggleFavorite}
+          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white/95 hover:bg-white border border-slate-200/80 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer group/fav"
+          title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+          aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+        >
+          <Heart
+            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
+              isFav
+                ? 'text-brand-red fill-brand-red'
+                : 'text-slate-400 group-hover/fav:text-brand-red'
+            }`}
+          />
+        </button>
+
         <img
-          src={images[currentImgIdx]?.url}
+          src={mainImage}
           alt={product.name}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
+          className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
           }}
         />
-
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setCurrentImgIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-              }}
-              className="absolute left-1.5 md:left-2.5 top-1/2 -translate-y-1/2 flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/60 text-slate-600 shadow-sm opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200 cursor-pointer"
-              aria-label="Imagen anterior"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 md:h-5 md:w-5 text-slate-600" />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setCurrentImgIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-              }}
-              className="absolute right-1.5 md:right-2.5 top-1/2 -translate-y-1/2 flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white border border-slate-200/60 text-slate-600 shadow-sm opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200 cursor-pointer"
-              aria-label="Imagen siguiente"
-            >
-              <ChevronRight className="h-3.5 w-3.5 md:h-5 md:w-5 text-slate-600" />
-            </button>
-
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 bg-black/10 backdrop-blur-xs px-2 py-1 rounded-full opacity-100 md:opacity-0 md:group-hover/image:opacity-100 transition-opacity duration-200">
-              {images.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full transition-all duration-300 ${
-                    idx === currentImgIdx ? 'bg-brand-red w-2.5 md:w-3' : 'bg-white/80'
-                  }`}
-                />
-              ))}
-            </div>
-          </>
-        )}
       </div>
 
+      {/* Información del Producto */}
       <div className="flex flex-col flex-grow">
-        <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">
-          {product.brand.name}
+        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+          {product.brand?.name || 'Papes Confort'}
         </span>
-        <h3 className="font-display text-[11px] md:text-sm font-bold text-brand-black mb-1 md:mb-2 line-clamp-2 leading-tight group-hover:text-brand-red transition-colors duration-200">
+
+        <h3 className="text-xs sm:text-sm font-bold text-brand-black line-clamp-2 leading-snug group-hover:text-brand-red transition-colors min-h-[2.25rem] mb-2">
           {product.name}
         </h3>
-        
-        {/* Stock Badge & Availability Note */}
-        <div className="mb-2 flex items-center gap-1.5 flex-wrap">
-          {product.stockVisible > 0 ? (
-            <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-emerald-700">
-              {product.stockVisible} disponible{product.stockVisible > 1 ? 's' : ''}
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-rose-700">
-              Sin stock
+
+        {/* Bloque de Precios y Financiación */}
+        <div className="mt-auto pt-2 border-t border-slate-50 space-y-1">
+          {showListPrice && (
+            <span className="block text-[11px] sm:text-xs text-slate-400 line-through">
+              {formatPrice(listPrice)}
             </span>
           )}
-          <span className="inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[9px] md:text-xs font-semibold text-amber-700 border border-amber-100/50">
-            Consultar disponibilidad
-          </span>
-        </div>
 
-      </div>
-
-      <div className="border-t border-slate-50 pt-2 md:pt-4 mt-auto">
-        <div className="flex items-center justify-between gap-2 mb-1 md:mb-3">
-          <div className="flex flex-col items-start gap-0.5">
-            {/* Precio de Lista */}
-            <span className="text-xs md:text-sm font-bold text-slate-800">
-              {formatPrice(product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice)}
-            </span>
-
-            {/* Etiqueta Transferencia */}
-            <span className="text-[10px] md:text-xs font-black text-brand-red uppercase tracking-wider">
-              TRANSFERENCIA {product.discountPercent > 0 ? product.discountPercent : (product.listPrice && product.listPrice > product.basePrice ? Math.round(((product.listPrice - product.basePrice) / product.listPrice) * 100) : 20)}% OFF
-            </span>
-
-            {/* Precio Transferencia */}
-            <span className="text-base md:text-xl font-black text-brand-red">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-brand-black group-hover:text-brand-red transition-colors">
               {formatPrice(product.finalPrice)}
             </span>
           </div>
-          
-          {/* Botón rápido Agregar al Carrito */}
-          {product.stockVisible > 0 && (
-            <button
-              onClick={handleAddToCart}
-              disabled={isAdding}
-              className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-brand-red hover:bg-brand-red-dark text-white flex items-center justify-center shadow-md hover:shadow-brand-red/20 active:scale-95 transition-all"
-              aria-label="Agregar al carrito rápidamente"
-            >
-              {isAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
-              ) : (
-                <Plus className="h-4 w-4 md:h-5 md:w-5 text-white" />
-              )}
-            </button>
-          )}
-        </div>
 
-        <div className="hidden md:flex items-center justify-between text-xs font-bold text-brand-red uppercase tracking-wider group-hover:text-brand-red-dark transition-colors">
-          <span>Ver Detalles</span>
-          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          <p className="text-[11px] sm:text-xs font-semibold text-emerald-700">
+            {product.discountPercent > 0
+              ? 'Precio especial de oferta'
+              : 'Hasta 12 cuotas fijas'}
+          </p>
+        </div>
+      </div>
+
+      {/* CTA Limpio */}
+      <div className="mt-3 pt-2">
+        <div className="w-full py-2 px-3 rounded-xl bg-slate-100 group-hover:bg-brand-red text-slate-700 group-hover:text-white text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5">
+          <span>Ver producto</span>
+          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
       </div>
     </Link>

@@ -15,6 +15,10 @@ router.get('/', async (req, res, next) => {
     const productType = req.query.productType as string || undefined;
     const offerSlug = (req.query.offer as string) || undefined;
     const offerId = (req.query.offerId as string) || undefined;
+    const sort = (req.query.sort as string) || undefined;
+    const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+    const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
+    const inStock = req.query.inStock === 'true' || req.query.inStock === '1';
 
     const data = await getProducts({
       page,
@@ -26,6 +30,10 @@ router.get('/', async (req, res, next) => {
       productType,
       offerSlug,
       offerId,
+      sort,
+      minPrice,
+      maxPrice,
+      inStock: inStock ? true : undefined,
     });
 
     res.json({
