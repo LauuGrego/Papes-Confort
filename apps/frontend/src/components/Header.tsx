@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
+import { useFavoritesStore } from '../stores/favorites';
 import { fetchApi } from '../lib/api';
 import { OfferDto } from '@papes-confort/shared';
 
@@ -51,10 +52,26 @@ interface Brand {
 export default function Header() {
   const { totalItems, load } = useCartStore();
   const { user, customer, isAuthenticated, clearAuth } = useAuthStore();
+  const currentCustomerId = customer?.id || user?.id || null;
+  const favoritesCount = useFavoritesStore((state) =>
+    isAuthenticated ? state.getCount(currentCustomerId) : 0
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleFavoritesClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!isAuthenticated) {
+      router.push(`/ingresar?redirect=${encodeURIComponent('/mi-cuenta/favoritos')}`);
+    } else {
+      router.push('/mi-cuenta/favoritos');
+    }
+  };
 
   const [families, setFamilies] = useState<Family[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -154,16 +171,16 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6">
         {/* Brand Logo and Text */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink min-w-0">
           <img
             src="/images/logo/isotipo.svg"
             alt="Isotipo Papes Confort"
-            className="h-9 w-9 sm:h-[45px] sm:w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
+            className="h-8 w-8 sm:h-10 sm:w-10 md:h-[45px] md:w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="flex flex-col">
-            <span className="font-display text-sm sm:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
+          <div className="flex flex-col min-w-0">
+            <span className="font-display text-sm sm:text-base md:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
               PAPES CONFORT
             </span>
             <span className="hidden sm:block text-xs tracking-widest text-slate-500 uppercase font-light -mt-0.5 whitespace-nowrap">
@@ -467,6 +484,21 @@ export default function Header() {
                         <Package className="h-4 w-4" />
                         Mis Pedidos
                       </Link>
+                      <Link
+                        href="/mi-cuenta/favoritos"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Heart className="h-4 w-4" />
+                          <span>Mis Favoritos</span>
+                        </div>
+                        {favoritesCount > 0 && (
+                          <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+                            {favoritesCount}
+                          </span>
+                        )}
+                      </Link>
                       <div className="my-1 border-t border-slate-100" />
                       <button
                         onClick={() => {
@@ -495,14 +527,20 @@ export default function Header() {
           )}
 
           {/* Favoritos (♡ SVG) */}
-          <Link
-            href="/catalogo"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0"
+          <button
+            type="button"
+            onClick={handleFavoritesClick}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 transition-all duration-200 group bg-slate-50 hover:bg-slate-100 shrink-0 cursor-pointer"
             title="Mis Favoritos"
             aria-label="Mis Favoritos"
           >
-            <Heart className="h-4.5 w-4.5 text-slate-600 group-hover:text-brand-red transition-colors duration-200" />
-          </Link>
+            <Heart className={`h-4.5 w-4.5 transition-colors duration-200 ${favoritesCount > 0 ? 'text-brand-red fill-brand-red/20' : 'text-slate-600 group-hover:text-brand-red'}`} />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white transition-all duration-200 scale-100 shadow-xs">
+                {favoritesCount}
+              </span>
+            )}
+          </button>
 
           {/* Carrito (🛒 SVG) */}
           <Link
@@ -519,16 +557,31 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Acciones móviles: Carrito + Menú */}
-        <div className="flex items-center gap-2 md:hidden">
+        {/* Acciones móviles: Favoritos + Carrito + Menú */}
+        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden shrink-0 ml-2">
+          <button
+            type="button"
+            onClick={handleFavoritesClick}
+            className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all cursor-pointer"
+            aria-label="Mis Favoritos"
+            title="Mis Favoritos"
+          >
+            <Heart className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${favoritesCount > 0 ? 'text-brand-red fill-brand-red/20' : 'text-slate-600'}`} />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+                {favoritesCount}
+              </span>
+            )}
+          </button>
+
           <Link
             href="/carrito"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all"
+            className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all"
             aria-label="Carrito de compras"
           >
-            <ShoppingCart className="h-4.5 w-4.5" />
+            <ShoppingCart className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-slate-600" />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
                 {totalItems}
               </span>
             )}
@@ -538,7 +591,7 @@ export default function Header() {
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-10 px-3.5 items-center justify-center gap-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
+              className="flex h-9 w-9 sm:h-10 sm:w-auto sm:px-3.5 items-center justify-center gap-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
               aria-expanded={menuOpen}
               aria-label="Menú del sitio"
             >
@@ -784,6 +837,26 @@ export default function Header() {
                     )}
                   </Link>
 
+                  {/* Favoritos móvil */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleFavoritesClick();
+                    }}
+                    className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group text-left w-full cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Heart className={`h-4.5 w-4.5 ${favoritesCount > 0 ? 'text-brand-red' : 'text-slate-400 group-hover:text-brand-red'} transition-colors`} />
+                      <span>Mis Favoritos</span>
+                    </div>
+                    {favoritesCount > 0 && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[10px] font-bold text-white">
+                        {favoritesCount}
+                      </span>
+                    )}
+                  </button>
+
                   {/* Autenticación / Cuenta / Panel */}
                   {isAuthenticated ? (
                     user?.type === 'admin' ? (
@@ -824,6 +897,21 @@ export default function Header() {
                         >
                           <Package className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
                           <span>Mis Pedidos</span>
+                        </Link>
+                        <Link
+                          href="/mi-cuenta/favoritos"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Heart className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                            <span>Favoritos</span>
+                          </div>
+                          {favoritesCount > 0 && (
+                            <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+                              {favoritesCount}
+                            </span>
+                          )}
                         </Link>
                         <button
                           onClick={() => {

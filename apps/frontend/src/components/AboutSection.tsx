@@ -150,7 +150,7 @@ export default function AboutSection({ aboutConfig }: AboutSectionProps) {
                       <p className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
                         Papes Confort
                       </p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-slate-500 leading-snug">
                         {config.storeLocation}
                       </p>
                     </div>

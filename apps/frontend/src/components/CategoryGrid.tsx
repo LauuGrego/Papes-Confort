@@ -63,7 +63,7 @@ export default function CategoryGrid({ cards }: CategoryGridProps) {
                 <span className="font-display text-base sm:text-lg lg:text-xl font-bold text-white group-hover:text-red-200 transition-colors">
                   {cat.name}
                 </span>
-                <span className="text-[11px] sm:text-xs text-slate-300 line-clamp-1 mt-0.5 opacity-90 font-light">
+                <span className="text-[11px] sm:text-xs text-slate-300 mt-0.5 opacity-90 font-light leading-snug">
                   {cat.description}
                 </span>
 

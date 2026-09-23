@@ -79,7 +79,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     images: imageDtos,
     isOutlet: product.productType === 'OUTLET',
     isActive: product.isActive,
-    warrantyMonths: product.warrantyMonths || 12,
+    warrantyMonths: product.warrantyMonths ?? null,
     weightKg: product.weightKg ? Number(product.weightKg) : null,
     dimensions: dimensionsStr,
     specs: (product.specs as Record<string, any>) || {},
@@ -98,6 +98,10 @@ export async function getProducts(params: {
   productType?: string;
   offerId?: string;
   offerSlug?: string;
+  sort?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
 }) {
   const page = params.page || 1;
   const limit = params.limit || 10;
@@ -135,6 +139,18 @@ export async function getProducts(params: {
     where.offers = { some: { offer: { slug: params.offerSlug } } };
   }
 
+  if (params.minPrice !== undefined && !isNaN(params.minPrice)) {
+    where.basePrice = { ...(where.basePrice || {}), gte: params.minPrice };
+  }
+
+  if (params.maxPrice !== undefined && !isNaN(params.maxPrice)) {
+    where.basePrice = { ...(where.basePrice || {}), lte: params.maxPrice };
+  }
+
+  if (params.inStock) {
+    where.stock = { gt: 0 };
+  }
+
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
     where.OR = [
@@ -145,6 +161,19 @@ export async function getProducts(params: {
       { productFamily: { name: { contains: searchTerm, mode: 'insensitive' } } },
       { productCategory: { name: { contains: searchTerm, mode: 'insensitive' } } },
     ];
+  }
+
+  let orderBy: any = { createdAt: 'desc' };
+  if (params.sort === 'price_asc') {
+    orderBy = { basePrice: 'asc' };
+  } else if (params.sort === 'price_desc') {
+    orderBy = { basePrice: 'desc' };
+  } else if (params.sort === 'recent') {
+    orderBy = { createdAt: 'desc' };
+  } else if (params.sort === 'offers') {
+    orderBy = { discountPercent: 'desc' };
+  } else if (params.sort === 'name_asc') {
+    orderBy = { name: 'asc' };
   }
 
   const [items, total] = await Promise.all([
@@ -160,7 +189,7 @@ export async function getProducts(params: {
       },
       skip,
       take: limit,
-      orderBy: { name: 'asc' },
+      orderBy,
     }),
     prisma.product.count({ where }),
   ]);
@@ -297,7 +326,7 @@ export async function updateProduct(id: string, data: {
   productCategoryId?: string;
   productType?: any;
   discountPercent?: number;
-  warrantyMonths?: number;
+  warrantyMonths?: number | null;
   weightKg?: number;
   dimensions?: { alto?: number; ancho?: number; prof?: number; } | string;
   specs?: Record<string, any>;

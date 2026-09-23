@@ -23,7 +23,7 @@ export default function AdminProductosPage() {
   // Form Fields
   const [name, setName] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
-  const [warrantyMonths, setWarrantyMonths] = useState(12);
+  const [warrantyMonths, setWarrantyMonths] = useState<number | ''>('');
   const [specs, setSpecs] = useState<{ key: string; val: string }[]>([]);
 
   const fetchProducts = async (pNum: number, searchVal: string, statusVal: string) => {
@@ -60,7 +60,7 @@ export default function AdminProductosPage() {
     setEditingProduct(product);
     setName(product.name);
     setDiscountPercent(product.discountPercent);
-    setWarrantyMonths(product.warrantyMonths || 12);
+    setWarrantyMonths(product.warrantyMonths ?? '');
 
     // Map specs Record to array (filtering out internal ivaPercent metadata)
     const mappedSpecs = Object.entries(product.specs || {})
@@ -106,7 +106,7 @@ export default function AdminProductosPage() {
 
     const body = {
       discountPercent: Number(discountPercent),
-      warrantyMonths: Number(warrantyMonths),
+      warrantyMonths: warrantyMonths !== '' && Number(warrantyMonths) > 0 ? Number(warrantyMonths) : null,
       specs: specsRecord,
     };
 
@@ -372,9 +372,10 @@ export default function AdminProductosPage() {
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Garantía (Meses)</label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
+                    placeholder="Sin especificar (vacío o 0)"
                     value={warrantyMonths}
-                    onChange={(e) => setWarrantyMonths(parseInt(e.target.value, 10) || 12)}
+                    onChange={(e) => setWarrantyMonths(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0))}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/30 focus:bg-white transition-all"
                   />
                 </div>
