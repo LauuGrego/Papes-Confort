@@ -37,10 +37,10 @@ export default function TrustBar({ items }: TrustBarProps) {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs sm:text-sm font-bold text-brand-black group-hover:text-brand-red truncate transition-colors">
+                  <span className="text-xs sm:text-sm font-bold text-brand-black group-hover:text-brand-red transition-colors leading-tight">
                     {item.title}
                   </span>
-                  <span className="text-[11px] sm:text-xs text-slate-500 truncate">
+                  <span className="text-[11px] sm:text-xs text-slate-500 leading-snug mt-0.5">
                     {item.description}
                   </span>
                 </div>

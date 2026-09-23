@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '@papes-confort/database';
-import { ApiResponse, SyncStatus } from '@papes-confort/shared';
+import { ApiResponse, SyncStatus, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
 import { requireSyncAuth } from '../../middleware/syncAuth';
 
 const router = Router();
@@ -81,6 +81,8 @@ router.post('/', async (req, res, next) => {
           subrubro,
           isActive,
         } = item;
+
+        const sanitizedDescription = description !== undefined ? sanitizeCorruptedSpanishText(String(description)) : undefined;
 
         if (!sku || gescomName === undefined || basePrice === undefined || stock === undefined) {
           errors++;
@@ -200,7 +202,7 @@ router.post('/', async (req, res, next) => {
             data: {
               gescomName: String(gescomName),
               name: name || String(gescomName),
-              ...(description !== undefined && { description: String(description) }),
+              ...(sanitizedDescription !== undefined && { description: sanitizedDescription }),
               ...(isActive !== undefined && { isActive: Boolean(isActive) }),
               basePrice: numericPrice,
               listPrice: numericListPrice,
@@ -233,7 +235,7 @@ router.post('/', async (req, res, next) => {
               gescomName: String(gescomName),
               name: name || String(gescomName),
               slug: finalSlug,
-              description: description !== undefined ? String(description) : undefined,
+              description: sanitizedDescription,
               isActive: isActive !== undefined ? Boolean(isActive) : true,
               basePrice: numericPrice,
               listPrice: numericListPrice,

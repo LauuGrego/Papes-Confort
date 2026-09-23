@@ -171,16 +171,16 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md text-brand-black">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6">
         {/* Brand Logo and Text */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink min-w-0">
           <img
             src="/images/logo/isotipo.svg"
             alt="Isotipo Papes Confort"
-            className="h-9 w-9 sm:h-[45px] sm:w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
+            className="h-8 w-8 sm:h-10 sm:w-10 md:h-[45px] md:w-[45px] shrink-0 transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="flex flex-col">
-            <span className="font-display text-sm sm:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
+          <div className="flex flex-col min-w-0">
+            <span className="font-display text-sm sm:text-base md:text-xl font-extrabold tracking-wider text-brand-black group-hover:text-brand-red transition-colors duration-200 whitespace-nowrap">
               PAPES CONFORT
             </span>
             <span className="hidden sm:block text-xs tracking-widest text-slate-500 uppercase font-light -mt-0.5 whitespace-nowrap">
@@ -558,17 +558,17 @@ export default function Header() {
         </div>
 
         {/* Acciones móviles: Favoritos + Carrito + Menú */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden shrink-0 ml-2">
           <button
             type="button"
             onClick={handleFavoritesClick}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all cursor-pointer"
+            className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all cursor-pointer"
             aria-label="Mis Favoritos"
             title="Mis Favoritos"
           >
-            <Heart className={`h-4.5 w-4.5 ${favoritesCount > 0 ? 'text-brand-red fill-brand-red/20' : 'text-slate-600'}`} />
+            <Heart className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${favoritesCount > 0 ? 'text-brand-red fill-brand-red/20' : 'text-slate-600'}`} />
             {favoritesCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
                 {favoritesCount}
               </span>
             )}
@@ -576,12 +576,12 @@ export default function Header() {
 
           <Link
             href="/carrito"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all"
+            className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 transition-all"
             aria-label="Carrito de compras"
           >
-            <ShoppingCart className="h-4.5 w-4.5" />
+            <ShoppingCart className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-slate-600" />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-brand-red text-[9px] font-bold text-white">
                 {totalItems}
               </span>
             )}
@@ -591,7 +591,7 @@ export default function Header() {
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-10 px-3.5 items-center justify-center gap-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
+              className="flex h-9 w-9 sm:h-10 sm:w-auto sm:px-3.5 items-center justify-center gap-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red cursor-pointer group"
               aria-expanded={menuOpen}
               aria-label="Menú del sitio"
             >

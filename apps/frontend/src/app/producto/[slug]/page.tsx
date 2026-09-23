@@ -6,8 +6,6 @@ import Link from 'next/link';
 import {
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   ArrowLeft,
   Truck,
@@ -19,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
-import { ProductDto, PaginatedResponse } from '@papes-confort/shared';
+import { ProductDto, PaginatedResponse, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
 import { useCartStore } from '../../../stores/cart';
 import { useAuthStore } from '../../../stores/auth';
 import { useFavoritesStore } from '../../../stores/favorites';
@@ -35,17 +33,6 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState<ProductDto[]>([]);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
-
-  // Accordion state for technical specifications
-  const [openSpecs, setOpenSpecs] = useState<Record<string, boolean>>({
-    dimensions: false,
-    warranty: false,
-    additional: false,
-  });
-
-  const toggleSpecAccordion = (key: string) => {
-    setOpenSpecs((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   // Auth and Favorites
   const { user, customer, isAuthenticated } = useAuthStore();
@@ -384,7 +371,7 @@ export default function ProductDetailPage() {
             </div>
 
             <p className="text-xs font-semibold text-emerald-700 pt-1">
-              Hasta 12 cuotas fijas o precio promocional por transferencia bancaria
+              Precio promocional por transferencia
             </p>
           </div>
 
@@ -484,7 +471,9 @@ export default function ProductDetailPage() {
               <ShieldCheck className="h-5 w-5 text-brand-red mx-auto" />
               <h4 className="text-xs font-bold text-slate-800">Garantía</h4>
               <p className="text-[11px] text-slate-500">
-                Oficial de {product.warrantyMonths} meses
+                {product.warrantyMonths && product.warrantyMonths > 0
+                  ? `Oficial de ${product.warrantyMonths} meses`
+                  : 'No especificada'}
               </p>
             </div>
 
@@ -500,154 +489,76 @@ export default function ProductDetailPage() {
       {/* 4. Descripción y Características del Producto */}
       <div className="border-t border-slate-200/80 pt-14 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Descripción */}
-        <div className="lg:col-span-7 space-y-8">
-          <div>
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-              Descripción del producto
-            </h2>
-            <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/70 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-              {product.description || product.name}
-            </div>
-          </div>
-
-          {/* Tabla de Características Clave */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Características principales
-            </h3>
-            <div className="rounded-2xl border border-slate-200/70 overflow-hidden shadow-2xs bg-white">
-              <table className="w-full text-left text-xs">
-                <tbody>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500 w-1/3">Marca</td>
-                    <td className="px-4 py-3.5 text-brand-black font-bold">{product.brand.name}</td>
-                  </tr>
-                  <tr className="bg-white border-b border-slate-100">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500">Rubro</td>
-                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.productType.name}</td>
-                  </tr>
-                  {product.productCategory && product.productCategory.name !== 'Sin Categoría' && (
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <td className="px-4 py-3.5 font-semibold text-slate-500">Categoría</td>
-                      <td className="px-4 py-3.5 text-brand-black font-medium">{product.productCategory.name}</td>
-                    </tr>
-                  )}
-                  {product.dimensions && (
-                    <tr className="bg-white border-b border-slate-100">
-                      <td className="px-4 py-3.5 font-semibold text-slate-500">Dimensiones (cm)</td>
-                      <td className="px-4 py-3.5 text-brand-black font-medium">{product.dimensions}</td>
-                    </tr>
-                  )}
-                  {product.weightKg && (
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <td className="px-4 py-3.5 font-semibold text-slate-500">Peso aproximado</td>
-                      <td className="px-4 py-3.5 text-brand-black font-medium">{product.weightKg} kg</td>
-                    </tr>
-                  )}
-                  <tr className="bg-white">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500">Garantía oficial</td>
-                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.warrantyMonths} meses</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <div className="lg:col-span-7 space-y-3">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Descripción del producto
+          </h2>
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/70 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+            {sanitizeCorruptedSpanishText(product.description) || product.name}
           </div>
         </div>
 
-        {/* Acordeón de Especificaciones Técnicas */}
+        {/* Tabla de Características Clave */}
         <div className="lg:col-span-5 space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-            Especificaciones técnicas
-          </h2>
-
-          {/* Acordeón: Garantía y Devolución */}
-          <div className="rounded-2xl border border-slate-200/70 overflow-hidden bg-white shadow-2xs">
-            <button
-              type="button"
-              onClick={() => toggleSpecAccordion('warranty')}
-              className="w-full p-4 flex items-center justify-between text-xs font-bold text-slate-800 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <span>Garantía y respaldo</span>
-              {openSpecs.warranty ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              )}
-            </button>
-            {openSpecs.warranty && (
-              <div className="p-4 pt-0 text-xs text-slate-500 leading-relaxed border-t border-slate-100">
-                Todos nuestros productos cuentan con garantía oficial directa del fabricante por un período de {product.warrantyMonths} meses a partir de la fecha de entrega.
-              </div>
-            )}
-          </div>
-
-          {/* Acordeón: Envíos y Retiros */}
-          <div className="rounded-2xl border border-slate-200/70 overflow-hidden bg-white shadow-2xs">
-            <button
-              type="button"
-              onClick={() => toggleSpecAccordion('dimensions')}
-              className="w-full p-4 flex items-center justify-between text-xs font-bold text-slate-800 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <span>Envíos y retiros</span>
-              {openSpecs.dimensions ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              )}
-            </button>
-            {openSpecs.dimensions && (
-              <div className="p-4 pt-0 text-xs text-slate-500 leading-relaxed border-t border-slate-100">
-                Podes retirar de forma gratuita en nuestro local central en Basavilbaso, Entre Ríos, o coordinar el despacho a través de transporte expreso o flete a convenir.
-              </div>
-            )}
-          </div>
-
-          {/* Atributos adicionales dinámicos de Gescom */}
-          {product.specs && Object.keys(product.specs).filter(k => k !== 'ivaPercent').length > 0 && (
-            <div className="rounded-2xl border border-slate-200/70 overflow-hidden bg-white shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSpecAccordion('additional')}
-                className="w-full p-4 flex items-center justify-between text-xs font-bold text-slate-800 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <span>Ficha técnica adicional</span>
-                {openSpecs.additional ? (
-                  <ChevronUp className="h-4 w-4 text-slate-400" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Características principales
+          </h3>
+          <div className="rounded-2xl border border-slate-200/70 overflow-hidden shadow-2xs bg-white">
+            <table className="w-full text-left text-xs">
+              <tbody>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <td className="px-4 py-3.5 font-semibold text-slate-500 w-1/3">Marca</td>
+                  <td className="px-4 py-3.5 text-brand-black font-bold">{product.brand.name}</td>
+                </tr>
+                <tr className="bg-white border-b border-slate-100">
+                  <td className="px-4 py-3.5 font-semibold text-slate-500">Rubro</td>
+                  <td className="px-4 py-3.5 text-brand-black font-medium">{product.productType.name}</td>
+                </tr>
+                {product.productCategory && product.productCategory.name !== 'Sin Categoría' && (
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <td className="px-4 py-3.5 font-semibold text-slate-500">Categoría</td>
+                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.productCategory.name}</td>
+                  </tr>
                 )}
-              </button>
-              {openSpecs.additional && (
-                <div className="p-4 pt-0 text-xs border-t border-slate-100">
-                  <div className="space-y-2">
-                    {Object.entries(product.specs)
-                      .filter(([k]) => k !== 'ivaPercent')
-                      .map(([k, v]) => (
-                        <div key={k} className="flex justify-between py-1.5 border-b border-slate-100 last:border-0">
-                          <span className="text-slate-400 capitalize">{k.replace(/_/g, ' ')}:</span>
-                          <span className="font-medium text-slate-700">{String(v)}</span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                {product.dimensions && (
+                  <tr className="bg-white border-b border-slate-100">
+                    <td className="px-4 py-3.5 font-semibold text-slate-500">Dimensiones (cm)</td>
+                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.dimensions}</td>
+                  </tr>
+                )}
+                {product.weightKg && (
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <td className="px-4 py-3.5 font-semibold text-slate-500">Peso aproximado</td>
+                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.weightKg} kg</td>
+                  </tr>
+                )}
+                <tr className="bg-white">
+                  <td className="px-4 py-3.5 font-semibold text-slate-500">Garantía oficial</td>
+                  <td className="px-4 py-3.5 text-brand-black font-medium">
+                    {product.warrantyMonths && product.warrantyMonths > 0
+                      ? `${product.warrantyMonths} meses`
+                      : 'No especificada'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* 5. Productos Relacionados ("También te puede interesar") */}
       {relatedProducts.length > 0 && (
         <section className="pt-14 border-t border-slate-200/80 space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="text-lg sm:text-xl font-bold text-brand-black">
               También te puede interesar
             </h2>
             <Link
               href={`/catalogo?type=${product.productType?.slug}`}
-              className="text-xs font-bold text-brand-red hover:underline"
+              className="text-xs sm:text-sm font-bold text-brand-red hover:underline inline-flex items-center gap-1 group self-start sm:self-auto"
             >
-              Ver más de {product.productType?.name}
+              <span>Ver más de {product.productType?.name}</span>
+              <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
 

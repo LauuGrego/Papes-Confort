@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   ChevronRight,
-  Search,
   SlidersHorizontal,
   ArrowUpDown,
   X,
@@ -35,7 +34,6 @@ function CatalogoContent() {
 
   // Search & Sorting
   const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
   const [sort, setSort] = useState('relevance');
   const [page, setPage] = useState(1);
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -51,7 +49,6 @@ function CatalogoContent() {
     selectedProductType: null,
     minPrice: '',
     maxPrice: '',
-    inStock: false,
   });
 
   // 1. Read URL params
@@ -65,11 +62,9 @@ function CatalogoContent() {
     const brandParam = searchParams.get('brandId');
     const minPriceParam = searchParams.get('minPrice');
     const maxPriceParam = searchParams.get('maxPrice');
-    const inStockParam = searchParams.get('inStock') === 'true';
 
     setPage(pageParam ? Number(pageParam) : 1);
     setSearch(searchParam || '');
-    setSearchInput(searchParam || '');
     setSort(sortParam || 'relevance');
 
     setFilters({
@@ -79,7 +74,6 @@ function CatalogoContent() {
       selectedProductType: productTypeParam || null,
       minPrice: minPriceParam || '',
       maxPrice: maxPriceParam || '',
-      inStock: inStockParam,
     });
 
     setInitialLoaded(true);
@@ -117,7 +111,6 @@ function CatalogoContent() {
     if (filters.selectedProductType) params.set('productType', filters.selectedProductType);
     if (filters.minPrice) params.set('minPrice', filters.minPrice);
     if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
-    if (filters.inStock) params.set('inStock', 'true');
 
     const res = await fetchApi<PaginatedResponse<ProductDto>>(`/api/products?${params.toString()}`);
     if (res.success && res.data) {
@@ -147,24 +140,12 @@ function CatalogoContent() {
     if (filters.selectedProductType) params.set('productType', filters.selectedProductType);
     if (filters.minPrice) params.set('minPrice', filters.minPrice);
     if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
-    if (filters.inStock) params.set('inStock', 'true');
 
     const qs = params.toString();
     const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
     window.history.replaceState(null, '', newUrl);
   }, [page, search, sort, filters, initialLoaded]);
 
-  // Search input debounce
-  useEffect(() => {
-    if (!initialLoaded) return;
-    if (searchInput === search) return;
-
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput, search, initialLoaded]);
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -179,10 +160,8 @@ function CatalogoContent() {
       selectedProductType: null,
       minPrice: '',
       maxPrice: '',
-      inStock: false,
     });
     setSearch('');
-    setSearchInput('');
     setSort('relevance');
     setPage(1);
   };
@@ -205,7 +184,6 @@ function CatalogoContent() {
     filters.selectedProductType ||
     filters.minPrice ||
     filters.maxPrice ||
-    filters.inStock ||
     search
   );
 
@@ -234,38 +212,16 @@ function CatalogoContent() {
         )}
       </nav>
 
-      <div className="mb-6 space-y-3">
+      <div className="mb-6 space-y-2">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-black tracking-tight">
-          {selectedCategoryObj
+          {search
+            ? `Resultados para "${search}"`
+            : selectedCategoryObj
             ? selectedCategoryObj.name
             : selectedFamilyObj
             ? selectedFamilyObj.name
             : 'Encontrá lo que necesitás para tu hogar'}
         </h1>
-
-        {/* Buscador Integrado en el Encabezado */}
-        <div className="relative max-w-2xl">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar productos, marcas o categorías..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-brand-black outline-none focus:border-brand-red/50 focus:ring-2 focus:ring-brand-red/10 transition-all"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput('');
-                setSearch('');
-              }}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
 
         {/* Contador de resultados */}
         <p className="text-xs text-slate-500 font-medium">
@@ -387,18 +343,6 @@ function CatalogoContent() {
             </span>
           )}
 
-          {filters.inStock && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-              <span>Solo en stock</span>
-              <button
-                type="button"
-                onClick={() => handleFilterChange({ inStock: false })}
-                className="text-slate-400 hover:text-red-500"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          )}
 
           {search && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
@@ -407,7 +351,6 @@ function CatalogoContent() {
                 type="button"
                 onClick={() => {
                   setSearch('');
-                  setSearchInput('');
                 }}
                 className="text-slate-400 hover:text-red-500"
               >
@@ -429,7 +372,7 @@ function CatalogoContent() {
       {/* B. Layout Principal: 25% Sidebar Filtros + 75% Productos */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         {/* Sidebar Desktop (25%) */}
-        <div className="hidden lg:block lg:col-span-1 sticky top-24 bg-white rounded-2xl p-5 border border-slate-100 shadow-2xs">
+        <aside className="hidden lg:block lg:col-span-1 sticky top-20 bg-white rounded-2xl p-5 border border-slate-100 shadow-2xs max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
           <ProductFiltersSidebar
             families={families}
             brands={brands}
@@ -437,7 +380,7 @@ function CatalogoContent() {
             onFilterChange={handleFilterChange}
             onClearAll={handleClearAll}
           />
-        </div>
+        </aside>
 
         {/* Grilla de Productos (75%) */}
         <main className="lg:col-span-3 space-y-8">

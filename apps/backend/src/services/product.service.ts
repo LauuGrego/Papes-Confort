@@ -79,7 +79,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     images: imageDtos,
     isOutlet: product.productType === 'OUTLET',
     isActive: product.isActive,
-    warrantyMonths: product.warrantyMonths || 12,
+    warrantyMonths: product.warrantyMonths ?? null,
     weightKg: product.weightKg ? Number(product.weightKg) : null,
     dimensions: dimensionsStr,
     specs: (product.specs as Record<string, any>) || {},
@@ -326,7 +326,7 @@ export async function updateProduct(id: string, data: {
   productCategoryId?: string;
   productType?: any;
   discountPercent?: number;
-  warrantyMonths?: number;
+  warrantyMonths?: number | null;
   weightKg?: number;
   dimensions?: { alto?: number; ancho?: number; prof?: number; } | string;
   specs?: Record<string, any>;

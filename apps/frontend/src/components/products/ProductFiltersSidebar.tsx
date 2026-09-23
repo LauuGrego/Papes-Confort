@@ -10,7 +10,7 @@ export interface FilterState {
   selectedProductType: string | null;
   minPrice: string;
   maxPrice: string;
-  inStock: boolean;
+  inStock?: boolean;
 }
 
 interface ProductFiltersSidebarProps {
@@ -37,7 +37,6 @@ export default function ProductFiltersSidebar({
     categories: true,
     brands: true,
     price: true,
-    availability: true,
     types: true,
   });
 
@@ -63,8 +62,7 @@ export default function ProductFiltersSidebar({
     filters.selectedBrand ||
     filters.selectedProductType ||
     filters.minPrice ||
-    filters.maxPrice ||
-    filters.inStock
+    filters.maxPrice
   );
 
   return (
@@ -296,42 +294,6 @@ export default function ProductFiltersSidebar({
         )}
       </div>
 
-      {/* 4. Disponibilidad (Stock) */}
-      <div className="border-b border-slate-100 pb-5">
-        <button
-          type="button"
-          onClick={() => toggleSection('availability')}
-          className="w-full flex items-center justify-between font-bold text-slate-800 text-xs uppercase tracking-wider py-1 cursor-pointer"
-        >
-          <span>Disponibilidad</span>
-          {openSections.availability ? (
-            <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-          )}
-        </button>
-
-        {openSections.availability && (
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => onFilterChange({ inStock: !filters.inStock })}
-              className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer"
-            >
-              <div
-                className={`h-4 w-4 rounded border flex items-center justify-center ${
-                  filters.inStock
-                    ? 'bg-brand-red border-brand-red text-white'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-                {filters.inStock && <Check className="h-3 w-3" />}
-              </div>
-              <span>Solo con stock disponible</span>
-            </button>
-          </div>
-        )}
-      </div>
 
       {/* 5. Tipo Especial (Ofertas / Outlet) */}
       <div>

@@ -89,7 +89,7 @@ export interface ProductDto {
   images: ProductImageDto[];
   isOutlet: boolean;
   isActive: boolean;
-  warrantyMonths: number;
+  warrantyMonths: number | null;
   weightKg: number | null;
   dimensions: string | null; // e.g. "120x80x40"
   specs: Record<string, any>; // Atributos flexibles guardados como JSON en BD
@@ -665,7 +665,7 @@ export interface CreateProductPayload {
   productTypeId: string;
   productCategoryId: string;
   isOutlet: boolean;
-  warrantyMonths: number;
+  warrantyMonths?: number | null;
   weightKg?: number;
   dimensions?: string;
   specs?: Record<string, any>;

@@ -95,11 +95,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Información del Producto */}
       <div className="flex flex-col flex-grow">
-        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 leading-tight">
           {product.brand?.name || 'Papes Confort'}
         </span>
 
-        <h3 className="text-xs sm:text-sm font-bold text-brand-black line-clamp-2 leading-snug group-hover:text-brand-red transition-colors min-h-[2.25rem] mb-2">
+        <h3 className="text-xs sm:text-sm font-bold text-brand-black leading-snug group-hover:text-brand-red transition-colors mb-2">
           {product.name}
         </h3>
 
@@ -118,9 +118,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           <p className="text-[11px] sm:text-xs font-semibold text-emerald-700">
-            {product.discountPercent > 0
-              ? 'Precio especial de oferta'
-              : 'Hasta 12 cuotas fijas'}
+            Precio promocional por transferencia
           </p>
         </div>
       </div>
