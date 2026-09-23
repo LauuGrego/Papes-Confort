@@ -771,7 +771,7 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
                 <p className="text-[11px] text-indigo-700">
-                  Total financiado: {formatPrice(listPrice)} al precio de lista oficial con tarjetas emitidas por {installmentsConfig.bankPromoName}.
+                  Total financiado: {formatPrice(listPrice)} con tarjetas emitidas por {installmentsConfig.bankPromoName}.
                 </p>
               </div>
             )}
@@ -787,18 +787,18 @@ export default function ProductDetailPage() {
 
               <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100 overflow-hidden text-xs">
                 <div className="flex items-center justify-between p-3 bg-slate-50/50">
-                  <span className="font-medium text-slate-700">1 pago sin interés</span>
+                  <span className="font-medium text-slate-700">1 pago</span>
                   <span className="font-bold text-slate-900">{formatPrice(listPrice)}</span>
                 </div>
                 {defaultInstallments >= 3 && (
                   <div className="flex items-center justify-between p-3 bg-white">
-                    <span className="font-medium text-slate-700">3 cuotas sin interés</span>
+                    <span className="font-medium text-slate-700">3 cuotas</span>
                     <span className="font-bold text-slate-900">{formatPrice(Math.round(listPrice / 3))} c/u</span>
                   </div>
                 )}
                 {defaultInstallments > 3 && (
                   <div className="flex items-center justify-between p-3 bg-slate-50/50">
-                    <span className="font-bold text-slate-900">{defaultInstallments} cuotas sin interés</span>
+                    <span className="font-bold text-slate-900">{defaultInstallments} cuotas</span>
                     <span className="font-black text-brand-red">{formatPrice(standardInstallmentAmount)} c/u</span>
                   </div>
                 )}
