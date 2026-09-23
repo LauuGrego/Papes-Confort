@@ -4,9 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, Heart } from 'lucide-react';
+import { ArrowRight, CreditCard, Heart } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
 import { useFavoritesStore } from '../../stores/favorites';
+import { useInstallmentsStore } from '../../stores/installments';
 
 interface ProductCardProps {
   product: ProductDto;
@@ -45,8 +46,17 @@ export default function ProductCard({ product }: ProductCardProps) {
     toggleFavorite(product, currentCustomerId);
   };
 
+  const { config: installmentsConfig, load: loadInstallments } = useInstallmentsStore();
+
+  React.useEffect(() => {
+    loadInstallments();
+  }, [loadInstallments]);
+
   const listPrice = product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice;
   const showListPrice = listPrice > product.finalPrice;
+
+  const defaultInstallments = installmentsConfig.defaultInstallments || 5;
+  const installmentAmount = Math.round(listPrice / defaultInstallments);
 
   return (
     <Link
@@ -117,9 +127,30 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          <p className="text-[11px] sm:text-xs font-semibold text-emerald-700">
+          <p className="text-[11px] sm:text-xs font-semibold text-emerald-700 leading-tight">
             Precio promocional por transferencia
           </p>
+
+          {/* Financiación en Cuotas al Precio de Lista */}
+          {defaultInstallments > 1 && (
+            <div className="pt-1.5 border-t border-slate-100/90 space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-slate-800 leading-tight">
+                <CreditCard className="h-3.5 w-3.5 text-brand-red shrink-0" />
+                <span>
+                  <strong className="font-bold text-slate-900">{defaultInstallments} cuotas</strong> de{' '}
+                  <strong className="font-extrabold text-brand-black">{formatPrice(installmentAmount)}</strong>
+                </span>
+              </div>
+
+              {installmentsConfig.bankPromoActive && installmentsConfig.bankPromoInstallments > 0 && (
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/80">
+                    O hasta {installmentsConfig.bankPromoInstallments} cuotas s/int con {installmentsConfig.bankPromoName}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

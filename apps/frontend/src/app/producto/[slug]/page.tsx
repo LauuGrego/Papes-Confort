@@ -15,12 +15,16 @@ import {
   Heart,
   Search,
   X,
+  CreditCard,
+  BadgePercent,
+  Sparkles,
 } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto, PaginatedResponse, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
 import { useCartStore } from '../../../stores/cart';
 import { useAuthStore } from '../../../stores/auth';
 import { useFavoritesStore } from '../../../stores/favorites';
+import { useInstallmentsStore } from '../../../stores/installments';
 import ProductCard from '../../../components/products/ProductCard';
 
 export default function ProductDetailPage() {
@@ -55,6 +59,14 @@ export default function ProductDetailPage() {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isZoomed, setIsZoomed] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Cuotas y Financiación
+  const { config: installmentsConfig, load: loadInstallments } = useInstallmentsStore();
+
+  useEffect(() => {
+    loadInstallments();
+  }, [loadInstallments]);
 
   // Mobile Touch Swipe states
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -200,6 +212,12 @@ export default function ProductDetailPage() {
   const imageUrl = primaryImage ? primaryImage.url : '/images/logo/isotipo.svg';
   const listPrice = product.listPrice && product.listPrice > 0 ? product.listPrice : product.basePrice;
   const showListPrice = listPrice > product.finalPrice;
+
+  const defaultInstallments = installmentsConfig.defaultInstallments || 5;
+  const standardInstallmentAmount = Math.round(listPrice / defaultInstallments);
+
+  const bankPromoInstallments = installmentsConfig.bankPromoInstallments || 9;
+  const bankPromoInstallmentAmount = Math.round(listPrice / bankPromoInstallments);
 
   // WhatsApp message
   const whatsappMsg = `Hola, estoy interesado en el producto ${product.name} (SKU: ${product.sku}) que vi en la tienda online. ¿Podrían confirmarme disponibilidad y opciones de entrega?`;
@@ -352,27 +370,78 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Bloque de Precios y Financiación */}
-          <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-100 space-y-1.5">
-            {showListPrice && (
-              <span className="text-sm text-slate-400 line-through block">
-                {formatPrice(listPrice)}
-              </span>
-            )}
-
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl md:text-4xl font-black text-brand-black">
-                {formatPrice(product.finalPrice)}
-              </span>
-              {product.discountPercent > 0 && (
-                <span className="text-xs font-bold text-brand-red bg-brand-red/10 px-2.5 py-0.5 rounded-full">
-                  Ahorras {product.discountPercent}%
+          <div className="bg-slate-50/70 rounded-2xl p-5 sm:p-6 border border-slate-100 space-y-4">
+            {/* Opción 1: Contado / Transferencia */}
+            <div className="space-y-1">
+              {showListPrice && (
+                <span className="text-sm text-slate-400 line-through block">
+                  {formatPrice(listPrice)}
                 </span>
               )}
+
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl md:text-4xl font-black text-brand-black">
+                  {formatPrice(product.finalPrice)}
+                </span>
+                {product.discountPercent > 0 && (
+                  <span className="text-xs font-bold text-brand-red bg-brand-red/10 px-2.5 py-0.5 rounded-full">
+                    Ahorras {product.discountPercent}%
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 pt-0.5">
+                <BadgePercent className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span>Precio especial abonando por transferencia o efectivo</span>
+              </div>
             </div>
 
-            <p className="text-xs font-semibold text-emerald-700 pt-1">
-              Precio promocional por transferencia
-            </p>
+            {/* Opción 2: Tarjeta de Crédito y Financiación en Cuotas al Precio de Lista */}
+            {defaultInstallments > 1 && (
+              <div className="pt-3 border-t border-slate-200/70 space-y-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-brand-black">
+                    <CreditCard className="h-4 w-4 text-brand-red shrink-0" />
+                    <span>
+                      Hasta <strong className="text-slate-900 font-extrabold">{defaultInstallments} cuotas sin interés</strong> de{' '}
+                      <strong className="text-brand-black font-black">{formatPrice(standardInstallmentAmount)}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Promo bancaria destacada (ej. Banco Nación) */}
+                {installmentsConfig.bankPromoActive && installmentsConfig.bankPromoInstallments > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-indigo-50/80 border border-indigo-100 flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs space-y-0.5 min-w-0">
+                      <div className="font-extrabold text-indigo-950 flex items-center gap-1.5">
+                        <span>Promoción Especial {installmentsConfig.bankPromoName}</span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-indigo-200/60 text-indigo-800 text-[10px] font-bold">Vigente</span>
+                      </div>
+                      <div className="font-bold text-indigo-900 text-sm">
+                        {installmentsConfig.bankPromoInstallments} cuotas sin interés de {formatPrice(bankPromoInstallmentAmount)}
+                      </div>
+                      <div className="text-[11px] text-indigo-700/90 font-medium">
+                        {installmentsConfig.bankPromoText || `Exclusivo al precio de lista con tarjetas de crédito emitidas por ${installmentsConfig.bankPromoName}.`}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón para ver tabla completa de cuotas */}
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-red hover:text-brand-red-dark transition-colors cursor-pointer group"
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span>Ver medios de pago y tabla detallada de cuotas</span>
+                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Disponibilidad de Stock Limpia */}
@@ -459,28 +528,51 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
-          {/* 3. Bloque de Confianza: Envíos, Garantía y Seguridad */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100">
-            <div className="p-3 rounded-2xl bg-slate-50/60 border border-slate-100 text-center space-y-1">
-              <Truck className="h-5 w-5 text-brand-red mx-auto" />
-              <h4 className="text-xs font-bold text-slate-800">Envíos</h4>
-              <p className="text-[11px] text-slate-500">Coordinación a Basavilbaso y todo el país</p>
+          {/* 3. Bloque de Entrega y Envíos */}
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-800">
+              <Truck className="h-4 w-4 text-brand-red" />
+              <span>Formas de Entrega y Envíos</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-50/60 border border-slate-100 text-center space-y-1">
-              <ShieldCheck className="h-5 w-5 text-brand-red mx-auto" />
+            <ul className="space-y-2.5 text-xs text-slate-700">
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                <div>
+                  <strong className="font-bold text-slate-900 uppercase">Retiro del local</strong>
+                </div>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                <div>
+                  <strong className="font-bold text-slate-900 uppercase">Envíos sin cargo dentro del radio urbano</strong>
+                </div>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                <div className="leading-relaxed">
+                  <strong className="font-bold text-slate-900 uppercase">Envíos a otras localidades a coordinar</strong>, por Correo Argentino - Andreani - Mostto o transporte a designar de acuerdo al tamaño y servicios de logísticas disponibles para la zona del domicilio de entrega.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Garantía y Seguridad */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="p-3 rounded-2xl bg-white border border-slate-100 text-center space-y-0.5">
+              <ShieldCheck className="h-4 w-4 text-brand-red mx-auto" />
               <h4 className="text-xs font-bold text-slate-800">Garantía</h4>
               <p className="text-[11px] text-slate-500">
                 {product.warrantyMonths && product.warrantyMonths > 0
                   ? `Oficial de ${product.warrantyMonths} meses`
-                  : 'No especificada'}
+                  : 'Respaldo directo de fábrica'}
               </p>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-50/60 border border-slate-100 text-center space-y-1">
-              <Lock className="h-5 w-5 text-brand-red mx-auto" />
+            <div className="p-3 rounded-2xl bg-white border border-slate-100 text-center space-y-0.5">
+              <Lock className="h-4 w-4 text-brand-red mx-auto" />
               <h4 className="text-xs font-bold text-slate-800">Compra segura</h4>
-              <p className="text-[11px] text-slate-500">Datos y pagos protegidos</p>
+              <p className="text-[11px] text-slate-500">Facturación y datos protegidos</p>
             </div>
           </div>
         </div>
@@ -616,6 +708,128 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+      {/* Modal de Medios de Pago y Financiación */}
+      {isPaymentModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setIsPaymentModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-brand-red" />
+                  <h3 className="text-base font-extrabold text-brand-black">Medios de Pago y Cuotas</h3>
+                </div>
+                <p className="text-xs text-slate-400 truncate max-w-xs">{product.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Cerrar modal"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Opción Efectivo / Transferencia */}
+            <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100/80 p-4 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                  Transferencia o Efectivo
+                </span>
+                <span className="text-xs font-bold text-emerald-700 bg-white/80 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                  Precio Especial
+                </span>
+              </div>
+              <div className="text-2xl font-black text-emerald-950">
+                {formatPrice(product.finalPrice)}
+              </div>
+              <p className="text-[11px] text-emerald-700">
+                Abonando mediante transferencia bancaria inmediata o en efectivo en nuestro local.
+              </p>
+            </div>
+
+            {/* Promoción Bancaria Destacada */}
+            {installmentsConfig.bankPromoActive && installmentsConfig.bankPromoInstallments > 0 && (
+              <div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 p-4 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>Promo Destacada: {installmentsConfig.bankPromoName}</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-semibold text-slate-700">
+                    {installmentsConfig.bankPromoInstallments} cuotas sin interés de:
+                  </span>
+                  <span className="text-lg font-black text-indigo-950">
+                    {formatPrice(bankPromoInstallmentAmount)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-indigo-700">
+                  Total financiado: {formatPrice(listPrice)} al precio de lista oficial con tarjetas emitidas por {installmentsConfig.bankPromoName}.
+                </p>
+              </div>
+            )}
+
+            {/* Tarjetas Bancarias en Cuotas Sin Interés */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Tarjetas de Crédito Bancarias
+                </h4>
+                <span className="text-[11px] text-slate-400">Precio de lista: {formatPrice(listPrice)}</span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100 overflow-hidden text-xs">
+                <div className="flex items-center justify-between p-3 bg-slate-50/50">
+                  <span className="font-medium text-slate-700">1 pago sin interés</span>
+                  <span className="font-bold text-slate-900">{formatPrice(listPrice)}</span>
+                </div>
+                {defaultInstallments >= 3 && (
+                  <div className="flex items-center justify-between p-3 bg-white">
+                    <span className="font-medium text-slate-700">3 cuotas sin interés</span>
+                    <span className="font-bold text-slate-900">{formatPrice(Math.round(listPrice / 3))} c/u</span>
+                  </div>
+                )}
+                {defaultInstallments > 3 && (
+                  <div className="flex items-center justify-between p-3 bg-slate-50/50">
+                    <span className="font-bold text-slate-900">{defaultInstallments} cuotas sin interés</span>
+                    <span className="font-black text-brand-red">{formatPrice(standardInstallmentAmount)} c/u</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                Válido para tarjetas Visa, Mastercard, American Express y Cabal emitidas por entidades bancarias.
+              </p>
+            </div>
+
+            {/* Botón de consulta vía WhatsApp */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider transition-all text-center flex items-center justify-center gap-2"
+              >
+                <span>Consultar financiación por WhatsApp</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="w-full sm:w-auto py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all text-center cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

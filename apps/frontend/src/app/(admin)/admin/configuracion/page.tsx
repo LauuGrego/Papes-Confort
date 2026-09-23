@@ -46,6 +46,8 @@ import {
   DEFAULT_TRUST_BAR,
   HomeAboutDto,
   DEFAULT_ABOUT_SECTION,
+  InstallmentsConfigDto,
+  DEFAULT_INSTALLMENTS_CONFIG,
 } from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
@@ -126,6 +128,8 @@ function AdminConfiguracionContent() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
   const [paymentCards, setPaymentCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_PAYMENT_CARDS);
+  const [installmentsConfig, setInstallmentsConfig] = useState<InstallmentsConfigDto>(DEFAULT_INSTALLMENTS_CONFIG);
+  const [installmentsSaveLoading, setInstallmentsSaveLoading] = useState(false);
 
   // Landing Components States
   const [categoryCards, setCategoryCards] = useState<HomeCategoryCardDto[]>(DEFAULT_CATEGORY_CARDS);
@@ -253,6 +257,16 @@ function AdminConfiguracionContent() {
             console.error('Error al parsear home_about de DB:', e);
           }
         }
+        if (res.data.installments_config) {
+          try {
+            const parsed = JSON.parse(res.data.installments_config);
+            if (parsed && typeof parsed === 'object') {
+              setInstallmentsConfig({ ...DEFAULT_INSTALLMENTS_CONFIG, ...parsed });
+            }
+          } catch (e) {
+            console.error('Error al parsear installments_config de DB:', e);
+          }
+        }
       }
       setLoading(false);
     }
@@ -266,7 +280,8 @@ function AdminConfiguracionContent() {
     updatedCategories?: HomeCategoryCardDto[],
     updatedWeeklyOffer?: HomeWeeklyOfferDto,
     updatedTrustBar?: HomeTrustBarItemDto[],
-    updatedAbout?: HomeAboutDto
+    updatedAbout?: HomeAboutDto,
+    updatedInstallments?: InstallmentsConfigDto
   ) => {
     setSaveLoading(true);
     setSuccessMsg(null);
@@ -279,6 +294,7 @@ function AdminConfiguracionContent() {
     const weeklyOfferToSave = updatedWeeklyOffer || weeklyOffer;
     const trustBarToSave = updatedTrustBar || trustBarItems;
     const aboutToSave = updatedAbout || aboutConfig;
+    const installmentsToSave = updatedInstallments || installmentsConfig;
 
     const body = {
       safety_stock: safetyStock,
@@ -290,6 +306,7 @@ function AdminConfiguracionContent() {
       home_weekly_offer: JSON.stringify(weeklyOfferToSave),
       home_trust_bar: JSON.stringify(trustBarToSave),
       home_about: JSON.stringify(aboutToSave),
+      installments_config: JSON.stringify(installmentsToSave),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -666,6 +683,15 @@ function AdminConfiguracionContent() {
     if (!confirm('¿Deseas restaurar las 3 tarjetas informativas sugeridas por defecto?')) return;
     setPaymentCards(DEFAULT_PAYMENT_CARDS);
     await saveSettings(undefined, DEFAULT_PAYMENT_CARDS);
+  };
+
+  const handleSaveInstallmentsConfig = async (customConfig?: InstallmentsConfigDto) => {
+    setInstallmentsSaveLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    const target = customConfig || installmentsConfig;
+    await saveSettings(undefined, undefined, undefined, undefined, undefined, undefined, undefined, target);
+    setInstallmentsSaveLoading(false);
   };
 
   const handleRequestPasswordChange = async () => {
@@ -1304,10 +1330,203 @@ function AdminConfiguracionContent() {
         />
       )}
 
-      {/* TAB: Tarjetas Informativas de Beneficios */}
+      {/* TAB: Tarjetas Informativas de Beneficios y Financiación */}
       {activeTab === 'payment_cards' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-8">
+          {/* SECCIÓN 1: Configuración de Cuotas y Financiación para Productos */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-2xl bg-rose-50 border border-rose-100 text-brand-red flex items-center justify-center shrink-0">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-extrabold text-slate-800">
+                    Financiación y Cuotas en Productos
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                  Configura la cantidad de cuotas sin interés y promociones bancarias (como Banco Nación) que se calculan automáticamente sobre el <strong>precio de lista</strong> en todas las cards del catálogo y en la ficha de producto.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleSaveInstallmentsConfig()}
+                disabled={installmentsSaveLoading}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer disabled:opacity-50 shrink-0 self-start sm:self-center"
+              >
+                {installmentsSaveLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                <span>Guardar Financiación</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Cuotas estándar al precio de lista */}
+              <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/60 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                    Cuotas Sin Interés Estándar (Todas las tarjetas)
+                  </label>
+                  <p className="text-[11px] text-slate-400">
+                    Cantidad habitual de cuotas sin interés calculadas sobre el precio de lista.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={installmentsConfig.defaultInstallments}
+                    onChange={(e) =>
+                      setInstallmentsConfig((prev) => ({
+                        ...prev,
+                        defaultInstallments: Math.max(1, parseInt(e.target.value) || 1),
+                      }))
+                    }
+                    className="w-28 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-800 text-center outline-none focus:border-brand-red/40 transition-all"
+                  />
+                  <span className="text-xs font-bold text-slate-600">
+                    cuotas sin interés con tarjetas bancarias
+                  </span>
+                </div>
+              </div>
+
+              {/* Promoción Bancaria Especial (ej. Banco Nación) */}
+              <div className="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="text-xs font-bold text-indigo-950 uppercase tracking-wider block">
+                      Promoción Bancaria Destacada
+                    </label>
+                    <p className="text-[11px] text-indigo-700">
+                      Convenio bancario especial (ej. 9 cuotas con Banco Nación).
+                    </p>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={installmentsConfig.bankPromoActive}
+                      onChange={(e) =>
+                        setInstallmentsConfig((prev) => ({
+                          ...prev,
+                          bankPromoActive: e.target.checked,
+                        }))
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+
+                {installmentsConfig.bankPromoActive && (
+                  <div className="space-y-3 pt-2 border-t border-indigo-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-indigo-900 uppercase">
+                          Banco o Tarjeta
+                        </label>
+                        <input
+                          type="text"
+                          value={installmentsConfig.bankPromoName}
+                          onChange={(e) =>
+                            setInstallmentsConfig((prev) => ({
+                              ...prev,
+                              bankPromoName: e.target.value,
+                            }))
+                          }
+                          placeholder="ej. Banco Nación"
+                          className="w-full px-3.5 py-2 rounded-xl border border-indigo-200 bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-400"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-indigo-900 uppercase">
+                          Cantidad de Cuotas
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={60}
+                          value={installmentsConfig.bankPromoInstallments}
+                          onChange={(e) =>
+                            setInstallmentsConfig((prev) => ({
+                              ...prev,
+                              bankPromoInstallments: Math.max(1, parseInt(e.target.value) || 1),
+                            }))
+                          }
+                          className="w-full px-3.5 py-2 rounded-xl border border-indigo-200 bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-400 text-center"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-indigo-900 uppercase">
+                        Aclaración / Texto Promocional
+                      </label>
+                      <input
+                        type="text"
+                        value={installmentsConfig.bankPromoText || ''}
+                        onChange={(e) =>
+                          setInstallmentsConfig((prev) => ({
+                            ...prev,
+                            bankPromoText: e.target.value,
+                          }))
+                        }
+                        placeholder="ej. Hasta 9 cuotas sin interés con Banco Nación"
+                        className="w-full px-3.5 py-2 rounded-xl border border-indigo-200 bg-white text-xs text-slate-800 outline-none focus:border-indigo-400"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Simulador en Vivo */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">
+                Simulador en tiempo real (Ejemplo: Producto con Precio de Lista de $100.000)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-white border border-slate-100 shadow-2xs space-y-0.5">
+                  <span className="text-slate-400 text-[11px] block">Tarjetas estándar:</span>
+                  <span className="font-bold text-slate-900">
+                    {installmentsConfig.defaultInstallments} cuotas de{' '}
+                    <strong className="text-brand-red font-black">
+                      ${Math.round(100000 / installmentsConfig.defaultInstallments).toLocaleString('es-AR')}
+                    </strong>
+                  </span>
+                </div>
+
+                {installmentsConfig.bankPromoActive && installmentsConfig.bankPromoInstallments > 0 ? (
+                  <div className="p-3 rounded-xl bg-white border border-indigo-100 shadow-2xs space-y-0.5">
+                    <span className="text-indigo-600 text-[11px] block font-semibold">
+                      {installmentsConfig.bankPromoName}:
+                    </span>
+                    <span className="font-bold text-indigo-950">
+                      {installmentsConfig.bankPromoInstallments} cuotas de{' '}
+                      <strong className="text-indigo-600 font-black">
+                        ${Math.round(100000 / installmentsConfig.bankPromoInstallments).toLocaleString('es-AR')}
+                      </strong>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-white border border-slate-100 shadow-2xs flex items-center text-slate-400 italic">
+                    Sin promoción bancaria especial activa
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 2: Tarjetas Informativas de Portada */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
             <div>
               <h2 className="text-lg font-extrabold text-slate-800">Tarjetas Informativas de Portada</h2>
               <p className="text-xs text-slate-400 mt-0.5">

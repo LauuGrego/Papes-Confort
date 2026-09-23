@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ArrowLeft, MessageSquare, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, MessageSquare, AlertCircle, Truck } from 'lucide-react';
 import { useCartStore } from '../../stores/cart';
 import { fetchApi } from '../../lib/api';
 
@@ -256,6 +256,28 @@ export default function CarritoPage() {
             <p className="text-center text-xs text-slate-400 mt-4 leading-relaxed">
               Al hacer clic serás redirigido a WhatsApp para finalizar la cotización y envío de tus productos de forma directa.
             </p>
+
+            {/* Opciones de Entrega y Envíos */}
+            <div className="mt-6 pt-5 border-t border-slate-200/80 space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Truck className="h-4 w-4 text-brand-red" />
+                <span>Opciones de Entrega y Envíos</span>
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold text-slate-800">•</span>
+                  <span><strong className="text-slate-900 uppercase">Retiro del local</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold text-slate-800">•</span>
+                  <span><strong className="text-slate-900 uppercase">Envíos sin cargo dentro del radio urbano</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold text-slate-800">•</span>
+                  <span className="leading-relaxed"><strong className="text-slate-900 uppercase">Envíos a otras localidades a coordinar</strong>, por Correo Argentino - Andreani - Mostto o transporte a designar de acuerdo al tamaño y servicios de logísticas disponibles para la zona del domicilio de entrega.</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       )}

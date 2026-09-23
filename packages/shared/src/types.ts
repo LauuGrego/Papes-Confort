@@ -268,6 +268,22 @@ export interface PaymentFeatureCardDto {
   sortOrder: number;
 }
 
+export interface InstallmentsConfigDto {
+  defaultInstallments: number; // Ej: 5
+  bankPromoActive: boolean; // Ej: true
+  bankPromoName: string; // Ej: 'Banco Nación'
+  bankPromoInstallments: number; // Ej: 9
+  bankPromoText?: string; // Ej: 'Hasta 9 cuotas sin interés con Banco Nación'
+}
+
+export const DEFAULT_INSTALLMENTS_CONFIG: InstallmentsConfigDto = {
+  defaultInstallments: 5,
+  bankPromoActive: true,
+  bankPromoName: 'Banco Nación',
+  bankPromoInstallments: 9,
+  bankPromoText: 'Hasta 9 cuotas sin interés con Banco Nación',
+};
+
 export interface HomeHeroBannerDto {
   imageUrl: string;
   images?: string[];
@@ -435,8 +451,8 @@ export const DEFAULT_TRUST_BAR: HomeTrustBarItemDto[] = [
   {
     id: 'envios',
     icon: 'truck',
-    title: 'Envíos a todo el país',
-    description: 'Entregas seguras y seguimiento',
+    title: 'Envíos y Entregas',
+    description: 'Sin cargo en radio urbano y a todo el país',
     href: '/catalogo',
     isActive: true,
   },

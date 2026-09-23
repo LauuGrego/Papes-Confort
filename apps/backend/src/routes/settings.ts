@@ -19,6 +19,7 @@ router.get('/public', async (_req, res, next) => {
             'home_weekly_offer',
             'home_trust_bar',
             'home_about',
+            'installments_config',
           ],
         },
       },
@@ -33,6 +34,7 @@ router.get('/public', async (_req, res, next) => {
       home_weekly_offer: '',
       home_trust_bar: '',
       home_about: '',
+      installments_config: '',
     };
 
     settings.forEach((s) => {
