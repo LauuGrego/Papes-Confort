@@ -116,13 +116,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Bloque de Precios y Financiación */}
         <div className="mt-auto pt-2 border-t border-slate-50 space-y-1">
           {showListPrice && (
-            <span className="block text-[11px] sm:text-xs text-slate-400 line-through">
+            <span className="block text-xs sm:text-sm font-bold text-slate-900 line-through">
               {formatPrice(listPrice)}
             </span>
           )}
 
           <div className="flex items-baseline gap-1.5">
-            <span className="text-lg sm:text-xl font-black text-brand-black group-hover:text-brand-red transition-colors">
+            <span className="text-lg sm:text-xl font-black text-brand-red">
               {formatPrice(product.finalPrice)}
             </span>
           </div>

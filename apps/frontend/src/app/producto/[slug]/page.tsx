@@ -374,13 +374,13 @@ export default function ProductDetailPage() {
             {/* Opción 1: Contado / Transferencia */}
             <div className="space-y-1">
               {showListPrice && (
-                <span className="text-sm text-slate-400 line-through block">
+                <span className="text-base sm:text-lg font-bold text-slate-900 line-through block">
                   {formatPrice(listPrice)}
                 </span>
               )}
 
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl md:text-4xl font-black text-brand-black">
+                <span className="text-3xl md:text-4xl font-black text-brand-red">
                   {formatPrice(product.finalPrice)}
                 </span>
                 {product.discountPercent > 0 && (
