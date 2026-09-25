@@ -10,9 +10,10 @@ import {
   X,
   Loader2,
   PackageOpen,
+  Tag,
 } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
-import { ProductDto, PaginatedResponse } from '@papes-confort/shared';
+import { ProductDto, PaginatedResponse, OfferDto } from '@papes-confort/shared';
 import ProductCard from '../../components/products/ProductCard';
 import Pagination from '../../components/Pagination';
 import ProductFiltersSidebar, { FilterState } from '../../components/products/ProductFiltersSidebar';
@@ -31,6 +32,7 @@ function CatalogoContent() {
   const [productsData, setProductsData] = useState<PaginatedResponse<ProductDto> | null>(null);
   const [families, setFamilies] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [offers, setOffers] = useState<OfferDto[]>([]);
 
   // Search & Sorting
   const [search, setSearch] = useState('');
@@ -47,6 +49,7 @@ function CatalogoContent() {
     selectedCategory: null,
     selectedBrand: null,
     selectedProductType: null,
+    selectedOffer: null,
     minPrice: '',
     maxPrice: '',
   });
@@ -59,6 +62,7 @@ function CatalogoContent() {
     const familyParam = searchParams.get('type');
     const categoryParam = searchParams.get('categoryId');
     const productTypeParam = searchParams.get('productType');
+    const offerParam = searchParams.get('offer');
     const brandParam = searchParams.get('brandId');
     const minPriceParam = searchParams.get('minPrice');
     const maxPriceParam = searchParams.get('maxPrice');
@@ -72,6 +76,7 @@ function CatalogoContent() {
       selectedCategory: categoryParam || null,
       selectedBrand: brandParam || null,
       selectedProductType: productTypeParam || null,
+      selectedOffer: offerParam || null,
       minPrice: minPriceParam || '',
       maxPrice: maxPriceParam || '',
     });
@@ -79,18 +84,22 @@ function CatalogoContent() {
     setInitialLoaded(true);
   }, [searchParams]);
 
-  // 2. Load metadata (families & brands)
+  // 2. Load metadata (families, brands & offers)
   useEffect(() => {
     async function loadMetadata() {
-      const [categoriesRes, brandsRes] = await Promise.all([
+      const [categoriesRes, brandsRes, offersRes] = await Promise.all([
         fetchApi<any[]>('/api/categories'),
         fetchApi<any[]>('/api/brands'),
+        fetchApi<OfferDto[]>('/api/offers'),
       ]);
       if (categoriesRes.success && categoriesRes.data) {
         setFamilies(categoriesRes.data);
       }
       if (brandsRes.success && brandsRes.data) {
         setBrands(brandsRes.data);
+      }
+      if (offersRes.success && offersRes.data) {
+        setOffers(offersRes.data);
       }
     }
     loadMetadata();
@@ -109,6 +118,7 @@ function CatalogoContent() {
     if (filters.selectedCategory) params.set('categoryId', filters.selectedCategory);
     if (filters.selectedBrand) params.set('brandId', filters.selectedBrand);
     if (filters.selectedProductType) params.set('productType', filters.selectedProductType);
+    if (filters.selectedOffer) params.set('offer', filters.selectedOffer);
     if (filters.minPrice) params.set('minPrice', filters.minPrice);
     if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
 
@@ -138,6 +148,7 @@ function CatalogoContent() {
     if (filters.selectedCategory) params.set('categoryId', filters.selectedCategory);
     if (filters.selectedBrand) params.set('brandId', filters.selectedBrand);
     if (filters.selectedProductType) params.set('productType', filters.selectedProductType);
+    if (filters.selectedOffer) params.set('offer', filters.selectedOffer);
     if (filters.minPrice) params.set('minPrice', filters.minPrice);
     if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
 
@@ -158,6 +169,7 @@ function CatalogoContent() {
       selectedCategory: null,
       selectedBrand: null,
       selectedProductType: null,
+      selectedOffer: null,
       minPrice: '',
       maxPrice: '',
     });
@@ -177,11 +189,18 @@ function CatalogoContent() {
 
   const selectedBrandObj = brands.find((b) => b.id === filters.selectedBrand);
 
+  const isAllOffers = filters.selectedOffer === 'all' || filters.selectedOffer === 'todas';
+
+  const selectedOfferObj = isAllOffers
+    ? ({ id: 'all', name: 'Todas las promociones', slug: 'all', discountPercent: 0, isActive: true } as unknown as OfferDto)
+    : offers.find((o) => o.slug === filters.selectedOffer || o.id === filters.selectedOffer);
+
   const hasActiveFilters = Boolean(
     filters.selectedFamily ||
     filters.selectedCategory ||
     filters.selectedBrand ||
     filters.selectedProductType ||
+    filters.selectedOffer ||
     filters.minPrice ||
     filters.maxPrice ||
     search
@@ -210,12 +229,24 @@ function CatalogoContent() {
             <span className="text-brand-red font-semibold">{selectedCategoryObj.name}</span>
           </>
         )}
+        {selectedOfferObj && (
+          <>
+            <ChevronRight className="h-3 w-3 shrink-0" />
+            <span className="text-brand-red font-semibold">
+              {isAllOffers ? 'Promociones' : selectedOfferObj.name}
+            </span>
+          </>
+        )}
       </nav>
 
       <div className="mb-6 space-y-2">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-black tracking-tight">
           {search
             ? `Resultados para "${search}"`
+            : isAllOffers
+            ? 'Ofertas y Promociones'
+            : selectedOfferObj
+            ? `Oferta: ${selectedOfferObj.name}`
             : selectedCategoryObj
             ? selectedCategoryObj.name
             : selectedFamilyObj
@@ -321,7 +352,25 @@ function CatalogoContent() {
               <button
                 type="button"
                 onClick={() => handleFilterChange({ selectedProductType: null })}
-                className="text-slate-400 hover:text-red-500"
+                className="text-slate-400 hover:text-red-500 cursor-pointer"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+
+          {filters.selectedOffer && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-red/10 text-brand-red text-xs font-bold border border-brand-red/20">
+              <Tag className="h-3 w-3" />
+              <span>
+                {isAllOffers
+                  ? 'Todas las promociones'
+                  : `Oferta: ${selectedOfferObj?.name || filters.selectedOffer}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange({ selectedOffer: null })}
+                className="text-brand-red hover:text-red-700 cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -376,6 +425,7 @@ function CatalogoContent() {
           <ProductFiltersSidebar
             families={families}
             brands={brands}
+            offers={offers}
             filters={filters}
             onFilterChange={handleFilterChange}
             onClearAll={handleClearAll}
@@ -449,6 +499,7 @@ function CatalogoContent() {
               <ProductFiltersSidebar
                 families={families}
                 brands={brands}
+                offers={offers}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearAll={handleClearAll}

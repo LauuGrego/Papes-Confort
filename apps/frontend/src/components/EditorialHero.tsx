@@ -26,7 +26,10 @@ export default function EditorialHero({ bannerConfig }: EditorialHeroProps) {
   const primaryBtnText = config.primaryBtnText || 'Ver Catálogo';
   const primaryBtnUrl = config.primaryBtnUrl || '/catalogo';
   const secondaryBtnText = config.secondaryBtnText || 'Ver Ofertas';
-  const secondaryBtnUrl = config.secondaryBtnUrl || '#oferta-semanal';
+  const secondaryBtnUrl =
+    !config.secondaryBtnUrl || config.secondaryBtnUrl === '#oferta-semanal'
+      ? '/catalogo?offer=all'
+      : config.secondaryBtnUrl;
 
   const objectFit = config.objectFit || 'cover';
   const objectPosition = `${config.objectPositionX ?? 50}% ${config.objectPositionY ?? 50}%`;

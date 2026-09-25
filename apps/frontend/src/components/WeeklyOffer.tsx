@@ -11,6 +11,10 @@ interface WeeklyOfferProps {
 
 export default function WeeklyOffer({ offerConfig }: WeeklyOfferProps) {
   const config = offerConfig ? { ...DEFAULT_WEEKLY_OFFER, ...offerConfig } : DEFAULT_WEEKLY_OFFER;
+  const mainCtaUrl =
+    !config.mainCtaUrl || config.mainCtaUrl === '/catalogo'
+      ? '/catalogo?offer=all'
+      : config.mainCtaUrl;
 
   if (config.isActive === false) {
     return null;
@@ -58,7 +62,7 @@ export default function WeeklyOffer({ offerConfig }: WeeklyOfferProps) {
             {/* CTA */}
             <div className="pt-2">
               <Link
-                href={config.mainCtaUrl}
+                href={mainCtaUrl}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-8 py-4 text-sm font-bold text-white hover:bg-brand-red-dark shadow-[0_4px_20px_rgba(228,20,20,0.35)] hover:shadow-[0_6px_25px_rgba(228,20,20,0.45)] transition-all duration-200 transform hover:-translate-y-0.5 group cursor-pointer"
               >
                 <span>{config.mainCtaText}</span>
