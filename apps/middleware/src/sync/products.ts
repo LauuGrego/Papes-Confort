@@ -44,7 +44,14 @@ function computeProductHash(row: GescomStockRow, listPrice: number): string {
 }
 
 
+let isSyncInProgress = false;
+
 export async function syncProductsFromGescom() {
+  if (isSyncInProgress) {
+    logger.warn('A product sync cycle is already in progress. Skipping overlapping execution.');
+    return;
+  }
+  isSyncInProgress = true;
   const startTime = Date.now();
   logger.info('Starting products sync cycle from GesCom...');
 
@@ -179,5 +186,7 @@ export async function syncProductsFromGescom() {
     });
   } catch (error: any) {
     logger.error('Products sync failed', { error: error.message, stack: error.stack });
+  } finally {
+    isSyncInProgress = false;
   }
 }
