@@ -133,10 +133,22 @@ export async function getProducts(params: {
     where.productType = params.productType;
   }
 
+  const andConditions: any[] = [];
+
   if (params.offerId) {
     where.offers = { some: { offerId: params.offerId } };
   } else if (params.offerSlug) {
-    where.offers = { some: { offer: { slug: params.offerSlug } } };
+    if (params.offerSlug === 'all' || params.offerSlug === 'todas') {
+      andConditions.push({
+        OR: [
+          { offers: { some: { offer: { isActive: true } } } },
+          { productType: 'OFFER' },
+          { discountPercent: { gt: 0 } },
+        ],
+      });
+    } else {
+      where.offers = { some: { offer: { slug: params.offerSlug } } };
+    }
   }
 
   if (params.minPrice !== undefined && !isNaN(params.minPrice)) {
@@ -153,14 +165,20 @@ export async function getProducts(params: {
 
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
-    where.OR = [
-      { name: { contains: searchTerm, mode: 'insensitive' } },
-      { sku: { contains: searchTerm, mode: 'insensitive' } },
-      { description: { contains: searchTerm, mode: 'insensitive' } },
-      { brand: { name: { contains: searchTerm, mode: 'insensitive' } } },
-      { productFamily: { name: { contains: searchTerm, mode: 'insensitive' } } },
-      { productCategory: { name: { contains: searchTerm, mode: 'insensitive' } } },
-    ];
+    andConditions.push({
+      OR: [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { sku: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { brand: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        { productFamily: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        { productCategory: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   let orderBy: any = { createdAt: 'desc' };

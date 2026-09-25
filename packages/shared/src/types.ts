@@ -322,7 +322,7 @@ export const DEFAULT_HERO_BANNER: HomeHeroBannerDto = {
   primaryBtnText: 'Ver Catálogo',
   primaryBtnUrl: '/catalogo',
   secondaryBtnText: 'Ver Ofertas',
-  secondaryBtnUrl: '#oferta-semanal',
+  secondaryBtnUrl: '/catalogo?offer=all',
   searchTags: ['Heladeras', 'Lavarropas', 'Smart TV', 'Colchones', 'Aires'],
   linkUrl: '',
   showBadge: true,
@@ -446,7 +446,7 @@ export const DEFAULT_WEEKLY_OFFER: HomeWeeklyOfferDto = {
   linkText: 'Ver modelos',
   linkUrl: '/catalogo?search=aire',
   mainCtaText: 'Ver Todas las Ofertas',
-  mainCtaUrl: '/catalogo',
+  mainCtaUrl: '/catalogo?offer=all',
   isActive: true,
 };
 

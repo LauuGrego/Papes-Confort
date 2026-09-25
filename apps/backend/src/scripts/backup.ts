@@ -4,21 +4,55 @@ import { promisify } from 'util';
 
 const execPromise = promisify(exec);
 
+function sanitizePrimaryUrl(rawUrl: string): string {
+  let urlStr = rawUrl;
+
+  // Supabase Pooler session mode (port 5432) has a strict limit of 15 connections (EMAXCONNSESSION).
+  // For data extraction (findMany), switch to transaction mode (port 6543) with pgbouncer=true.
+  if (urlStr.includes('pooler.supabase.com:5432')) {
+    console.log('  [Auto-Fix] Primary DB uses Supabase Session Pooler (:5432). Switching to Transaction Pooler (:6543) to avoid EMAXCONNSESSION...');
+    urlStr = urlStr.replace('pooler.supabase.com:5432', 'pooler.supabase.com:6543');
+    if (!urlStr.includes('pgbouncer=true')) {
+      urlStr += (urlStr.includes('?') ? '&' : '?') + 'pgbouncer=true';
+    }
+  }
+
+  // Ensure connection_limit=1 so the backup process only claims 1 single connection slot
+  if (/connection_limit=\d+/.test(urlStr)) {
+    urlStr = urlStr.replace(/connection_limit=\d+/, 'connection_limit=1');
+  } else {
+    urlStr += (urlStr.includes('?') ? '&' : '?') + 'connection_limit=1';
+  }
+
+  return urlStr;
+}
+
+function sanitizeBackupUrl(rawUrl: string): string {
+  let urlStr = rawUrl;
+  if (!urlStr.includes('connection_limit=')) {
+    urlStr += (urlStr.includes('?') ? '&' : '?') + 'connection_limit=5';
+  }
+  return urlStr;
+}
+
 async function runBackup() {
   console.log('Starting programmatic database backup from primary (Supabase) to backup (Railway)...');
   
-  const primaryUrl = process.env.DATABASE_URL;
-  const backupUrl = process.env.BACKUP_DATABASE_URL;
+  const primaryRawUrl = process.env.DATABASE_URL || process.env.PROD_DATABASE_URL;
+  const backupRawUrl = process.env.BACKUP_DATABASE_URL;
   
-  if (!primaryUrl) {
+  if (!primaryRawUrl) {
     console.error('Error: DATABASE_URL (Primary DB) is not defined.');
     process.exit(1);
   }
   
-  if (!backupUrl) {
+  if (!backupRawUrl) {
     console.error('Error: BACKUP_DATABASE_URL (Backup DB) is not defined.');
     process.exit(1);
   }
+
+  const primaryUrl = sanitizePrimaryUrl(primaryRawUrl);
+  const backupUrl = sanitizeBackupUrl(backupRawUrl);
 
   // Initialize clients
   const primaryPrisma = new PrismaClient({
@@ -99,7 +133,7 @@ async function runBackup() {
       console.log('    Restoring foreign key constraints...');
       await tx.$executeRawUnsafe("SET session_replication_role = 'origin';");
     }, {
-      timeout: 120000 // 2 minutes timeout for safety
+      timeout: 300000 // 5 minutes timeout for safe table bulk copying
     });
 
     console.log('Database backup completed successfully!');
@@ -111,8 +145,8 @@ async function runBackup() {
     } catch {}
     process.exit(1);
   } finally {
-    await primaryPrisma.$disconnect();
-    await backupPrisma.$disconnect();
+    await primaryPrisma.$disconnect().catch(() => {});
+    await backupPrisma.$disconnect().catch(() => {});
   }
 }
 

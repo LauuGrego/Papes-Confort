@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronUp, RotateCcw, Check } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, RotateCcw, Check, Tag } from 'lucide-react';
+import { OfferDto } from '@papes-confort/shared';
 
 export interface FilterState {
   selectedFamily: string | null;
   selectedCategory: string | null;
   selectedBrand: string | null;
   selectedProductType: string | null;
+  selectedOffer?: string | null;
   minPrice: string;
   maxPrice: string;
   inStock?: boolean;
@@ -16,6 +18,7 @@ export interface FilterState {
 interface ProductFiltersSidebarProps {
   families: any[];
   brands: any[];
+  offers?: OfferDto[];
   filters: FilterState;
   onFilterChange: (newFilters: Partial<FilterState>) => void;
   onClearAll: () => void;
@@ -24,6 +27,7 @@ interface ProductFiltersSidebarProps {
 export default function ProductFiltersSidebar({
   families,
   brands,
+  offers = [],
   filters,
   onFilterChange,
   onClearAll,
@@ -295,14 +299,14 @@ export default function ProductFiltersSidebar({
       </div>
 
 
-      {/* 5. Tipo Especial (Ofertas / Outlet) */}
+      {/* 5. Promociones y Ofertas */}
       <div>
         <button
           type="button"
           onClick={() => toggleSection('types')}
           className="w-full flex items-center justify-between font-bold text-slate-800 text-xs uppercase tracking-wider py-1 cursor-pointer"
         >
-          <span>Promociones</span>
+          <span>Promociones y Ofertas</span>
           {openSections.types ? (
             <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
           ) : (
@@ -312,54 +316,76 @@ export default function ProductFiltersSidebar({
 
         {openSections.types && (
           <div className="mt-3 space-y-1.5">
+            {/* Listado de Ofertas / Campañas de GesCom o Admin */}
+            {offers && offers.length > 0 && (
+              <div className="space-y-1 pb-2 border-b border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-1 mb-1">
+                  Campañas activas
+                </span>
+                {offers.map((offer) => {
+                  const isSelected = filters.selectedOffer === offer.slug;
+                  return (
+                    <button
+                      key={offer.id}
+                      type="button"
+                      onClick={() => {
+                        onFilterChange({
+                          selectedOffer: isSelected ? null : offer.slug,
+                        });
+                      }}
+                      className={`w-full flex items-center justify-between text-xs py-1.5 px-2 rounded-lg transition-colors text-left cursor-pointer ${
+                        isSelected
+                          ? 'bg-brand-red/10 text-brand-red font-bold'
+                          : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate pr-1">
+                        <div
+                          className={`h-3.5 w-3.5 rounded border shrink-0 flex items-center justify-center ${
+                            isSelected
+                              ? 'bg-brand-red border-brand-red text-white'
+                              : 'border-slate-300 bg-white'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-2.5 w-2.5" />}
+                        </div>
+                        <Tag className="h-3 w-3 text-brand-red shrink-0" />
+                        <span className="truncate">{offer.name}</span>
+                      </div>
+                      {offer.discountPercent > 0 && (
+                        <span className="text-[10px] font-bold text-brand-red bg-brand-red/10 px-1.5 py-0.5 rounded shrink-0">
+                          {offer.discountPercent}% OFF
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <button
               type="button"
               onClick={() => {
                 onFilterChange({
-                  selectedProductType: filters.selectedProductType === 'OFFER' ? null : 'OFFER',
+                  selectedOffer: filters.selectedOffer === 'all' ? null : 'all',
                 });
               }}
-              className={`w-full flex items-center gap-2.5 text-xs py-1 px-2 rounded-lg transition-colors text-left cursor-pointer ${
-                filters.selectedProductType === 'OFFER'
+              className={`w-full flex items-center gap-2.5 text-xs py-1.5 px-2 rounded-lg transition-colors text-left cursor-pointer ${
+                filters.selectedOffer === 'all'
                   ? 'bg-brand-red/10 text-brand-red font-bold'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               <div
                 className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
-                  filters.selectedProductType === 'OFFER'
+                  filters.selectedOffer === 'all'
                     ? 'bg-brand-red border-brand-red text-white'
                     : 'border-slate-300 bg-white'
                 }`}
               >
-                {filters.selectedProductType === 'OFFER' && <Check className="h-2.5 w-2.5" />}
+                {filters.selectedOffer === 'all' && <Check className="h-2.5 w-2.5" />}
               </div>
-              <span>En oferta especial</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onFilterChange({
-                  selectedProductType: filters.selectedProductType === 'OUTLET' ? null : 'OUTLET',
-                });
-              }}
-              className={`w-full flex items-center gap-2.5 text-xs py-1 px-2 rounded-lg transition-colors text-left cursor-pointer ${
-                filters.selectedProductType === 'OUTLET'
-                  ? 'bg-brand-navy/10 text-brand-navy font-bold'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <div
-                className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
-                  filters.selectedProductType === 'OUTLET'
-                    ? 'bg-brand-navy border-brand-navy text-white'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-                {filters.selectedProductType === 'OUTLET' && <Check className="h-2.5 w-2.5" />}
-              </div>
-              <span>Sección Outlet</span>
+              <span>Todos los productos en oferta</span>
             </button>
           </div>
         )}

@@ -578,7 +578,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* 4. Descripción y Características del Producto */}
+      {/* 4. Descripción  del Producto */}
       <div className="border-t border-slate-200/80 pt-14 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Descripción */}
         <div className="lg:col-span-7 space-y-3">
@@ -587,53 +587,6 @@ export default function ProductDetailPage() {
           </h2>
           <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/70 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
             {sanitizeCorruptedSpanishText(product.description) || product.name}
-          </div>
-        </div>
-
-        {/* Tabla de Características Clave */}
-        <div className="lg:col-span-5 space-y-3">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-            Características principales
-          </h3>
-          <div className="rounded-2xl border border-slate-200/70 overflow-hidden shadow-2xs bg-white">
-            <table className="w-full text-left text-xs">
-              <tbody>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <td className="px-4 py-3.5 font-semibold text-slate-500 w-1/3">Marca</td>
-                  <td className="px-4 py-3.5 text-brand-black font-bold">{product.brand.name}</td>
-                </tr>
-                <tr className="bg-white border-b border-slate-100">
-                  <td className="px-4 py-3.5 font-semibold text-slate-500">Rubro</td>
-                  <td className="px-4 py-3.5 text-brand-black font-medium">{product.productType.name}</td>
-                </tr>
-                {product.productCategory && product.productCategory.name !== 'Sin Categoría' && (
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500">Categoría</td>
-                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.productCategory.name}</td>
-                  </tr>
-                )}
-                {product.dimensions && (
-                  <tr className="bg-white border-b border-slate-100">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500">Dimensiones (cm)</td>
-                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.dimensions}</td>
-                  </tr>
-                )}
-                {product.weightKg && (
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <td className="px-4 py-3.5 font-semibold text-slate-500">Peso aproximado</td>
-                    <td className="px-4 py-3.5 text-brand-black font-medium">{product.weightKg} kg</td>
-                  </tr>
-                )}
-                <tr className="bg-white">
-                  <td className="px-4 py-3.5 font-semibold text-slate-500">Garantía oficial</td>
-                  <td className="px-4 py-3.5 text-brand-black font-medium">
-                    {product.warrantyMonths && product.warrantyMonths > 0
-                      ? `${product.warrantyMonths} meses`
-                      : 'No especificada'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

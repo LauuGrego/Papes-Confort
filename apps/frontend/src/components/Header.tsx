@@ -381,7 +381,7 @@ export default function Header() {
           {offers.length > 0 && (
             <div className="relative group py-6">
               <Link
-                href={`/catalogo?offer=${offers[0].slug}`}
+                href="/catalogo?offer=all"
                 className="text-brand-red font-semibold hover:text-brand-red-dark transition-colors duration-200 flex items-center gap-1.5 bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/15 hover:bg-brand-red/10 cursor-pointer"
               >
                 <Tag className="h-3.5 w-3.5" />
@@ -391,6 +391,16 @@ export default function Header() {
 
               <div className="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="w-64 rounded-3xl border border-slate-100 bg-white p-3 shadow-xl ring-1 ring-black/5 flex flex-col gap-1">
+                  <Link
+                    href="/catalogo?offer=all"
+                    className="flex items-center justify-between p-2.5 rounded-2xl bg-brand-red/5 hover:bg-brand-red/10 text-brand-red font-bold transition-colors group/item mb-1 border-b border-brand-red/10"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-brand-red" />
+                      <span className="text-xs">Todas las promociones</span>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/item:translate-x-1" />
+                  </Link>
                   {offers.map((offer) => (
                     <Link
                       key={offer.id}
@@ -644,6 +654,14 @@ export default function Header() {
 
                         {mobileExpandedSection === 'ofertas' && (
                           <div className="pl-6 pr-2 py-1 flex flex-col gap-1 border-l-2 border-brand-red/20 ml-4 my-1">
+                            <Link
+                              href="/catalogo?offer=all"
+                              onClick={() => setMenuOpen(false)}
+                              className="text-xs text-brand-red hover:underline py-1.5 font-bold flex items-center justify-between border-b border-slate-100 mb-1"
+                            >
+                              <span>Todas las promociones</span>
+                              <ChevronRight className="h-3.5 w-3.5 text-brand-red" />
+                            </Link>
                             {offers.map((offer) => (
                               <Link
                                 key={offer.id}
