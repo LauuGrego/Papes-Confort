@@ -60,255 +60,307 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    for (const item of products) {
-      try {
-        const {
-          sku,
-          gescomName,
-          name,
-          description,
-          basePrice,
-          listPrice,
-          discountPercent,
-          productType,
-          stock,
-          brandName,
-          gescomId,
-          barcode,
-          ivaPercent,
-          unit,
-          rubro,
-          subrubro,
-          isActive,
-        } = item;
+    // 1. In-memory caches to prevent thousands of duplicate DB roundtrips per batch
+    const brandCache = new Map<string, string>();
+    brandCache.set('papes confort', defaultBrand.id);
+    brandCache.set('general', defaultBrand.id);
 
-        const sanitizedDescription = description !== undefined ? sanitizeCorruptedSpanishText(String(description)) : undefined;
+    const familyCache = new Map<string, string>();
+    familyCache.set('general', defaultFamily.id);
 
-        if (!sku || gescomName === undefined || basePrice === undefined || stock === undefined) {
-          errors++;
-          errorDetails.push({ sku: sku || 'UNKNOWN', error: 'Missing required product fields (sku, gescomName, basePrice, stock)' });
-          continue;
-        }
+    const categoryCache = new Map<string, string>();
+    const offerCache = new Map<string, string>();
 
-        // Handle brand if specified
-        let brandId = defaultBrand.id;
-        if (brandName && brandName.trim()) {
-          const trimmedBrand = brandName.trim();
-          const brandSlug = slugify(trimmedBrand);
-          let brand = await prisma.brand.findFirst({
-            where: { OR: [{ slug: brandSlug }, { gescomName: trimmedBrand }] },
-          });
+    // 2. Pre-resolve unique brands in this batch
+    const uniqueBrandNames = Array.from(
+      new Set(
+        products
+          .map((p: any) => p.brandName && String(p.brandName).trim())
+          .filter(Boolean) as string[]
+      )
+    );
 
-          if (!brand) {
-            brand = await prisma.brand.create({
-              data: {
-                name: trimmedBrand,
-                slug: brandSlug || `brand-${Date.now()}`,
-                gescomName: trimmedBrand,
-              },
-            });
-            brandsCreated++;
-          }
-          brandId = brand.id;
-        }
-
-        // Handle category from rubro/subrubro
-        let productCategoryId: string | null = null;
-        let productFamilyId = defaultFamily.id;
-
-        if (rubro && rubro.trim()) {
-          const trimmedRubro = rubro.trim();
-          const familySlug = slugify(trimmedRubro);
-          let family = await prisma.productFamily.findUnique({
-            where: { slug: familySlug },
-          });
-
-          if (!family) {
-            family = await prisma.productFamily.create({
-              data: {
-                name: trimmedRubro,
-                slug: familySlug || `family-${Date.now()}`,
-              },
-            });
-          }
-          productFamilyId = family.id;
-
-          if (subrubro && subrubro.trim()) {
-            const trimmedSubrubro = subrubro.trim();
-            const categoryName = trimmedSubrubro;
-            // Avoid collisions between identical subrubro codes belonging to different rubros
-            const categorySlug = slugify(`rubro-${trimmedRubro}-subrubro-${trimmedSubrubro}`);
-            let category = await prisma.productCategory.findUnique({
-              where: { slug: categorySlug },
-            });
-
-            if (!category) {
-              category = await prisma.productCategory.create({
-                data: {
-                  name: categoryName,
-                  slug: categorySlug || `category-${Date.now()}-${trimmedSubrubro}`,
-                  productFamilyId: family.id,
-                },
-              });
-            }
-            productCategoryId = category.id;
-          }
-        }
-
-        const numericPrice = Number(basePrice);
-        const numericListPrice = listPrice !== undefined && listPrice !== null ? Number(listPrice) : numericPrice;
-        const numericStock = Number(stock);
-
-        const offerTitle = item.offerName || item.listDescription || item.LDes || item.listName;
-        const lPorc = item.LPorc !== undefined ? Number(item.LPorc) : undefined;
-
-        // Compute discount percent using formula: (listPrice - basePrice) / listPrice * 100 or LPorc
-        let computedDiscount = 0;
-        if (discountPercent !== undefined && discountPercent !== null) {
-          computedDiscount = Number(discountPercent);
-        } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
-          computedDiscount = Math.abs(Math.round(lPorc));
-        } else if (numericListPrice > numericPrice && numericListPrice > 0) {
-          computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
-        }
-
-        // Determine product type (OFFER if discount > 0 or offerTitle passed, else NORMAL or passed type)
-        let finalProductType = productType;
-        if (!finalProductType) {
-          finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
-        }
-
-        const baseSlug = slugify(gescomName) || `prod-${sku}`;
-        const finalSlug = `${baseSlug}-${sku.toLowerCase()}`;
-
-        const existing = await prisma.product.findUnique({
-          where: { sku: String(sku) },
+    for (const bName of uniqueBrandNames) {
+      const brandSlug = slugify(bName);
+      let brand = await prisma.brand.findFirst({
+        where: { OR: [{ slug: brandSlug }, { gescomName: bName }] },
+      });
+      if (!brand) {
+        brand = await prisma.brand.create({
+          data: {
+            name: bName,
+            slug: brandSlug || `brand-${Date.now()}`,
+            gescomName: bName,
+          },
         });
+        brandsCreated++;
+      }
+      brandCache.set(bName.toLowerCase(), brand.id);
+      if (brandSlug) brandCache.set(brandSlug, brand.id);
+    }
 
-        let targetProductId: string;
+    // 3. Pre-resolve unique families (rubros) in this batch
+    const uniqueRubros = Array.from(
+      new Set(
+        products
+          .map((p: any) => p.rubro && String(p.rubro).trim())
+          .filter(Boolean) as string[]
+      )
+    );
 
-        if (existing) {
-          const currentSpecs = (existing.specs as Record<string, any>) || {};
-          const updatedSpecs = {
-            ...currentSpecs,
-            ...(ivaPercent !== undefined && { ivaPercent }),
-            ...(unit !== undefined && { unit }),
-            ...(rubro !== undefined && { rubro }),
-            ...(subrubro !== undefined && { subrubro }),
-          };
+    for (const rName of uniqueRubros) {
+      const familySlug = slugify(rName);
+      let family = await prisma.productFamily.findUnique({
+        where: { slug: familySlug },
+      });
+      if (!family) {
+        family = await prisma.productFamily.create({
+          data: {
+            name: rName,
+            slug: familySlug || `family-${Date.now()}`,
+          },
+        });
+      }
+      familyCache.set(rName.toLowerCase(), family.id);
+      if (familySlug) familyCache.set(familySlug, family.id);
+    }
 
-          const updatedProduct = await prisma.product.update({
-            where: { id: existing.id },
-            data: {
-              gescomName: String(gescomName),
-              name: name || String(gescomName),
-              ...(sanitizedDescription !== undefined && { description: sanitizedDescription }),
-              ...(isActive !== undefined && { isActive: Boolean(isActive) }),
-              basePrice: numericPrice,
-              listPrice: numericListPrice,
-              discountPercent: computedDiscount,
-              productType: finalProductType as any,
-              stock: numericStock,
-              brandId,
-              productFamilyId,
-              productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
-              gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
-              barcode: barcode !== undefined ? barcode : undefined,
-              specs: updatedSpecs,
-              lastSyncAt: new Date(),
-            },
+    // 4. Pre-resolve unique categories (subrubros) in this batch
+    for (const item of products) {
+      if (item.rubro && String(item.rubro).trim() && item.subrubro && String(item.subrubro).trim()) {
+        const rName = String(item.rubro).trim();
+        const sName = String(item.subrubro).trim();
+        const catKey = `${rName.toLowerCase()}:::${sName.toLowerCase()}`;
+        if (!categoryCache.has(catKey)) {
+          const categorySlug = slugify(`rubro-${rName}-subrubro-${sName}`);
+          const familyId = familyCache.get(rName.toLowerCase()) || defaultFamily.id;
+          let category = await prisma.productCategory.findUnique({
+            where: { slug: categorySlug },
           });
-          targetProductId = updatedProduct.id;
-          productsUpdated++;
-        } else {
-          const newSpecs: Record<string, any> = {};
-          if (ivaPercent !== undefined) newSpecs.ivaPercent = ivaPercent;
-          if (unit !== undefined) newSpecs.unit = unit;
-          if (rubro !== undefined) newSpecs.rubro = rubro;
-          if (subrubro !== undefined) newSpecs.subrubro = subrubro;
-
-          const createdProduct = await prisma.product.create({
-            data: {
-              sku: String(sku),
-              gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
-              barcode: barcode !== undefined ? barcode : undefined,
-              gescomName: String(gescomName),
-              name: name || String(gescomName),
-              slug: finalSlug,
-              description: sanitizedDescription,
-              isActive: isActive !== undefined ? Boolean(isActive) : true,
-              basePrice: numericPrice,
-              listPrice: numericListPrice,
-              discountPercent: computedDiscount,
-              productType: finalProductType as any,
-              stock: numericStock,
-              brandId,
-              productFamilyId,
-              productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
-              specs: newSpecs,
-              lastSyncAt: new Date(),
-            },
-          });
-          targetProductId = createdProduct.id;
-          productsCreated++;
+          if (!category) {
+            category = await prisma.productCategory.create({
+              data: {
+                name: sName,
+                slug: categorySlug || `category-${Date.now()}-${sName}`,
+                productFamilyId: familyId,
+              },
+            });
+          }
+          categoryCache.set(catKey, category.id);
         }
+      }
+    }
 
-        // If list description (LDes / offerName) is provided, link product to the corresponding Offer
-        if (offerTitle && String(offerTitle).trim()) {
-          const trimmedOfferTitle = String(offerTitle).trim();
-          const offerSlug = slugify(trimmedOfferTitle) || `offer-${Date.now()}`;
+    // 5. Pre-resolve offers in this batch
+    for (const item of products) {
+      const offerTitle = item.offerName || item.listDescription || item.LDes || item.listName;
+      if (offerTitle && String(offerTitle).trim()) {
+        const trimmed = String(offerTitle).trim();
+        const key = trimmed.toLowerCase();
+        if (!offerCache.has(key)) {
+          const offerSlug = slugify(trimmed) || `offer-${Date.now()}`;
           let offer = await prisma.offer.findFirst({
-            where: { OR: [{ slug: offerSlug }, { name: trimmedOfferTitle }] },
+            where: { OR: [{ slug: offerSlug }, { name: trimmed }] },
           });
-
           if (!offer) {
+            const rawDiscount = item.discountPercent !== undefined
+              ? Number(item.discountPercent)
+              : (item.LPorc !== undefined ? Math.abs(Number(item.LPorc)) : 0);
             offer = await prisma.offer.create({
               data: {
-                name: trimmedOfferTitle,
+                name: trimmed,
                 slug: offerSlug,
-                description: `Lista de ofertas: ${trimmedOfferTitle}`,
-                discountPercent: computedDiscount > 0 ? computedDiscount : 0,
+                description: `Lista de ofertas: ${trimmed}`,
+                discountPercent: !isNaN(rawDiscount) && rawDiscount > 0 ? rawDiscount : 0,
                 isActive: true,
               },
             });
           }
-
-          await prisma.offerProduct.upsert({
-            where: {
-              offerId_productId: {
-                offerId: offer.id,
-                productId: targetProductId,
-              },
-            },
-            update: {},
-            create: {
-              offerId: offer.id,
-              productId: targetProductId,
-            },
-          });
+          offerCache.set(key, offer.id);
         }
-      } catch (err: any) {
-        errors++;
-        errorDetails.push({ sku: item.sku, error: err.message || 'Error processing product' });
       }
     }
 
-    // Clean up orphaned categories and families (those with 0 products or subcategories)
-    try {
-      await prisma.productCategory.deleteMany({
-        where: {
-          products: { none: {} }
-        }
-      });
-      await prisma.productFamily.deleteMany({
-        where: {
-          id: { not: defaultFamily.id },
-          products: { none: {} },
-          categories: { none: {} }
-        }
-      });
-    } catch (cleanupErr) {
-      console.error('Error cleaning up orphaned categories/families:', cleanupErr);
+    // 6. Pre-fetch all existing products in ONE query
+    const skus = products.map((p: any) => String(p.sku)).filter(Boolean);
+    const existingProducts = await prisma.product.findMany({
+      where: { sku: { in: skus } },
+    });
+    const existingMap = new Map(existingProducts.map((p) => [p.sku, p]));
+
+    // 7. Process products in parallel chunks of 15
+    const CHUNK_SIZE = 15;
+    for (let i = 0; i < products.length; i += CHUNK_SIZE) {
+      const chunk = products.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (item: any) => {
+          try {
+            const {
+              sku,
+              gescomName,
+              name,
+              description,
+              basePrice,
+              listPrice,
+              discountPercent,
+              productType,
+              stock,
+              brandName,
+              gescomId,
+              barcode,
+              ivaPercent,
+              unit,
+              rubro,
+              subrubro,
+              isActive,
+            } = item;
+
+            const sanitizedDescription = description !== undefined ? sanitizeCorruptedSpanishText(String(description)) : undefined;
+
+            if (!sku || gescomName === undefined || basePrice === undefined || stock === undefined) {
+              errors++;
+              errorDetails.push({ sku: sku || 'UNKNOWN', error: 'Missing required product fields (sku, gescomName, basePrice, stock)' });
+              return;
+            }
+
+            // Resolve brand from cache
+            let brandId = defaultBrand.id;
+            if (brandName && String(brandName).trim()) {
+              const trimmedBrand = String(brandName).trim().toLowerCase();
+              brandId = brandCache.get(trimmedBrand) || defaultBrand.id;
+            }
+
+            // Resolve family & category from cache
+            let productFamilyId = defaultFamily.id;
+            let productCategoryId: string | null = null;
+            if (rubro && String(rubro).trim()) {
+              const rName = String(rubro).trim().toLowerCase();
+              productFamilyId = familyCache.get(rName) || defaultFamily.id;
+
+              if (subrubro && String(subrubro).trim()) {
+                const sName = String(subrubro).trim().toLowerCase();
+                productCategoryId = categoryCache.get(`${rName}:::${sName}`) || null;
+              }
+            }
+
+            const numericPrice = Number(basePrice);
+            const numericListPrice = listPrice !== undefined && listPrice !== null ? Number(listPrice) : numericPrice;
+            const numericStock = Number(stock);
+
+            const offerTitle = item.offerName || item.listDescription || item.LDes || item.listName;
+            const lPorc = item.LPorc !== undefined ? Number(item.LPorc) : undefined;
+
+            let computedDiscount = 0;
+            if (discountPercent !== undefined && discountPercent !== null) {
+              computedDiscount = Number(discountPercent);
+            } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
+              computedDiscount = Math.abs(Math.round(lPorc));
+            } else if (numericListPrice > numericPrice && numericListPrice > 0) {
+              computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
+            }
+
+            let finalProductType = productType;
+            if (!finalProductType) {
+              finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
+            }
+
+            const baseSlug = slugify(gescomName) || `prod-${sku}`;
+            const finalSlug = `${baseSlug}-${String(sku).toLowerCase()}`;
+
+            const existing = existingMap.get(String(sku));
+            let targetProductId: string;
+
+            if (existing) {
+              const currentSpecs = (existing.specs as Record<string, any>) || {};
+              const updatedSpecs = {
+                ...currentSpecs,
+                ...(ivaPercent !== undefined && { ivaPercent }),
+                ...(unit !== undefined && { unit }),
+                ...(rubro !== undefined && { rubro }),
+                ...(subrubro !== undefined && { subrubro }),
+              };
+
+              const updatedProduct = await prisma.product.update({
+                where: { id: existing.id },
+                data: {
+                  gescomName: String(gescomName),
+                  name: name || String(gescomName),
+                  ...(sanitizedDescription !== undefined && { description: sanitizedDescription }),
+                  ...(isActive !== undefined && { isActive: Boolean(isActive) }),
+                  basePrice: numericPrice,
+                  listPrice: numericListPrice,
+                  discountPercent: computedDiscount,
+                  productType: finalProductType as any,
+                  stock: numericStock,
+                  brandId,
+                  productFamilyId,
+                  productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
+                  gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
+                  barcode: barcode !== undefined ? barcode : undefined,
+                  specs: updatedSpecs,
+                  lastSyncAt: new Date(),
+                },
+              });
+              targetProductId = updatedProduct.id;
+              productsUpdated++;
+            } else {
+              const newSpecs: Record<string, any> = {};
+              if (ivaPercent !== undefined) newSpecs.ivaPercent = ivaPercent;
+              if (unit !== undefined) newSpecs.unit = unit;
+              if (rubro !== undefined) newSpecs.rubro = rubro;
+              if (subrubro !== undefined) newSpecs.subrubro = subrubro;
+
+              const createdProduct = await prisma.product.create({
+                data: {
+                  sku: String(sku),
+                  gescomId: gescomId !== undefined ? Number(gescomId) : undefined,
+                  barcode: barcode !== undefined ? barcode : undefined,
+                  gescomName: String(gescomName),
+                  name: name || String(gescomName),
+                  slug: finalSlug,
+                  description: sanitizedDescription,
+                  isActive: isActive !== undefined ? Boolean(isActive) : true,
+                  basePrice: numericPrice,
+                  listPrice: numericListPrice,
+                  discountPercent: computedDiscount,
+                  productType: finalProductType as any,
+                  stock: numericStock,
+                  brandId,
+                  productFamilyId,
+                  productCategoryId: productCategoryId !== undefined ? productCategoryId : null,
+                  specs: newSpecs,
+                  lastSyncAt: new Date(),
+                },
+              });
+              targetProductId = createdProduct.id;
+              productsCreated++;
+            }
+
+            // If list description (LDes / offerName) is provided, link product to the corresponding Offer
+            if (offerTitle && String(offerTitle).trim()) {
+              const offerId = offerCache.get(String(offerTitle).trim().toLowerCase());
+              if (offerId) {
+                await prisma.offerProduct.upsert({
+                  where: {
+                    offerId_productId: {
+                      offerId,
+                      productId: targetProductId,
+                    },
+                  },
+                  update: {},
+                  create: {
+                    offerId,
+                    productId: targetProductId,
+                  },
+                });
+              }
+            }
+          } catch (err: any) {
+            errors++;
+            errorDetails.push({ sku: item.sku, error: err.message || 'Error processing product' });
+          }
+        })
+      );
     }
 
     const finishedAt = new Date();
@@ -327,18 +379,26 @@ router.post('/', async (req, res, next) => {
       },
     });
 
-    // Automatically purge sync logs older than 7 days to avoid inflating the database
-    try {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      await prisma.syncLog.deleteMany({
-        where: {
-          startedAt: {
-            lt: sevenDaysAgo,
+    // Occasional cleanup (approx 2% chance per batch) to keep DB lean without adding latency to every request
+    if (Math.random() < 0.02) {
+      try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        await prisma.syncLog.deleteMany({
+          where: { startedAt: { lt: sevenDaysAgo } },
+        });
+        await prisma.productCategory.deleteMany({
+          where: { products: { none: {} } },
+        });
+        await prisma.productFamily.deleteMany({
+          where: {
+            id: { not: defaultFamily.id },
+            products: { none: {} },
+            categories: { none: {} },
           },
-        },
-      });
-    } catch (purgeErr) {
-      console.error('Error auto-purging old sync logs:', purgeErr);
+        });
+      } catch (cleanupErr) {
+        console.error('Error during occasional cleanup:', cleanupErr);
+      }
     }
 
     res.json({

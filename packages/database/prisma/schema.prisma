@@ -326,7 +326,14 @@ model Order {
   shippingCity          String        @map("shipping_city")
   shippingPostalCode    String        @map("shipping_postal_code")
   notes                 String?
-  mercadopagoPaymentId  String?       @unique @map("mercadopago_payment_id")
+  // Pasarela de pago (Mobbex)
+  gatewayPaymentId      String?       @unique @map("gateway_payment_id")
+  gatewayCheckoutId     String?       @unique @map("gateway_checkout_id")
+  paymentUrl            String?       @map("payment_url")
+  installmentsCount     Int?          @map("installments_count")
+  paymentStatus         String?       @map("payment_status")
+  cancelledAt           DateTime?     @map("cancelled_at")
+
   bankAccountId         String?       @map("bank_account_id")
   transferConfirmedAt   DateTime?     @map("transfer_confirmed_at")
   transferConfirmedById String?       @map("transfer_confirmed_by")
@@ -343,7 +350,8 @@ model Order {
 
   @@index([status])
   @@index([customerId])
-  @@index([mercadopagoPaymentId])
+  @@index([paymentMethod])
+  @@index([createdAt])
   @@index([gatewayExpiresAt])
   @@map("orders")
 }

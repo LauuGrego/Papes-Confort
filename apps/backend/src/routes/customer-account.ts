@@ -11,7 +11,7 @@ import {
 import {
   ApiResponse,
   CustomerDto,
-  OrderDto,
+  OrderDetailDto,
   UpdateCustomerPayload,
   UserPayload,
   ChangePasswordConfirmPayload,
@@ -445,7 +445,7 @@ router.get('/orders/:id', async (req, res) => {
     res.json({
       success: true,
       data: order,
-    } as ApiResponse<OrderDto>);
+    } as ApiResponse<OrderDetailDto>);
   } catch (error: any) {
     res.status(404).json({
       success: false,

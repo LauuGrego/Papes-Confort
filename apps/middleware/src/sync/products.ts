@@ -44,7 +44,14 @@ function computeProductHash(row: GescomStockRow, listPrice: number): string {
 }
 
 
+let isSyncInProgress = false;
+
 export async function syncProductsFromGescom() {
+  if (isSyncInProgress) {
+    logger.warn('A product sync cycle is already in progress. Skipping overlapping execution.');
+    return;
+  }
+  isSyncInProgress = true;
   const startTime = Date.now();
   logger.info('Starting products sync cycle from GesCom...');
 
@@ -151,21 +158,26 @@ export async function syncProductsFromGescom() {
 
     logger.info(`Detected ${changedProducts.length} changed or new products. Sending sync...`);
 
-    // Send in batches of 250 to avoid payload issues
-    const BATCH_SIZE = 250;
+    // Send in batches of 100 to avoid payload issues and timeouts
+    const BATCH_SIZE = 100;
     let totalProcessed = 0;
 
     for (let i = 0; i < changedProducts.length; i += BATCH_SIZE) {
       const batch = changedProducts.slice(i, i + BATCH_SIZE);
       await sendProductsSyncBatch(batch);
       totalProcessed += batch.length;
+
+      // Update state incrementally per successful batch so progress isn't lost on interruption
+      for (const p of batch) {
+        if (nextStateProducts[p.sku]) {
+          syncState.products[p.sku] = nextStateProducts[p.sku];
+        }
+      }
+      syncState.lastSyncAt = new Date().toISOString();
+      saveSyncState(syncState);
+
       logger.info(`Sent batch ${Math.floor(i / BATCH_SIZE) + 1}: ${totalProcessed}/${changedProducts.length} products`);
     }
-
-    // Save updated state on success
-    syncState.products = nextStateProducts;
-    syncState.lastSyncAt = new Date().toISOString();
-    saveSyncState(syncState);
 
     const durationMs = Date.now() - startTime;
     logger.info(`Products sync completed successfully in ${durationMs}ms`, {
@@ -174,5 +186,7 @@ export async function syncProductsFromGescom() {
     });
   } catch (error: any) {
     logger.error('Products sync failed', { error: error.message, stack: error.stack });
+  } finally {
+    isSyncInProgress = false;
   }
 }

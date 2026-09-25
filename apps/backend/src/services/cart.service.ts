@@ -41,11 +41,9 @@ export async function getOrCreateCart(sessionId: string, customerId?: string | n
   return cart;
 }
 
-export async function getCartDto(sessionId: string, customerId?: string | null): Promise<CartDto> {
-  const cart = await getOrCreateCart(sessionId, customerId);
-
-  const cartItems = await prisma.cartItem.findMany({
-    where: { cartId: cart.id },
+export async function getCartWithItems(cartId: string) {
+  return prisma.cartItem.findMany({
+    where: { cartId },
     include: {
       product: {
         include: {
@@ -57,6 +55,18 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
       },
     },
   });
+}
+
+export async function markCartOrdered(cartId: string) {
+  return prisma.cart.update({
+    where: { id: cartId },
+    data: { status: 'ORDERED' },
+  });
+}
+
+export async function getCartDto(sessionId: string, customerId?: string | null): Promise<CartDto> {
+  const cart = await getOrCreateCart(sessionId, customerId);
+  const cartItems = await getCartWithItems(cart.id);
 
   const itemDtos: CartItemDto[] = cartItems.map((item) => {
     const product = item.product;

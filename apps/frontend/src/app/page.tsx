@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import TrustBar from '../components/TrustBar';
 import EditorialHero from '../components/EditorialHero';
 import FlyersCarousel from '../components/FlyersCarousel';
 import CategoryGrid from '../components/CategoryGrid';
@@ -18,8 +17,6 @@ import {
   DEFAULT_CATEGORY_CARDS,
   HomeWeeklyOfferDto,
   DEFAULT_WEEKLY_OFFER,
-  HomeTrustBarItemDto,
-  DEFAULT_TRUST_BAR,
   HomeAboutDto,
   DEFAULT_ABOUT_SECTION,
 } from '@papes-confort/shared';
@@ -29,7 +26,6 @@ export default function HomePage() {
   const [heroBanner, setHeroBanner] = useState<HomeHeroBannerDto>(DEFAULT_HERO_BANNER);
   const [categoryCards, setCategoryCards] = useState<HomeCategoryCardDto[]>(DEFAULT_CATEGORY_CARDS);
   const [weeklyOffer, setWeeklyOffer] = useState<HomeWeeklyOfferDto>(DEFAULT_WEEKLY_OFFER);
-  const [trustBarItems, setTrustBarItems] = useState<HomeTrustBarItemDto[]>(DEFAULT_TRUST_BAR);
   const [aboutConfig, setAboutConfig] = useState<HomeAboutDto>(DEFAULT_ABOUT_SECTION);
 
   useEffect(() => {
@@ -73,18 +69,6 @@ export default function HomePage() {
             }
           }
 
-          // 4. Trust Bar
-          if (res.data.home_trust_bar) {
-            try {
-              const parsed = JSON.parse(res.data.home_trust_bar);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setTrustBarItems(parsed);
-              }
-            } catch (e) {
-              console.error('Error al parsear home_trust_bar:', e);
-            }
-          }
-
           // 5. About Section
           if (res.data.home_about) {
             try {
@@ -106,10 +90,7 @@ export default function HomePage() {
 
   return (
     <div className="w-full bg-slate-50/50 pb-8">
-      {/* 1. Barra de beneficios */}
-      <TrustBar items={trustBarItems} />
-
-      {/* 2. Hero Editorial */}
+      {/* 1. Hero Editorial */}
       <EditorialHero bannerConfig={heroBanner} />
 
       {/* 3. Carrusel de Banners Promocionales (Flyers) */}

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '@papes-confort/database';
-import { ApiResponse } from '@papes-confort/shared';
+import { ApiResponse, DEFAULT_SETTINGS } from '@papes-confort/shared';
 
 const router = Router();
 
@@ -20,6 +20,10 @@ router.get('/public', async (_req, res, next) => {
             'home_trust_bar',
             'home_about',
             'installments_config',
+            'local_shipping_cost',
+            'remote_shipping_note',
+            'bank_transfer_instructions',
+            'transfer_expiration_hours',
           ],
         },
       },
@@ -35,6 +39,10 @@ router.get('/public', async (_req, res, next) => {
       home_trust_bar: '',
       home_about: '',
       installments_config: '',
+      local_shipping_cost: String(DEFAULT_SETTINGS.local_shipping_cost),
+      remote_shipping_note: DEFAULT_SETTINGS.remote_shipping_note,
+      bank_transfer_instructions: DEFAULT_SETTINGS.bank_transfer_instructions,
+      transfer_expiration_hours: String(DEFAULT_SETTINGS.transfer_expiration_hours),
     };
 
     settings.forEach((s) => {

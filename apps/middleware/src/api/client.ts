@@ -8,7 +8,7 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
     'X-Sync-Key': config.api.syncKey,
   },
-  timeout: 30000,
+  timeout: 120000,
 });
 
 export interface SyncProductItem {
@@ -34,7 +34,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
     try {
       return await fn();
     } catch (err: any) {
-      if (attempt === retries) throw err;
+      const isClientError = err.response && err.response.status >= 400 && err.response.status < 500;
+      if (attempt === retries || isClientError) throw err;
       const delay = Math.pow(2, attempt) * 1000;
       logger.warn(`Retry ${attempt + 1}/${retries} in ${delay}ms...`);
       await new Promise(r => setTimeout(r, delay));
