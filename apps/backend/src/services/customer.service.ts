@@ -2,13 +2,13 @@ import { prisma } from '@papes-confort/database';
 import {
   CustomerDto,
   UpdateCustomerPayload,
-  OrderDto,
-  OrderItemDto,
+  OrderDetailDto,
   isValidCuilCuit,
   cleanCuilCuit,
 } from '@papes-confort/shared';
 import { hash, compare } from 'bcryptjs';
 import { sendPasswordChangedEmail } from './email.service';
+import { mapOrderToDetailDto } from './order.service';
 
 export function mapCustomerToDto(customer: any): CustomerDto {
   return {
@@ -140,6 +140,7 @@ export async function getCustomerOrders(
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
+        bankAccount: true,
         items: {
           include: {
             product: {
@@ -155,40 +156,9 @@ export async function getCustomerOrders(
     prisma.order.count({ where }),
   ]);
 
-  const items: OrderDto[] = orders.map((order) => {
-    const itemDtos: OrderItemDto[] = order.items.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      productName: item.productNameSnapshot || item.product?.name || 'Producto',
-      sku: item.skuSnapshot || item.product?.sku || '',
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      discount: Number(item.discount),
-      total: Number(item.total),
-    }));
-
-    return {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      status: order.status,
-      paymentMethod: order.paymentMethod,
-      shippingType: order.shippingType,
-      subtotal: Number(order.subtotal),
-      shippingCost: Number(order.shippingCost),
-      bankDiscount: Number(order.bankDiscount),
-      total: Number(order.total),
-      customerEmail: order.customerEmail,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone || '',
-      shippingAddress: order.shippingAddress,
-      shippingCity: order.shippingCity,
-      shippingPostalCode: order.shippingPostalCode,
-      notes: order.notes,
-      items: itemDtos,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-    };
-  });
+  const items: OrderDetailDto[] = orders.map((order) =>
+    mapOrderToDetailDto(order, order.items, order.bankAccount)
+  );
 
   return {
     items,
@@ -203,10 +173,11 @@ export async function getCustomerOrderById(
   customerId: string,
   customerEmail: string,
   orderId: string
-): Promise<OrderDto> {
+): Promise<OrderDetailDto> {
   const order = await prisma.order.findUnique({
     where: { id: orderId, deletedAt: null },
     include: {
+      bankAccount: true,
       items: {
         include: {
           product: {
@@ -233,36 +204,5 @@ export async function getCustomerOrderById(
     throw new Error('Pedido no encontrado');
   }
 
-  const itemDtos: OrderItemDto[] = order.items.map((item) => ({
-    id: item.id,
-    productId: item.productId,
-    productName: item.productNameSnapshot || item.product?.name || 'Producto',
-    sku: item.skuSnapshot || item.product?.sku || '',
-    quantity: item.quantity,
-    unitPrice: Number(item.unitPrice),
-    discount: Number(item.discount),
-    total: Number(item.total),
-  }));
-
-  return {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    paymentMethod: order.paymentMethod,
-    shippingType: order.shippingType,
-    subtotal: Number(order.subtotal),
-    shippingCost: Number(order.shippingCost),
-    bankDiscount: Number(order.bankDiscount),
-    total: Number(order.total),
-    customerEmail: order.customerEmail,
-    customerName: order.customerName,
-    customerPhone: order.customerPhone || '',
-    shippingAddress: order.shippingAddress,
-    shippingCity: order.shippingCity,
-    shippingPostalCode: order.shippingPostalCode,
-    notes: order.notes,
-    items: itemDtos,
-    createdAt: order.createdAt.toISOString(),
-    updatedAt: order.updatedAt.toISOString(),
-  };
+  return mapOrderToDetailDto(order, order.items, order.bankAccount);
 }

@@ -5,7 +5,6 @@ import {
   Tag,
   Package,
   Percent,
-  AlertCircle,
   Loader2,
   X,
   Eye,
@@ -74,19 +73,6 @@ export default function AdminOffersPage() {
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Actualizar</span>
         </button>
-      </div>
-
-      {/* Banner Informativo Gescom Middleware */}
-      <div className="p-4 rounded-3xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-3.5 shadow-2xs">
-        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="text-xs space-y-1">
-          <h3 className="font-extrabold text-amber-900">
-            Sincronización Automática Exclusiva por Middleware (Gescom ERP)
-          </h3>
-          <p className="text-amber-800 leading-relaxed">
-            Las ofertas se extraen directamente desde las tablas de listas de precios (<strong>Ventas_Listas: LDes y LPorc</strong>). Los productos, descuentos y membresías a ofertas se calculan y actualizan de forma automática desde el middleware, eliminando la necesidad de carga o edición manual desde el panel.
-          </p>
-        </div>
       </div>
 
       {/* Errores */}

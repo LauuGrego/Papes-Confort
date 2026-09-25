@@ -204,6 +204,18 @@ export interface OrderItemDto {
   total: number;
 }
 
+export interface OrderItemDetailDto extends OrderItemDto {
+  imageUrl?: string | null;
+}
+
+export interface OrderDetailDto extends OrderDto {
+  gatewayCheckoutId: string | null;
+  installmentsCount: number | null;
+  paymentStatus: string | null;
+  bankAccount?: BankAccountDto | null;
+  items: OrderItemDetailDto[];
+}
+
 export interface WarrantyDto {
   id: string;
   orderNumber: string;
@@ -620,33 +632,89 @@ export interface LoginResponseDto {
 export type CustomerAuthResponseDto = LoginResponseDto;
 
 // Checkout
-export interface CheckoutPayload {
-  sessionId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+export interface CreateOrderPayload {
+  shippingType: ShippingType;
+  paymentMethod: PaymentMethod;   // CARD | TRANSFER
   shippingAddress: string;
   shippingCity: string;
   shippingPostalCode: string;
-  paymentMethod: PaymentMethod;
+  customerPhone: string;
   notes?: string;
 }
 
-// Webhooks de pago (e.g. Mobbex / Mercado Pago)
-export interface MobbexWebhookPayload {
-  checkoutId: string;
-  reference: string;
-  status: string; // e.g. "approved", "rejected"
-  payment: {
-    id: string;
-    amount: number;
-    currency: string;
-    method: string;
-    card?: {
-      brand: string;
-      type: string;
-    };
+export interface CreateOrderResponseDto {
+  order: OrderDetailDto;
+  paymentUrl: string | null;      // null si TRANSFER (sin gateway)
+  bankAccount?: BankAccountDto;   // datos para abonar transferencia
+}
+
+// Payload real hacia Mobbex (se arma en el backend)
+export interface MobbexCheckoutPayload {
+  total: number;
+  currency: 'ARS';
+  reference: string;                  // = order.orderNumber
+  description: string;
+  customer: {
+    email: string;
+    name: string;
+    identification?: string | null;
   };
+  items: Array<{
+    image?: string;
+    name: string;
+    description: string;
+    quantity: number;
+    total: number;
+    unit_price: number;
+  }>;
+  options: {
+    card_brand?: {
+      source: string[];
+    };
+  };   // solo tarjetas
+  return_url: string;
+  webhook: string;
+  test: boolean;
+  timeout: number;                    // minutos
+  webhooksType: 'enabled';
+}
+
+// Shape REAL del webhook Mobbex
+export interface MobbexWebhookPayload {
+  type: 'checkout';
+  checkout?: {
+    id: string;
+    reference: string;
+  };
+  operations: Array<{
+    type: 'payment';
+    payment: {
+      id: string;
+      reference: string;
+      status: {
+        code: number;
+        message: string;
+      };
+    };
+    card?: {
+      brand: {
+        name: string;
+      };
+    };
+  }>;
+}
+
+// Tipos admin para órdenes
+export interface AdminOrderFilters {
+  status?: OrderStatus;
+  paymentMethod?: PaymentMethod;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ConfirmTransferPayload {
+  bankAccountId: string;
 }
 
 // Sincronización desde Middleware (GesCom)

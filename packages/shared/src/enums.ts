@@ -29,6 +29,20 @@ export const PaymentMethod = {
 } as const;
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
+export const PaymentResult = {
+  APPROVED: 'APPROVED',
+  PENDING: 'PENDING',
+  REJECTED: 'REJECTED',
+} as const;
+export type PaymentResult = (typeof PaymentResult)[keyof typeof PaymentResult];
+
+export const CheckoutStep = {
+  SHIPPING: 'SHIPPING',
+  PAYMENT: 'PAYMENT',
+  REVIEW: 'REVIEW',
+} as const;
+export type CheckoutStep = (typeof CheckoutStep)[keyof typeof CheckoutStep];
+
 export const ProductType = {
   NORMAL: 'NORMAL',
   OUTLET: 'OUTLET',
@@ -76,10 +90,14 @@ export const PAYMENT_RULES: Record<ProductType, PaymentMethod[]> = {
 // Configuración predeterminada (Settings)
 export const DEFAULT_SETTINGS = {
   free_shipping_threshold: 50000,    // monto mínimo para envío gratis local (ARS)
+  local_shipping_cost: 0,           // envío local fijo (LOCAL_PAID)
+  remote_shipping_note: 'Envíos a otras localidades a coordinar: el costo se acuerda antes del despacho.',
+  bank_transfer_instructions: 'Aboná por transferencia y avisanos por WhatsApp para confirmar tu pedido.',
   safety_stock: 1,                   // unidades de colchón de stock
   whatsapp_number: '',               // número para botón de consulta WhatsApp
   gescom_images_path: '',            // ruta de la carpeta de imágenes GesCom
-  gateway_reservation_minutes: 15,   // minutos de reserva de stock en Mercado Pago
+  gateway_reservation_minutes: 15,   // minutos de reserva de stock en pasarela (Mobbex)
+  transfer_expiration_hours: 72,     // horas de vigencia para órdenes con pago por transferencia
   home_flyers: JSON.stringify([
     {
       id: 'flyer-1',

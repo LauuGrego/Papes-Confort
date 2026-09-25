@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ArrowLeft, MessageSquare, AlertCircle, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, MessageSquare, AlertCircle, Truck, CreditCard } from 'lucide-react';
 import { useCartStore } from '../../stores/cart';
 import { fetchApi } from '../../lib/api';
 
@@ -246,15 +246,23 @@ export default function CarritoPage() {
               </span>
             </div>
 
-            <button
-              onClick={handleSendWhatsApp}
+            <Link
+              href="/checkout"
               className="w-full h-14 flex items-center justify-center gap-3 rounded-full bg-brand-red text-base font-bold text-white shadow-lg shadow-brand-red/20 hover:bg-brand-red-dark transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <MessageSquare className="h-5 w-5" />
-              Enviar pedido por WhatsApp
+              <CreditCard className="h-5 w-5" />
+              Ir a pagar
+            </Link>
+
+            <button
+              onClick={handleSendWhatsApp}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors mt-3"
+            >
+              <MessageSquare className="h-4 w-4 text-emerald-600" />
+              O pedir por WhatsApp
             </button>
-            <p className="text-center text-xs text-slate-400 mt-4 leading-relaxed">
-              Al hacer clic serás redirigido a WhatsApp para finalizar la cotización y envío de tus productos de forma directa.
+            <p className="text-center text-xs text-slate-400 mt-3 leading-relaxed">
+              Pago con tarjeta o transferencia bancaria.
             </p>
 
             {/* Opciones de Entrega y Envíos */}
