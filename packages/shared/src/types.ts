@@ -240,7 +240,7 @@ export interface SyncLogDto {
   errors: string | null;
 }
 
-export type FlyerAspectRatio = 'ultrawide' | 'wide' | 'compact' | 'tall';
+export type FlyerAspectRatio = 'auto' | 'ultrawide' | 'wide' | 'compact' | 'tall';
 export type FlyerObjectFit = 'cover' | 'contain';
 export type FlyerObjectPosition =
   | 'center'

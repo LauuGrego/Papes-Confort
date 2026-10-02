@@ -1,8 +1,25 @@
 import { PrismaClient } from '@papes-confort/database';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs';
 
 const execPromise = promisify(exec);
+
+function findSchemaPath(): string {
+  const candidateSchemaPaths = [
+    path.resolve(__dirname, '../../../packages/database/prisma/schema.prisma'),
+    path.resolve(__dirname, '../../../../packages/database/prisma/schema.prisma'),
+    path.resolve(process.cwd(), '../../packages/database/prisma/schema.prisma'),
+    path.resolve(process.cwd(), 'packages/database/prisma/schema.prisma'),
+    path.resolve(process.cwd(), '../packages/database/prisma/schema.prisma'),
+  ];
+  const found = candidateSchemaPaths.find((p) => fs.existsSync(p));
+  if (!found) {
+    throw new Error('Could not locate schema.prisma file for backup DB push.');
+  }
+  return found;
+}
 
 function sanitizePrimaryUrl(rawUrl: string): string {
   let urlStr = rawUrl;
@@ -64,9 +81,10 @@ async function runBackup() {
   });
 
   try {
-    console.log('  Ensuring database schema exists on backup database...');
+    const schemaPath = findSchemaPath();
+    console.log(`  Ensuring database schema exists on backup database using: ${schemaPath}`);
     // We execute prisma db push using backupUrl as the database connection URL
-    const { stdout, stderr } = await execPromise('npx prisma db push --accept-data-loss --skip-generate --schema ../../packages/database/prisma/schema.prisma', {
+    const { stdout, stderr } = await execPromise(`npx prisma db push --accept-data-loss --skip-generate --schema "${schemaPath}"`, {
       env: {
         ...process.env,
         DATABASE_URL: backupUrl,

@@ -122,17 +122,22 @@ export default function FlyersCarousel() {
 
   const currentSlide = slides[currentIndex];
 
+  // Configuración de aspecto:
+  // En móviles (o cuando es 'auto', 'ultrawide' o no está definido), el contenedor adapta su altura
+  // de forma natural a la imagen (w-full h-auto) para que se muestre 100% completa sin recortes.
   const aspectClass = (() => {
     switch (currentSlide.aspectRatio) {
       case 'wide':
-        return 'aspect-[16/9] max-h-[320px] sm:max-h-[420px]';
+        return 'sm:aspect-[16/9] sm:max-h-[420px]';
       case 'compact':
-        return 'aspect-[2.5/1] max-h-[200px] sm:max-h-[260px]';
+        return 'sm:aspect-[2.5/1] sm:max-h-[260px]';
       case 'tall':
-        return 'aspect-[3/2] max-h-[380px] sm:max-h-[480px]';
+        return 'sm:aspect-[3/2] sm:max-h-[480px]';
       case 'ultrawide':
+      case 'auto':
       default:
-        return 'aspect-[3.6/1] sm:aspect-[4.2/1] md:aspect-[4.5/1] max-h-[140px] sm:max-h-[180px] md:max-h-[220px]';
+        // Adaptable al tamaño original de la imagen
+        return '';
     }
   })();
 
@@ -146,13 +151,15 @@ export default function FlyersCarousel() {
     return '50% 50%';
   })();
 
-  const objectFitClass = currentSlide.objectFit === 'contain' ? 'object-contain w-auto h-full mx-auto' : 'object-cover w-full h-full';
+  const objectFitClass = currentSlide.objectFit === 'contain' ? 'object-contain' : 'object-cover';
 
   return (
-    <div className="w-full bg-transparent flex justify-center items-center py-3 sm:py-4">
-      <div className="w-full max-w-7xl px-4 sm:px-6 flex justify-center items-center">
+    <div className="w-full bg-transparent flex flex-col justify-center items-center py-2 sm:py-4">
+      <div className="w-full max-w-7xl px-4 sm:px-6">
         <div
-          className={`relative overflow-hidden group w-full mx-auto flex items-center justify-center ${aspectClass}`}
+          className={`relative overflow-hidden group w-full mx-auto rounded-xl md:rounded-2xl border border-slate-200/80 shadow-xs sm:shadow-md bg-slate-50 flex items-center justify-center transition-all duration-300 ${
+            aspectClass ? aspectClass : ''
+          }`}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
@@ -160,13 +167,17 @@ export default function FlyersCarousel() {
           onTouchEnd={handleTouchEnd}
         >
           {/* Banner Cliqueable */}
-          <Link href={currentSlide.linkUrl || '/catalogo'} className="w-full h-full flex items-center justify-center relative z-10">
+          <Link href={currentSlide.linkUrl || '/catalogo'} className="block w-full h-full relative z-10">
             <img
               key={currentSlide.id}
               src={currentSlide.imageUrl}
               alt={currentSlide.title}
               style={{ objectPosition: objectPositionStyle }}
-              className={`rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md ${objectFitClass} transition-transform duration-700 hover:scale-[1.01] animate-in fade-in duration-300`}
+              className={`w-full block rounded-xl md:rounded-2xl transition-transform duration-500 hover:scale-[1.005] animate-in fade-in duration-300 ${
+                aspectClass
+                  ? `h-auto sm:h-full sm:${objectFitClass}`
+                  : 'h-auto'
+              }`}
             />
           </Link>
 
@@ -178,10 +189,10 @@ export default function FlyersCarousel() {
                 e.stopPropagation();
                 handlePrev();
               }}
-              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white text-slate-800 shadow-md border border-slate-200/80 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all cursor-pointer z-20 opacity-90 group-hover:opacity-100"
+              className="absolute left-1.5 sm:left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/90 sm:bg-white text-slate-800 shadow-md border border-slate-200/80 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all cursor-pointer z-20 opacity-80 sm:opacity-90 group-hover:opacity-100"
               aria-label="Flyer anterior"
             >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-slate-700" />
             </button>
           )}
 
@@ -193,33 +204,35 @@ export default function FlyersCarousel() {
                 e.stopPropagation();
                 handleNext();
               }}
-              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white text-slate-800 shadow-md border border-slate-200/80 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all cursor-pointer z-20 opacity-90 group-hover:opacity-100"
+              className="absolute right-1.5 sm:right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/90 sm:bg-white text-slate-800 shadow-md border border-slate-200/80 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all cursor-pointer z-20 opacity-80 sm:opacity-90 group-hover:opacity-100"
               aria-label="Flyer siguiente"
             >
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700" />
+              <ChevronRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-slate-700" />
             </button>
           )}
-
-          {/* Indicadores de Posición / Puntos */}
-          {slides.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 z-20">
-              {slides.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setCurrentIndex(idx);
-                  }}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    idx === currentIndex ? 'bg-brand-red w-4' : 'bg-white/70 hover:bg-white w-1.5'
-                  }`}
-                  aria-label={`Ir al flyer ${idx + 1}`}
-                />
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Indicadores de Posición / Puntos (Debajo del flyer para no tapar texto ni promociones) */}
+        {slides.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-2 sm:mt-2.5 z-20">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentIndex(idx);
+                }}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  idx === currentIndex
+                    ? 'bg-brand-red w-5 shadow-xs'
+                    : 'bg-slate-300 hover:bg-slate-400 w-1.5'
+                }`}
+                aria-label={`Ir al flyer ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
