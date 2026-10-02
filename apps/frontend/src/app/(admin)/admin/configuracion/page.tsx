@@ -58,7 +58,7 @@ const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
     linkUrl: '/catalogo',
     isActive: true,
     sortOrder: 1,
-    aspectRatio: 'ultrawide',
+    aspectRatio: 'auto',
     objectFit: 'cover',
     objectPosition: 'center',
   },
@@ -148,7 +148,7 @@ function AdminConfiguracionContent() {
   const [flyerImageUrl, setFlyerImageUrl] = useState('');
   const [flyerImages, setFlyerImages] = useState<string[]>([]);
   const [flyerIsActive, setFlyerIsActive] = useState(true);
-  const [flyerAspectRatio, setFlyerAspectRatio] = useState<FlyerAspectRatio>('ultrawide');
+  const [flyerAspectRatio, setFlyerAspectRatio] = useState<FlyerAspectRatio>('auto');
   const [flyerObjectFit, setFlyerObjectFit] = useState<FlyerObjectFit>('cover');
   const [flyerObjectPositionX, setFlyerObjectPositionX] = useState<number>(50);
   const [flyerObjectPositionY, setFlyerObjectPositionY] = useState<number>(50);
@@ -470,7 +470,7 @@ function AdminConfiguracionContent() {
     setFlyerImageUrl('');
     setFlyerImages([]);
     setFlyerIsActive(true);
-    setFlyerAspectRatio('ultrawide');
+    setFlyerAspectRatio('auto');
     setFlyerObjectFit('cover');
     setFlyerObjectPositionX(50);
     setFlyerObjectPositionY(50);
@@ -486,7 +486,7 @@ function AdminConfiguracionContent() {
       : (flyer.imageUrl ? [flyer.imageUrl] : []);
     setFlyerImages(imgs);
     setFlyerIsActive(flyer.isActive);
-    setFlyerAspectRatio(flyer.aspectRatio || 'ultrawide');
+    setFlyerAspectRatio(flyer.aspectRatio || 'auto');
     setFlyerObjectFit(flyer.objectFit || 'cover');
 
     if (flyer.objectPositionX !== undefined && flyer.objectPositionY !== undefined) {
@@ -2018,7 +2018,31 @@ function AdminConfiguracionContent() {
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                   Proporción y Tamaño de Banner
                 </label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setFlyerAspectRatio('auto')}
+                    className={`w-full p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                      flyerAspectRatio === 'auto'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800">Adaptable a la imagen</span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
+                          Recomendado
+                        </span>
+                      </div>
+                      {flyerAspectRatio === 'auto' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Muestra el banner 100% completo adaptando su tamaño a la foto original. Ideal para no cortar textos, tarjetas ni promociones en celulares.
+                    </span>
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => setFlyerAspectRatio('ultrawide')}
@@ -2098,6 +2122,7 @@ function AdminConfiguracionContent() {
                     </div>
                     <span className="text-[10px] text-slate-400">Destacado de mayor altura</span>
                   </button>
+                  </div>
                 </div>
               </div>
 
