@@ -2126,6 +2126,50 @@ function AdminConfiguracionContent() {
                 </div>
               </div>
 
+              {/* Modo de Ajuste de la Foto en el Banner */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Ajuste de la Imagen
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setFlyerObjectFit('cover')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                      flyerObjectFit === 'cover'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Cubrir banner (Cover)</span>
+                      {flyerObjectFit === 'cover' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    <span className="text-[10px] text-slate-500">
+                      Rellena todo el espacio horizontal. Ideal para fotos de productos, muebles o ambientación.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFlyerObjectFit('contain')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                      flyerObjectFit === 'contain'
+                        ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                      {flyerObjectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                    </div>
+                    <span className="text-[10px] text-slate-500">
+                      Muestra toda la foto sin cortar nada. Ideal para flyers con textos, cuotas, bancos o promociones.
+                    </span>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"

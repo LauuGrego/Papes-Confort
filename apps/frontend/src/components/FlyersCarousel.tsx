@@ -122,22 +122,21 @@ export default function FlyersCarousel() {
 
   const currentSlide = slides[currentIndex];
 
-  // Configuración de aspecto:
-  // En móviles (o cuando es 'auto', 'ultrawide' o no está definido), el contenedor adapta su altura
-  // de forma natural a la imagen (w-full h-auto) para que se muestre 100% completa sin recortes.
+  // Siempre mantiene el flyer horizontal finito (bajo perfil estilo Cetrogar/Frávega),
+  // evitando que fotos en formatos más grandes se expandan y se vean gigantes.
   const aspectClass = (() => {
     switch (currentSlide.aspectRatio) {
       case 'wide':
-        return 'sm:aspect-[16/9] sm:max-h-[420px]';
+        return 'aspect-[16/9] max-h-[260px] sm:max-h-[340px]';
       case 'compact':
-        return 'sm:aspect-[2.5/1] sm:max-h-[260px]';
+        return 'aspect-[3.2/1] max-h-[110px] sm:max-h-[160px]';
       case 'tall':
-        return 'sm:aspect-[3/2] sm:max-h-[480px]';
+        return 'aspect-[2.2/1] max-h-[180px] sm:max-h-[260px]';
       case 'ultrawide':
       case 'auto':
       default:
-        // Adaptable al tamaño original de la imagen
-        return '';
+        // Horizontal finito por defecto en todos los dispositivos
+        return 'aspect-[4.2/1] sm:aspect-[4.6/1] md:aspect-[5/1] max-h-[90px] sm:max-h-[135px] md:max-h-[170px]';
     }
   })();
 
@@ -151,32 +150,36 @@ export default function FlyersCarousel() {
     return '50% 50%';
   })();
 
-  const objectFitClass = currentSlide.objectFit === 'contain' ? 'object-contain' : 'object-cover';
+  const isContain = currentSlide.objectFit === 'contain';
 
   return (
-    <div className="w-full bg-transparent flex flex-col justify-center items-center py-2 sm:py-4">
+    <div className="w-full bg-transparent flex flex-col justify-center items-center py-2 sm:py-3.5">
       <div className="w-full max-w-7xl px-4 sm:px-6">
         <div
-          className={`relative overflow-hidden group w-full mx-auto rounded-xl md:rounded-2xl border border-slate-200/80 shadow-xs sm:shadow-md bg-slate-50 flex items-center justify-center transition-all duration-300 ${
-            aspectClass ? aspectClass : ''
-          }`}
+          className={`relative overflow-hidden group w-full mx-auto rounded-xl md:rounded-2xl border border-slate-200/80 shadow-xs sm:shadow-md bg-slate-900/5 flex items-center justify-center transition-all duration-300 ${aspectClass}`}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Fondo difuminado sutil si el flyer está en modo contain (sin recortes) */}
+          {isContain && (
+            <div
+              className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-25 scale-110 pointer-events-none"
+              style={{ backgroundImage: `url(${currentSlide.imageUrl})` }}
+            />
+          )}
+
           {/* Banner Cliqueable */}
-          <Link href={currentSlide.linkUrl || '/catalogo'} className="block w-full h-full relative z-10">
+          <Link href={currentSlide.linkUrl || '/catalogo'} className="block w-full h-full relative z-10 flex items-center justify-center">
             <img
               key={currentSlide.id}
               src={currentSlide.imageUrl}
               alt={currentSlide.title}
               style={{ objectPosition: objectPositionStyle }}
-              className={`w-full block rounded-xl md:rounded-2xl transition-transform duration-500 hover:scale-[1.005] animate-in fade-in duration-300 ${
-                aspectClass
-                  ? `h-auto sm:h-full sm:${objectFitClass}`
-                  : 'h-auto'
+              className={`w-full h-full block rounded-xl md:rounded-2xl transition-transform duration-500 hover:scale-[1.005] animate-in fade-in duration-300 ${
+                isContain ? 'object-contain mx-auto' : 'object-cover'
               }`}
             />
           </Link>
