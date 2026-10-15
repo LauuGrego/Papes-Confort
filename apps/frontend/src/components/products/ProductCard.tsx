@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductDto } from '@papes-confort/shared';
@@ -22,8 +22,24 @@ export default function ProductCard({ product }: ProductCardProps) {
   );
   const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
 
-  const images = product.images.length > 0 ? product.images : [{ url: '/images/logo/isotipo.svg', isPrimary: true }];
-  const mainImage = images[0]?.url || '/images/logo/isotipo.svg';
+  const images = product.images && product.images.length > 0
+    ? product.images
+    : [{ url: '/images/logo/isotipo.svg', isPrimary: true }];
+  const hasMultipleImages = images.length > 1;
+
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Desplazamiento dinámico continuo del carrusel cuando hay más de una foto
+  useEffect(() => {
+    if (!hasMultipleImages || isHovered) return;
+
+    const interval = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % images.length);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [hasMultipleImages, images.length, isHovered]);
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -48,7 +64,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const { config: installmentsConfig, load: loadInstallments } = useInstallmentsStore();
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadInstallments();
   }, [loadInstallments]);
 
@@ -61,17 +77,19 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/producto/${product.slug}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300"
     >
-      {/* Zona de Imagen 1:1 con Botón de Favorito y Badge Único */}
-      <div className="relative mb-3 flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50/70 p-3 sm:p-4">
+      {/* Zona de Imagen 1:1 con Carrusel Dinámico Desplazable, Botón de Favorito y Badge */}
+      <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl bg-slate-50/70">
         {/* Badge discreto único (máximo 1) */}
         {product.discountPercent > 0 ? (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs pointer-events-none">
             {product.discountPercent}% OFF
           </span>
         ) : product.isOutlet ? (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs pointer-events-none">
             Outlet
           </span>
         ) : null}
@@ -93,14 +111,56 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         </button>
 
-        <img
-          src={mainImage}
-          alt={product.name}
-          className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
-          }}
-        />
+        {/* Carrusel Dinámico Desplazable de Imágenes */}
+        {hasMultipleImages ? (
+          <div
+            className="flex h-full w-full transition-transform duration-500 ease-out will-change-transform"
+            style={{ transform: `translateX(-${currentIdx * 100}%)` }}
+          >
+            {images.map((img, idx) => (
+              <div
+                key={'id' in img ? (img as any).id : idx}
+                className="w-full h-full flex-none shrink-0 flex items-center justify-center p-3 sm:p-4 select-none pointer-events-none"
+              >
+                <img
+                  src={img.url}
+                  alt={`${product.name} - Imagen ${idx + 1}`}
+                  className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center p-3 sm:p-4">
+            <img
+              src={images[0]?.url || '/images/logo/isotipo.svg'}
+              alt={product.name}
+              className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/logo/isotipo.svg';
+              }}
+            />
+          </div>
+        )}
+
+        {/* Indicadores de diapositiva (dots) */}
+        {hasMultipleImages && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 pointer-events-none">
+            {images.map((_, idx) => (
+              <span
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  currentIdx === idx
+                    ? 'w-3.5 bg-brand-red shadow-2xs'
+                    : 'w-1.5 bg-slate-300/80'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Información del Producto */}

@@ -65,7 +65,7 @@ enum CartStatus {
 }
 
 // ==========================================
-// Modelos (18)
+// Modelos (19)
 // ==========================================
 
 model User {
@@ -171,6 +171,9 @@ model Product {
   @@index([productCategoryId])
   @@index([productType])
   @@index([isActive])
+  @@index([basePrice])
+  @@index([discountPercent])
+  @@index([isActive, deletedAt, stock])
   @@map("products")
 }
 
@@ -187,6 +190,7 @@ model ProductImage {
   product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  @@index([isPrimary])
   @@map("product_images")
 }
 
@@ -353,6 +357,7 @@ model Order {
   @@index([paymentMethod])
   @@index([createdAt])
   @@index([gatewayExpiresAt])
+  @@index([customerEmail])
   @@map("orders")
 }
 
@@ -418,6 +423,7 @@ model SyncLog {
   status          SyncStatus
   errorDetails    Json?      @map("error_details")
 
+  @@index([startedAt])
   @@map("sync_logs")
 }
 
@@ -447,3 +453,20 @@ model OfferProduct {
   @@id([offerId, productId])
   @@map("offer_products")
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String?
+  entityId  String?  @map("entity_id")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([action, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
+

@@ -5,13 +5,13 @@ import {
   CreateOrderPayload,
   CreateOrderResponseDto,
   OrderDetailDto,
-  PaymentMethod,
   PaymentResult,
-  ShippingType,
   UserPayload,
 } from '@papes-confort/shared';
 import { prisma } from '@papes-confort/database';
 import { createOrderFromCart, getOrderForCustomer } from '../services/order.service';
+import { validateBody } from '../middleware/validate';
+import { createOrderSchema } from '../schemas';
 
 const router = Router();
 
@@ -19,26 +19,10 @@ const router = Router();
 router.use(requireCustomer);
 
 // POST /api/orders
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', validateBody(createOrderSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user as UserPayload;
     const body = req.body as CreateOrderPayload;
-
-    // Validación básica de campos requeridos
-    if (!body.shippingType || !Object.values(ShippingType).includes(body.shippingType)) {
-      res.status(400).json({ success: false, error: 'Tipo de envío inválido o no especificado.' });
-      return;
-    }
-
-    if (!body.paymentMethod || !Object.values(PaymentMethod).includes(body.paymentMethod)) {
-      res.status(400).json({ success: false, error: 'Método de pago inválido o no especificado.' });
-      return;
-    }
-
-    if (!body.shippingAddress || !body.shippingCity || !body.shippingPostalCode) {
-      res.status(400).json({ success: false, error: 'Los datos de domicilio (dirección, ciudad, código postal) son obligatorios.' });
-      return;
-    }
 
     // Obtener entidad Customer completa
     const customer = await prisma.customer.findUnique({

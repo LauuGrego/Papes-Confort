@@ -10,6 +10,7 @@ import {
   PaymentFeatureCardDto,
   DEFAULT_INSTALLMENTS_CONFIG,
   InstallmentsConfigDto,
+  DEFAULT_SETTINGS,
 } from '@papes-confort/shared';
 import { computeInstallmentAmount } from '../../../../stores/installments';
 
@@ -247,6 +248,31 @@ describe('Admin Configuration & Landing Page Logic Tests', () => {
         const queryHref = `/admin/configuracion?tab=${tab}`;
         expect(queryHref).toContain(`tab=${tab}`);
       });
+    });
+  });
+
+  describe('Business Hours & General Settings Tests', () => {
+    it('should have correct default business hours in DEFAULT_SETTINGS', () => {
+      expect(DEFAULT_SETTINGS.business_hours).toBe('Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00');
+    });
+
+    it('should allow custom multiline business hours configuration', () => {
+      const customSchedule = 'Lunes a Viernes: 8:00 a 12:00 y 16:00 a 20:00\nSábados: 8:30 a 12:30';
+      const settingsPayload: Record<string, string> = {
+        whatsapp_number: '5493445454261',
+        business_hours: customSchedule,
+      };
+
+      expect(settingsPayload.business_hours).toBe(customSchedule);
+      expect(settingsPayload.business_hours.includes('\n')).toBe(true);
+    });
+
+    it('should fallback to default business hours if not set in API response', () => {
+      const apiResponse: { whatsapp_number?: string; business_hours?: string } = {
+        whatsapp_number: '5493445454261',
+      };
+      const businessHours = apiResponse.business_hours || DEFAULT_SETTINGS.business_hours;
+      expect(businessHours).toBe('Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00');
     });
   });
 });

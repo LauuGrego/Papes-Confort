@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/auth';
+import { requireAuth, requireRole } from '../../middleware/auth';
 import {
   listOffers,
   getOfferById,
 } from '../../services/offer.service';
+import { UserRole } from '@papes-confort/shared';
 
 const router = Router();
 router.use(requireAuth);
+router.use(requireRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]));
+
 
 // GET /api/admin/offers - List all offers for admin (Read-only, synced from Gescom)
 router.get('/', async (_req, res) => {

@@ -1,17 +1,20 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/auth';
+import { requireAuth, requireRole } from '../../middleware/auth';
 import { prisma } from '@papes-confort/database';
-import { ApiResponse, UserPayload } from '@papes-confort/shared';
+import { ApiResponse, UserPayload, UserRole } from '@papes-confort/shared';
 import { hash, compare } from 'bcryptjs';
 import { sendEmail } from '../../services/email.service';
 import { env } from '../../config/env';
 import { passwordSecurityService } from '../../services/password-security.service';
 import { auditSecurityEvent } from '../../utils/audit';
 import { v2 as cloudinary } from 'cloudinary';
+import { validateBody } from '../../middleware/validate';
+import { updateAdminSettingsSchema } from '../../schemas';
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]));
 
 // GET /api/admin/settings
 router.get('/', async (_req, res, next) => {
@@ -31,7 +34,7 @@ router.get('/', async (_req, res, next) => {
 });
 
 // PUT /api/admin/settings
-router.put('/', async (req, res, next) => {
+router.put('/', validateBody(updateAdminSettingsSchema), async (req, res, next) => {
   try {
     const body = req.body as Record<string, string>;
 

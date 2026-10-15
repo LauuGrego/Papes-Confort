@@ -25,6 +25,7 @@ import {
   RotateCcw,
   Upload,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { useAuthStore } from '../../../../stores/auth';
 import AdminCategoriesConfig from '../../../../components/admin/AdminCategoriesConfig';
@@ -48,6 +49,7 @@ import {
   DEFAULT_ABOUT_SECTION,
   InstallmentsConfigDto,
   DEFAULT_INSTALLMENTS_CONFIG,
+  DEFAULT_SETTINGS,
 } from '@papes-confort/shared';
 
 const DEFAULT_INITIAL_FLYERS: HomeFlyerDto[] = [
@@ -126,6 +128,7 @@ function AdminConfiguracionContent() {
 
   const [safetyStock, setSafetyStock] = useState('1');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [businessHours, setBusinessHours] = useState<string>(DEFAULT_SETTINGS.business_hours);
   const [flyers, setFlyers] = useState<HomeFlyerDto[]>(DEFAULT_INITIAL_FLYERS);
   const [paymentCards, setPaymentCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_PAYMENT_CARDS);
   const [installmentsConfig, setInstallmentsConfig] = useState<InstallmentsConfigDto>(DEFAULT_INSTALLMENTS_CONFIG);
@@ -187,6 +190,7 @@ function AdminConfiguracionContent() {
       if (res.success && res.data) {
         setSafetyStock(res.data.safety_stock || '1');
         setWhatsappNumber(res.data.whatsapp_number || '');
+        setBusinessHours(res.data.business_hours || DEFAULT_SETTINGS.business_hours);
         if (res.data.home_hero_banner) {
           try {
             const parsed = JSON.parse(res.data.home_hero_banner);
@@ -299,6 +303,7 @@ function AdminConfiguracionContent() {
     const body = {
       safety_stock: safetyStock,
       whatsapp_number: whatsappNumber,
+      business_hours: businessHours,
       home_flyers: JSON.stringify(flyersToSave),
       home_payment_cards: JSON.stringify(cardsToSave),
       home_hero_banner: JSON.stringify(heroToSave),
@@ -332,6 +337,7 @@ function AdminConfiguracionContent() {
     const body = {
       safety_stock: safetyStock,
       whatsapp_number: whatsappNumber,
+      business_hours: businessHours,
       home_flyers: JSON.stringify(flyers),
       home_payment_cards: JSON.stringify(paymentCards),
       home_hero_banner: JSON.stringify(target),
@@ -827,7 +833,7 @@ function AdminConfiguracionContent() {
         </h1>
         <p className="text-sm text-slate-400 mt-1">
           {activeTab === 'general'
-            ? 'Configura el número oficial de atención al cliente por WhatsApp y el stock de seguridad.'
+            ? 'Configura el número oficial de WhatsApp y los días y horarios de atención al cliente de la tienda.'
             : activeTab === 'security'
             ? 'Administra la contraseña y el correo de notificaciones del administrador.'
             : activeTab === 'flyers' || activeTab === 'banners'
@@ -1657,45 +1663,141 @@ function AdminConfiguracionContent() {
         </div>
       )}
 
-      {/* TAB 3: WhatsApp y Atención Comercial */}
+      {/* TAB 3: WhatsApp y Atención Comercial / Horarios */}
       {activeTab === 'general' && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs max-w-2xl space-y-6">
-          <div>
-            <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-brand-red" />
-              <span>WhatsApp de Atención Comercial</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Configura el número oficial de atención al cliente para recibir mensajes del botón de WhatsApp y consultas de compra.
-            </p>
-          </div>
+        <div className="max-w-3xl space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveSettings();
+            }}
+            className="space-y-6"
+          >
+            {/* Tarjeta 1: WhatsApp de Atención Comercial */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-brand-red" />
+                  <span>WhatsApp de Atención Comercial</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Configura el número oficial de atención al cliente para recibir mensajes del botón flotante de WhatsApp y consultas de productos.
+                </p>
+              </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); saveSettings(); }} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Número Telefónico (Formato Internacional sin +)
-              </label>
-              <input
-                type="text"
-                required
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="ej. 5493445454261"
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all font-mono"
-              />
-              <p className="text-[11px] text-slate-400">
-                Ejemplo para Argentina: <span className="font-semibold text-slate-600">5493445454261</span> (Código de país 54 + 9 + característica + número).
-              </p>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Número Telefónico (Formato Internacional sin +)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  placeholder="ej. 5493445454261"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all font-mono"
+                />
+                <p className="text-[11px] text-slate-400">
+                  Ejemplo para Argentina: <span className="font-semibold text-slate-600">5493445454261</span> (Código de país 54 + 9 + característica + número).
+                </p>
+              </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-end">
+            {/* Tarjeta 2: Días y Horarios de Atención al Público */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-brand-red" />
+                  <span>Días y Horarios de Atención (Footer y Casa Central)</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Personaliza los días y horarios que se muestran en el pie de página de la tienda y la información de contacto de la sucursal.
+                </p>
+              </div>
+
+              {/* Plantillas / Atajos rápidos */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Plantillas rápidas sugeridas:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBusinessHours('Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00')}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Lunes a Sábados (Doble Turno)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBusinessHours(
+                        'Lunes a Viernes: 8:00 a 12:00 y 16:00 a 20:00\nSábados: 8:30 a 12:30'
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Lunes a Viernes + Sábados medio día
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBusinessHours(
+                        'Lunes a Viernes: 8:00 a 17:00\nSábados: 8:00 a 13:00'
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Horario corrido
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Texto de Días y Horarios (Permite saltos de línea)
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={businessHours}
+                  onChange={(e) => setBusinessHours(e.target.value)}
+                  placeholder="ej. Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-sm text-brand-black outline-none focus:border-brand-red/40 focus:bg-white transition-all resize-y leading-relaxed font-sans"
+                />
+                <p className="text-[11px] text-slate-400">
+                  Podés escribir en una sola línea o usar saltos de línea para diferenciar los días de la semana y fines de semana.
+                </p>
+              </div>
+
+              {/* Previsualización en vivo estilo Footer */}
+              <div className="p-4.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Vista previa de cómo se ve en el Footer
+                  </span>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">
+                    Pie de página
+                  </span>
+                </div>
+                <div className="flex items-start gap-3 pt-1">
+                  <Clock className="h-4 w-4 text-brand-red shrink-0 mt-0.5" />
+                  <span className="text-xs text-slate-300 leading-snug whitespace-pre-line">
+                    {businessHours || DEFAULT_SETTINGS.business_hours}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botón Guardar */}
+            <div className="flex items-center justify-end">
               <button
                 type="submit"
                 disabled={saveLoading}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-7 py-3 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-md shadow-brand-red/20 cursor-pointer disabled:opacity-50"
               >
                 {saveLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span>Guardar Cambios</span>
+                <span>Guardar Configuración Comercial</span>
               </button>
             </div>
           </form>
