@@ -8,6 +8,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   ShoppingBag,
+  ClipboardList,
   RefreshCw,
   LogOut,
   Loader2,
@@ -103,6 +104,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const mainNav = [
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
+    { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin/productos', label: 'Productos', icon: ShoppingBag },
     { href: '/admin/ofertas', label: 'Ofertas Destacadas', icon: Tag },
   ];
