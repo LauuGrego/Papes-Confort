@@ -262,9 +262,11 @@ export default function ProductDetailPage() {
 
       {/* 2. Layout Principal: Galería Izquierda + Ficha Derecha */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pb-16">
-        {/* Columna Izquierda: Galería con Miniaturas Verticales en Desktop */}
-        <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 items-start w-full">
-          {/* Miniaturas verticales a la izquierda en Desktop */}
+        {/* Columna Izquierda: Galería e Información (Descripción Inmediatamente Debajo) */}
+        <div className="lg:col-span-7 space-y-8 w-full">
+          {/* Galería con Miniaturas Verticales en Desktop */}
+          <div className="flex flex-col-reverse md:flex-row gap-4 items-start w-full">
+            {/* Miniaturas verticales a la izquierda en Desktop */}
           {product.images.length > 1 && (
             <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto max-h-[500px] w-full md:w-20 shrink-0 pb-2 md:pb-0 pr-1">
               {product.images.map((img, idx) => (
@@ -288,43 +290,46 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Visor Grande Principal 1:1 */}
-          <div
-            className="relative aspect-square w-full rounded-3xl bg-slate-50/70 border border-slate-100 p-6 md:p-10 flex items-center justify-center cursor-zoom-in group select-none touch-pan-y overflow-hidden"
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsZoomed(true)}
-            onMouseLeave={() => setIsZoomed(false)}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onClick={() => setIsLightboxOpen(true)}
-          >
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-150 ease-out pointer-events-none"
-              style={{
-                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                transform: isZoomed ? 'scale(2.4)' : 'scale(1)',
-              }}
-            />
+          {/* Contenedor del Visor Principal y Controles Externos */}
+          <div className="relative flex-1 w-full min-w-0">
+            {/* Visor Grande Principal 1:1 (Solo imagen y zoom) */}
+            <div
+              className="relative aspect-square w-full rounded-3xl bg-slate-50/70 border border-slate-100 p-6 md:p-10 flex items-center justify-center cursor-zoom-in group select-none touch-pan-y overflow-hidden"
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsZoomed(true)}
+              onMouseLeave={() => setIsZoomed(false)}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onClick={() => setIsLightboxOpen(true)}
+            >
+              <img
+                src={imageUrl}
+                alt={product.name}
+                className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-150 ease-out pointer-events-none"
+                style={{
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                  transform: isZoomed ? 'scale(2.4)' : 'scale(1)',
+                }}
+              />
 
-            {/* Badge de Oferta discreto */}
-            {product.discountPercent > 0 && (
-              <div className="absolute left-5 top-5 z-10">
-                <span className="rounded-full bg-brand-red px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
-                  {product.discountPercent}% OFF
-                </span>
+              {/* Badge de Oferta discreto */}
+              {product.discountPercent > 0 && (
+                <div className="absolute left-5 top-5 z-10">
+                  <span className="rounded-full bg-brand-red px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
+                    {product.discountPercent}% OFF
+                  </span>
+                </div>
+              )}
+
+              {/* Hint para ampliar */}
+              <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
+                <Search className="h-3 w-3" />
+                <span>Toca o pasa el cursor para ampliar</span>
               </div>
-            )}
-
-            {/* Hint para ampliar */}
-            <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
-              <Search className="h-3 w-3" />
-              <span>Toca o pasa el cursor para ampliar</span>
             </div>
 
-            {/* Flechas de navegación rápida */}
+            {/* Flechas de navegación FUERA del contenedor de zoom (evita activar zoom al cambiar foto) */}
             {product.images.length > 1 && (
               <>
                 <button
@@ -333,10 +338,12 @@ export default function ProductDetailPage() {
                     e.stopPropagation();
                     changeImage(activeImageIdx === 0 ? product.images.length - 1 : activeImageIdx - 1);
                   }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  onMouseEnter={() => setIsZoomed(false)}
+                  className="absolute -left-3.5 sm:-left-4 md:-left-5 top-1/2 -translate-y-1/2 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white shadow-md border border-slate-200/90 text-slate-700 hover:text-brand-red hover:border-brand-red/30 hover:scale-110 active:scale-95 transition-all z-20 cursor-pointer"
                   aria-label="Imagen anterior"
+                  title="Imagen anterior"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
                 <button
                   type="button"
@@ -344,18 +351,31 @@ export default function ProductDetailPage() {
                     e.stopPropagation();
                     changeImage(activeImageIdx === product.images.length - 1 ? 0 : activeImageIdx + 1);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-200 text-slate-700 hover:bg-white transition-all z-20 cursor-pointer"
+                  onMouseEnter={() => setIsZoomed(false)}
+                  className="absolute -right-3.5 sm:-right-4 md:-right-5 top-1/2 -translate-y-1/2 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white shadow-md border border-slate-200/90 text-slate-700 hover:text-brand-red hover:border-brand-red/30 hover:scale-110 active:scale-95 transition-all z-20 cursor-pointer"
                   aria-label="Imagen siguiente"
+                  title="Imagen siguiente"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </>
             )}
           </div>
         </div>
 
-        {/* Columna Derecha: Información, Precios, Stock y Acciones */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* Descripción del Producto: Inmediatamente debajo de la imagen ocupando el espacio en blanco */}
+        <div className="space-y-3 pt-2">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Descripción del producto
+          </h2>
+          <div className="bg-slate-50/70 p-5 sm:p-6 rounded-2xl border border-slate-200/70 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+            {sanitizeCorruptedSpanishText(product.description) || product.name}
+          </div>
+        </div>
+      </div>
+
+      {/* Columna Derecha: Información, Precios, Stock y Acciones */}
+      <div className="lg:col-span-5 space-y-6">
           {/* Marca, Nombre y Modelo */}
           <div className="space-y-1.5 border-b border-slate-100 pb-5">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">
@@ -412,9 +432,6 @@ export default function ProductDetailPage() {
                 {/* Promo bancaria destacada (ej. Banco Nación) */}
                 {installmentsConfig.bankPromoActive && installmentsConfig.bankPromoInstallments > 0 && (
                   <div className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-indigo-50/80 border border-indigo-100 flex items-start gap-3">
-                    <div className="h-8 w-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
                     <div className="text-xs space-y-0.5 min-w-0">
                       <div className="font-extrabold text-indigo-950 flex items-center gap-1.5">
                         <span>Promoción Especial {installmentsConfig.bankPromoName}</span>
@@ -578,18 +595,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* 4. Descripción  del Producto */}
-      <div className="border-t border-slate-200/80 pt-14 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        {/* Descripción */}
-        <div className="lg:col-span-7 space-y-3">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-            Descripción del producto
-          </h2>
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/70 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-            {sanitizeCorruptedSpanishText(product.description) || product.name}
-          </div>
-        </div>
-      </div>
 
       {/* 5. Productos Relacionados ("También te puede interesar") */}
       {relatedProducts.length > 0 && (

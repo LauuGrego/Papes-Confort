@@ -2,11 +2,19 @@ import { Router, Request, Response } from 'express';
 import { MobbexWebhookPayload } from '@papes-confort/shared';
 import { validateWebhook, mapMobbexStatus } from '../services/mobbex.service';
 import { applyPaymentResult } from '../services/order.service';
+import { mobbexWebhookSchema } from '../schemas';
 
 const router = Router();
 
 // POST /api/webhooks/mobbex (PÚBLICO)
 router.post('/mobbex', (req: Request, res: Response) => {
+  const parsed = mobbexWebhookSchema.safeParse(req.body);
+  if (!parsed.success) {
+    console.warn('[Mobbex Webhook] Malformed payload received:', parsed.error.message);
+    res.status(400).json({ error: 'Payload de webhook inválido' });
+    return;
+  }
+
   // 1. Responder inmediatamente a Mobbex con 200 { result: true } para ack
   res.status(200).json({ result: true });
 

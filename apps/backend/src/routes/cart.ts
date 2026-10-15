@@ -8,6 +8,8 @@ import {
   clearCart,
 } from '../services/cart.service';
 import { ApiResponse } from '@papes-confort/shared';
+import { validateBody } from '../middleware/validate';
+import { addCartItemSchema, updateCartItemSchema } from '../schemas';
 
 const router = Router();
 
@@ -29,18 +31,10 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/cart/items
-router.post('/items', async (req, res) => {
+router.post('/items', validateBody(addCartItemSchema), async (req, res) => {
   try {
     const sessionId = req.sessionId!;
     const { productId, quantity } = req.body;
-
-    if (!productId || typeof quantity !== 'number') {
-      res.status(400).json({
-        success: false,
-        error: 'productId y quantity son requeridos y quantity debe ser un número',
-      } as ApiResponse);
-      return;
-    }
 
     const cart = await addItem(sessionId, productId, quantity);
     res.json({
@@ -56,19 +50,11 @@ router.post('/items', async (req, res) => {
 });
 
 // PATCH /api/cart/items/:productId
-router.patch('/items/:productId', async (req, res) => {
+router.patch('/items/:productId', validateBody(updateCartItemSchema), async (req, res) => {
   try {
     const sessionId = req.sessionId!;
     const { productId } = req.params;
     const { quantity } = req.body;
-
-    if (typeof quantity !== 'number') {
-      res.status(400).json({
-        success: false,
-        error: 'quantity debe ser un número',
-      } as ApiResponse);
-      return;
-    }
 
     const cart = await updateQuantity(sessionId, productId, quantity);
     res.json({

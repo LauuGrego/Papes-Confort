@@ -2,21 +2,15 @@ import { Router } from 'express';
 import { prisma } from '@papes-confort/database';
 import { ApiResponse } from '@papes-confort/shared';
 import { requireSyncAuth } from '../../middleware/syncAuth';
+import { validateBody } from '../../middleware/validate';
+import { syncImageSchema } from '../../schemas';
 
 const router = Router();
 router.use(requireSyncAuth);
 
-router.post('/', async (req, res, next) => {
+router.post('/', validateBody(syncImageSchema), async (req, res, next) => {
   try {
     const { sku, filename, url, isPrimary, sortOrder } = req.body;
-
-    if (!sku || !filename) {
-      res.status(400).json({
-        success: false,
-        error: 'Missing required fields: sku and filename',
-      } as ApiResponse);
-      return;
-    }
 
     const targetSku = String(sku).trim();
     const targetSkuClean = targetSku.replace(/^0+/, '');

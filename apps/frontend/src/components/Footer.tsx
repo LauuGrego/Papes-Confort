@@ -17,21 +17,28 @@ import {
   Facebook,
 } from 'lucide-react';
 import { fetchApi } from '../lib/api';
+import { DEFAULT_SETTINGS } from '@papes-confort/shared';
 
 export default function Footer() {
   const pathname = usePathname();
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
+  const [businessHours, setBusinessHours] = useState<string>(DEFAULT_SETTINGS.business_hours);
   const [activeModal, setActiveModal] = useState<'terminos' | 'privacidad' | 'garantias' | 'envios' | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
       try {
-        const res = await fetchApi<{ whatsapp_number?: string }>('/api/settings/public');
-        if (res.success && res.data?.whatsapp_number) {
-          setWhatsappNumber(res.data.whatsapp_number);
+        const res = await fetchApi<{ whatsapp_number?: string; business_hours?: string }>('/api/settings/public');
+        if (res.success && res.data) {
+          if (res.data.whatsapp_number) {
+            setWhatsappNumber(res.data.whatsapp_number);
+          }
+          if (res.data.business_hours) {
+            setBusinessHours(res.data.business_hours);
+          }
         }
       } catch (e) {
-        console.error('Error al cargar ajustes de WhatsApp:', e);
+        console.error('Error al cargar ajustes del footer:', e);
       }
     }
     loadSettings();
@@ -228,8 +235,8 @@ export default function Footer() {
                 </li>
                 <li className="flex items-start gap-3">
                   <Clock className="h-4 w-4 text-brand-red shrink-0 mt-0.5" />
-                  <span className="text-xs text-slate-400 leading-snug">
-                    Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00
+                  <span className="text-xs text-slate-400 leading-snug whitespace-pre-line">
+                    {businessHours || DEFAULT_SETTINGS.business_hours}
                   </span>
                 </li>
               </ul>

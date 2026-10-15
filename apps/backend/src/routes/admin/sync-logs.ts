@@ -1,11 +1,13 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/auth';
+import { requireAuth, requireRole } from '../../middleware/auth';
 import { prisma } from '@papes-confort/database';
-import { ApiResponse } from '@papes-confort/shared';
+import { ApiResponse, UserRole } from '@papes-confort/shared';
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]));
+
 
 router.get('/', async (req, res, next) => {
   try {

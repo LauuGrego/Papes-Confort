@@ -95,6 +95,7 @@ export const DEFAULT_SETTINGS = {
   bank_transfer_instructions: 'Aboná por transferencia y avisanos por WhatsApp para confirmar tu pedido.',
   safety_stock: 1,                   // unidades de colchón de stock
   whatsapp_number: '',               // número para botón de consulta WhatsApp
+  business_hours: 'Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00', // días y horarios de atención
   gescom_images_path: '',            // ruta de la carpeta de imágenes GesCom
   gateway_reservation_minutes: 15,   // minutos de reserva de stock en pasarela (Mobbex)
   transfer_expiration_hours: 72,     // horas de vigencia para órdenes con pago por transferencia

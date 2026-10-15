@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { prisma } from '@papes-confort/database';
 import { ApiResponse, SyncStatus, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
 import { requireSyncAuth } from '../../middleware/syncAuth';
+import { validateBody } from '../../middleware/validate';
+import { syncProductsSchema } from '../../schemas';
 
 const router = Router();
 router.use(requireSyncAuth);
@@ -18,7 +20,7 @@ function slugify(text: string): string {
     .replace(/-+/g, '-');
 }
 
-router.post('/', async (req, res, next) => {
+router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
   const startedAt = new Date();
   let productsCreated = 0;
   let productsUpdated = 0;
@@ -28,14 +30,6 @@ router.post('/', async (req, res, next) => {
 
   try {
     const { products } = req.body;
-
-    if (!Array.isArray(products)) {
-      res.status(400).json({
-        success: false,
-        error: 'Invalid payload: "products" must be an array',
-      } as ApiResponse);
-      return;
-    }
 
     // Ensure default ProductFamily exists
     let defaultFamily = await prisma.productFamily.findFirst();

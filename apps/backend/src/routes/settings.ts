@@ -12,6 +12,7 @@ router.get('/public', async (_req, res, next) => {
         key: {
           in: [
             'whatsapp_number',
+            'business_hours',
             'home_flyers',
             'home_payment_cards',
             'home_hero_banner',
@@ -31,6 +32,7 @@ router.get('/public', async (_req, res, next) => {
 
     const settingsMap: Record<string, string> = {
       whatsapp_number: '',
+      business_hours: DEFAULT_SETTINGS.business_hours,
       home_flyers: '',
       home_payment_cards: '',
       home_hero_banner: '',
