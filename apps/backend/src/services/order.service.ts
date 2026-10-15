@@ -316,6 +316,15 @@ export async function createOrderFromCart(
 
   // 6. Si es con TARJETA (Mobbex): Crear Checkout en pasarela
   if (payload.paymentMethod === 'CARD') {
+    if (!env.MOBBEX_API_KEY || !env.MOBBEX_ACCESS_TOKEN) {
+      await restoreStockAndCancel(createdOrder.id, 'Pagos con tarjeta en proceso de habilitación');
+      const err: any = new Error(
+        'Los pagos con tarjeta se encuentran en proceso de habilitación comercial. Por favor selecciona Transferencia Bancaria.'
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
     const frontendBase = originUrl || env.CORS_ORIGIN || 'http://localhost:3000';
     const returnUrl = `${frontendBase}/pedido/resultado?orderNumber=${encodeURIComponent(createdOrder.orderNumber)}`;
     

@@ -32,6 +32,13 @@ function LoginForm() {
         const dest = redirectParam && redirectParam !== '/mi-cuenta' ? redirectParam : '/admin';
         window.location.replace(dest);
       } else {
+        // Si el usuario logueado es cliente y el redirectParam apunta a /admin:
+        // Un cliente no tiene permisos de admin. NO auto-redirigir a /admin porque provocaría un bucle infinito.
+        // Se queda en esta pantalla permitiéndole ingresar con su cuenta admin o cerrar la actual.
+        if (redirectParam && redirectParam.startsWith('/admin')) {
+          return;
+        }
+
         const dest = redirectParam || '/mi-cuenta';
         window.location.replace(dest);
       }
@@ -65,7 +72,7 @@ function LoginForm() {
           window.location.replace(destination);
         } else {
           await loadCart().catch(() => {});
-          const destination = redirectParam || '/mi-cuenta';
+          const destination = (redirectParam && !redirectParam.startsWith('/admin')) ? redirectParam : '/mi-cuenta';
           window.location.replace(destination);
         }
       } else {
@@ -84,6 +91,34 @@ function LoginForm() {
         <h1 className="text-2xl font-black tracking-tight text-brand-black">Iniciar Sesión</h1>
         <p className="text-xs text-slate-500 mt-1">Ingresá tus credenciales para acceder a tu cuenta</p>
       </div>
+
+      {isAuthenticated && user?.type === 'customer' && redirectParam?.startsWith('/admin') && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 space-y-2.5">
+          <div className="flex items-center gap-2 text-amber-800 font-bold">
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>Sesión de Cliente Activa</span>
+          </div>
+          <p className="leading-relaxed text-[11px] text-amber-800">
+            Tenés una sesión activa como cliente con <strong>{user?.email}</strong>. Para acceder al Panel de Administración, ingresá con tu cuenta administradora o cerrá la sesión actual.
+          </p>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await Promise.all([
+                  fetchApi('/api/auth/logout', { method: 'POST' }),
+                  fetchApi('/api/customer/auth/logout', { method: 'POST' }),
+                ]);
+              } catch {}
+              useAuthStore.getState().clearAuth();
+              window.location.reload();
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-200/80 hover:bg-amber-200 text-amber-900 font-bold text-xs transition-colors cursor-pointer"
+          >
+            Cerrar sesión actual
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-600 animate-in fade-in">

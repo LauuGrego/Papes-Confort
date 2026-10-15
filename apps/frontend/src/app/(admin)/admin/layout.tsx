@@ -66,9 +66,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, user, hasHydrated, pathname, router]);
 
   const handleLogout = async () => {
-    await fetchApi('/api/auth/logout', { method: 'POST' });
+    try {
+      await Promise.all([
+        fetchApi('/api/auth/logout', { method: 'POST' }),
+        fetchApi('/api/customer/auth/logout', { method: 'POST' }),
+      ]);
+    } catch {}
     clearAuth();
-    window.location.href = '/';
+    window.location.href = '/ingresar';
   };
 
   const currentTab = searchParams.get('tab');

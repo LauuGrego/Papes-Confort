@@ -117,15 +117,16 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      if (user?.type === 'customer') {
-        await fetchApi('/api/customer/auth/logout', { method: 'POST' });
-      } else {
-        await fetchApi('/api/auth/logout', { method: 'POST' });
-      }
+      await Promise.all([
+        fetchApi('/api/auth/logout', { method: 'POST' }),
+        fetchApi('/api/customer/auth/logout', { method: 'POST' }),
+      ]);
     } catch {}
     clearAuth();
     if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/mi-cuenta'))) {
-      router.push('/');
+      window.location.href = '/ingresar';
+    } else {
+      window.location.reload();
     }
   };
 

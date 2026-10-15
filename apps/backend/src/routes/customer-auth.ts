@@ -283,6 +283,7 @@ router.post('/register-confirm', async (req, res, next) => {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -415,6 +416,7 @@ router.post('/register', async (req, res, next) => {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -471,6 +473,7 @@ router.post('/login', (req, res, next) => {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -535,6 +538,7 @@ router.post('/google', async (req, res) => {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -641,6 +645,7 @@ router.post('/google', async (req, res) => {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -673,6 +678,7 @@ router.post('/logout', (_req, res) => {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: '/',
   });
 
   res.json({

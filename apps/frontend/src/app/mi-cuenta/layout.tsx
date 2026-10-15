@@ -20,10 +20,13 @@ export default function MiCuentaLayout({ children }: { children: React.ReactNode
 
   const handleLogout = async () => {
     try {
-      await fetchApi('/api/customer/auth/logout', { method: 'POST' });
+      await Promise.all([
+        fetchApi('/api/auth/logout', { method: 'POST' }),
+        fetchApi('/api/customer/auth/logout', { method: 'POST' }),
+      ]);
     } catch {}
     clearAuth();
-    router.push('/');
+    window.location.href = '/ingresar';
   };
 
   if (!hasHydrated || !isAuthenticated || user?.type !== 'customer') {
