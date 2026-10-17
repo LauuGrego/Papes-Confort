@@ -77,7 +77,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     productType: productTypeDto,
     productCategory: productCategoryDto,
     images: imageDtos,
-    isOutlet: product.productType === 'OUTLET',
+    isOutlet: product.productType === 'OUTLET' || product.productFamily?.slug === 'outlet' || product.productFamily?.name?.toUpperCase() === 'OUTLET',
     isActive: product.isActive,
     warrantyMonths: product.warrantyMonths ?? null,
     weightKg: product.weightKg ? Number(product.weightKg) : null,
@@ -123,17 +123,27 @@ export async function getProducts(params: {
     where.productCategoryId = params.categoryId;
   }
 
+  const andConditions: any[] = [];
+
   if (params.typeSlug) {
-    where.productFamily = {
-      slug: params.typeSlug,
-    };
+    if (params.typeSlug.toLowerCase() === 'outlet') {
+      andConditions.push({
+        OR: [
+          { productFamily: { slug: 'outlet' } },
+          { productFamily: { name: { equals: 'OUTLET', mode: 'insensitive' } } },
+          { productType: 'OUTLET' },
+        ],
+      });
+    } else {
+      where.productFamily = {
+        slug: params.typeSlug,
+      };
+    }
   }
 
   if (params.productType) {
     where.productType = params.productType;
   }
-
-  const andConditions: any[] = [];
 
   if (params.offerId) {
     where.offers = { some: { offerId: params.offerId } };

@@ -255,7 +255,11 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
 
             let finalProductType = productType;
             if (!finalProductType) {
-              finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
+              if (rubro && String(rubro).toLowerCase().includes('outlet')) {
+                finalProductType = 'OUTLET';
+              } else {
+                finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
+              }
             }
 
             const baseSlug = slugify(gescomName) || `prod-${sku}`;
