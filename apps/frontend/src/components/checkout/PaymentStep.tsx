@@ -88,9 +88,9 @@ export default function PaymentStep({ onComplete, onBack }: PaymentStepProps) {
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-amber-700 font-medium">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-amber-700 font-semibold">
               <Clock className="h-4 w-4 shrink-0 text-amber-600" />
-              <span>Reserva de stock activa por 72 horas</span>
+              <span>Reserva de stock asegurada por 72 hs hábiles</span>
             </div>
           </div>
 
@@ -125,15 +125,28 @@ export default function PaymentStep({ onComplete, onBack }: PaymentStepProps) {
       </div>
 
       {paymentMethod === PaymentMethod.TRANSFER && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 text-xs text-amber-900 space-y-2">
-          <p className="font-bold flex items-center gap-1.5">
-            <Building2 className="h-4 w-4 text-amber-700" />
-            Instrucciones para la Transferencia:
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4.5 text-xs text-amber-900 space-y-2.5">
+          <p className="font-bold text-sm text-amber-950 flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-brand-red" />
+            <span>Instrucciones y Horarios de Transferencia</span>
           </p>
-          <p className="text-xs text-amber-800 leading-relaxed">{instructions}</p>
-          <p className="text-[11px] text-amber-700 font-semibold">
-            * Los datos bancarios (CBU, Alias y Titular) se mostrarán inmediatamente al confirmar tu pedido.
-          </p>
+          <p className="text-xs text-amber-900 leading-relaxed">{instructions}</p>
+          
+          <div className="pt-2 border-t border-amber-200/80 space-y-1.5 text-[11px] text-amber-800">
+            <p className="flex items-start gap-1.5">
+              <span className="font-bold text-amber-950">⏰ Transferí las 24 hs:</span>
+              <span>
+                Podés realizar tu compra y transferir en cualquier momento del día. La corroboración manual del pago por parte de administración se realiza en horario de atención comercial o en la próxima apertura del local al día hábil siguiente.
+              </span>
+            </p>
+            <p className="flex items-center gap-1.5 font-bold text-amber-950">
+              <Clock className="h-3.5 w-3.5 text-amber-700" />
+              <span>Tu reserva de stock queda asegurada durante 72 horas hábiles.</span>
+            </p>
+            <p className="text-[10px] text-slate-500 italic pt-0.5">
+              * Los datos bancarios completos (CBU, Alias y Titular) se mostrarán inmediatamente al confirmar el pedido.
+            </p>
+          </div>
         </div>
       )}
 

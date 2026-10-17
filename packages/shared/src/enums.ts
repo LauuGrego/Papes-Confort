@@ -92,7 +92,7 @@ export const DEFAULT_SETTINGS = {
   free_shipping_threshold: 50000,    // monto mínimo para envío gratis local (ARS)
   local_shipping_cost: 0,           // envío local fijo (LOCAL_PAID)
   remote_shipping_note: 'Envíos a otras localidades a coordinar: el costo se acuerda antes del despacho.',
-  bank_transfer_instructions: 'Aboná por transferencia y avisanos por WhatsApp para confirmar tu pedido.',
+  bank_transfer_instructions: 'Aboná por transferencia bancaria (disponible las 24 hs) y compartinos tu comprobante por WhatsApp. Tu stock queda asegurado por 72 hs hábiles.',
   safety_stock: 1,                   // unidades de colchón de stock
   whatsapp_number: '',               // número para botón de consulta WhatsApp
   business_hours: 'Lunes a Sábados: 8:00 a 12:00 y 16:00 a 20:00', // días y horarios de atención

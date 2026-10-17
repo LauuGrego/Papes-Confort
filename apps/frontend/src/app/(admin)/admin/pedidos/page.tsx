@@ -1053,6 +1053,12 @@ export default function AdminPedidosPage() {
                 </select>
               </div>
 
+              {newStatus === OrderStatus.SHIPPED && (
+                <div className="p-3 bg-blue-50 border border-blue-200 text-blue-900 text-[11px] rounded-xl leading-relaxed">
+                  🚚 <strong>Aviso automático:</strong> Al guardar como <em>En Camino (Despachado)</em>, se enviará un email al cliente confirmándole el despacho del pedido con el detalle de entrega y recordatorio de contacto por WhatsApp para garantías o consultas.
+                </div>
+              )}
+
               {newStatus === OrderStatus.CANCELLED && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-[11px] rounded-xl leading-relaxed">
                   ⚠️ <strong>Atención:</strong> Al cancelar el pedido, los productos reservados serán devueltos automáticamente al stock disponible de la tienda.

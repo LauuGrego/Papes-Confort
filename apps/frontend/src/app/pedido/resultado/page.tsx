@@ -265,10 +265,9 @@ function ResultadoPedidoContent() {
             <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 flex items-start gap-3 text-xs text-amber-900">
               <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold">Reserva de Stock Activa ({expirationHours} horas)</p>
+                <p className="font-bold">Reserva de Stock Activa ({expirationHours} horas hábiles)</p>
                 <p className="mt-0.5 leading-relaxed">
-                  Tus productos permanecerán reservados durante las próximas {expirationHours} horas. Por favor realizá
-                  la transferencia y compartinos tu comprobante para iniciar la preparación.
+                  Tus productos permanecerán reservados durante las próximas <strong>{expirationHours} horas hábiles</strong>. Podés transferir las 24 hs en cualquier momento; la corroboración manual del pago por parte de administración se realiza en horario comercial o al abrir el local al día siguiente hábil.
                 </p>
               </div>
             </div>
@@ -352,12 +351,17 @@ function ResultadoPedidoContent() {
             {/* Siguientes Pasos */}
             <div className="border-t border-slate-100 pt-4 space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-900">📌 Siguientes pasos:</p>
-              <ol className="list-decimal list-inside space-y-1 text-slate-600">
-                <li>Realizá la transferencia por el total exacto indicado.</li>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-600">
+                <li>Realizá la transferencia por el total exacto indicado desde tu banco o billetera virtual.</li>
                 <li>
-                  Ingresá a la sección <strong>Mis Pedidos</strong> para ver el seguimiento y subir tu comprobante.
+                  Podés transferir las 24 hs. La confirmación del pago se efectuará en horario comercial o en la próxima apertura del local.
                 </li>
-                <li>Una vez que nuestro equipo corrobore el ingreso, el pedido pasará a empaquetado.</li>
+                <li>
+                  Ingresá a la sección <strong>Mis Pedidos</strong> para ver el seguimiento de tu compra y subir tu comprobante.
+                </li>
+                <li>
+                  Por dudas sobre la entrega o la <strong>garantía oficial</strong> de tus productos, podés comunicarte directamente con nuestro equipo por WhatsApp.
+                </li>
               </ol>
             </div>
 
