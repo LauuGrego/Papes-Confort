@@ -48,6 +48,22 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// GET /api/admin/orders/meta/bank-accounts
+router.get('/meta/bank-accounts', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const accounts = await prisma.bankAccount.findMany({
+      where: { isActive: true },
+      orderBy: { bankName: 'asc' },
+    });
+    res.json({
+      success: true,
+      data: accounts,
+    } as ApiResponse);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/admin/orders/:id
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {

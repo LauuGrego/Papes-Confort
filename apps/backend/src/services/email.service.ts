@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
+import { prisma } from '@papes-confort/database';
 
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
   const apiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
@@ -360,10 +361,14 @@ export async function sendCustomerTransferPendingEmail(data: {
         `
             : ''
         }
-        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px; margin: 16px 0; color: #92400e; font-size: 13px; line-height: 1.5;">
-          ℹ️ <strong>Instrucciones:</strong> ${instructions}
-          <br />
-          <em>Tu reserva de stock permanecerá activa durante 72 horas.</em>
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 16px; margin: 16px 0; color: #92400e; font-size: 13px; line-height: 1.6;">
+          <strong>ℹ️ Instrucciones:</strong> ${instructions}
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #fde68a;">
+            <strong>⏰ Horarios y Verificación:</strong> Podés realizar tu compra y transferir en cualquier momento (las 24 hs). La confirmación manual del pago por parte de administración se efectuará en horario de atención comercial o en la próxima apertura del local al día hábil siguiente.
+          </div>
+          <div style="margin-top: 8px; font-weight: bold; color: #b45309;">
+            🔒 Tu reserva de stock permanece asegurada durante 72 horas hábiles.
+          </div>
         </div>
       </div>
       <div style="margin-top: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
@@ -616,5 +621,166 @@ export async function sendAdminNewPaidOrderNotificationEmail(data: AdminOrderNot
   }
 }
 
+export interface CustomerOrderShippedData {
+  name: string;
+  email: string;
+  orderNumber: string;
+  shippingType: string;
+  shippingAddress: string;
+  shippingCity: string;
+  shippingPostalCode: string;
+  customerPhone?: string | null;
+  items: Array<{
+    name: string;
+    sku: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+  total: number;
+  notes?: string | null;
+}
 
+export async function sendCustomerOrderShippedEmail(data: CustomerOrderShippedData) {
+  const firstName = data.name.split(' ')[0] || data.name;
 
+  let whatsappNumber = process.env.WHATSAPP_NUMBER || '5493445454261';
+  try {
+    const setting = await prisma.setting.findUnique({ where: { key: 'whatsapp_number' } });
+    if (setting?.value) whatsappNumber = setting.value;
+  } catch {}
+  const cleanPhone = whatsappNumber.replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+    `Hola Papes Confort, les escribo por mi pedido #${data.orderNumber} que figura como despachado/en camino.`
+  )}`;
+
+  const shippingTypeText =
+    data.shippingType === 'LOCAL_FREE'
+      ? 'Retiro en Sucursal / Entrega Bonificada'
+      : data.shippingType === 'LOCAL_PAID'
+      ? 'Envío Local a Domicilio'
+      : 'Envío Nacional / A Convenir por Transporte';
+
+  const itemsHtml = data.items
+    .map(
+      (item) => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px; font-size: 13px; color: #0f172a; font-weight: 600;">${item.name}</td>
+          <td style="padding: 10px; font-size: 12px; color: #64748b; font-family: monospace;">${item.sku}</td>
+          <td style="padding: 10px; text-align: center; font-size: 13px; color: #0f172a; font-weight: bold;">${item.quantity}</td>
+        </tr>
+      `
+    )
+    .join('');
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; color: #334155;">
+      <!-- CABECERA -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #e41414; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">PAPES CONFORT</h1>
+        <p style="color: #64748b; font-size: 13px; margin-top: 4px; font-weight: 500;">Hogar & Confort — Basavilbaso, Entre Ríos</p>
+      </div>
+
+      <!-- BANNER DE ESTADO -->
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: #22c55e; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 14px; border-radius: 9999px; margin-bottom: 8px;">
+          🚚 ¡En Camino!
+        </div>
+        <h2 style="color: #14532d; font-size: 20px; font-weight: 800; margin: 4px 0 6px 0;">¡Tu pedido está en viaje, ${firstName}!</h2>
+        <p style="color: #166534; font-size: 14px; margin: 0; line-height: 1.5;">
+          Hemos despachado tu pedido <strong>#${data.orderNumber}</strong> y ya se encuentra en camino.
+        </p>
+      </div>
+
+      <!-- DATOS DE ENTREGA -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+        <h3 style="color: #0f172a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0; font-weight: 800;">
+          📍 Detalles de Entrega
+        </h3>
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 4px 0; color: #64748b; width: 140px;">Modalidad:</td>
+            <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${shippingTypeText}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #64748b;">Destino:</td>
+            <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${data.shippingAddress}, ${data.shippingCity} (CP ${data.shippingPostalCode})</td>
+          </tr>
+          ${
+            data.customerPhone
+              ? `
+          <tr>
+            <td style="padding: 4px 0; color: #64748b;">Teléfono de contacto:</td>
+            <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${data.customerPhone}</td>
+          </tr>
+          `
+              : ''
+          }
+          ${
+            data.notes
+              ? `
+          <tr>
+            <td style="padding: 4px 0; color: #64748b;">Observaciones:</td>
+            <td style="padding: 4px 0; color: #0f172a; font-style: italic;">${data.notes}</td>
+          </tr>
+          `
+              : ''
+          }
+        </table>
+      </div>
+
+      <!-- PRODUCTOS DESPACHADOS -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #0f172a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; font-weight: 800;">
+          📦 Productos Despachados
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <thead>
+            <tr style="background-color: #f1f5f9; color: #475569; font-size: 11px; text-transform: uppercase;">
+              <th style="padding: 8px 10px; text-align: left;">Artículo</th>
+              <th style="padding: 8px 10px; text-align: left;">SKU</th>
+              <th style="padding: 8px 10px; text-align: center;">Cant.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BLOQUE DE ATENCIÓN Y GARANTÍAS POR WHATSAPP -->
+      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 20px; margin-bottom: 24px; text-align: center;">
+        <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
+        <h4 style="color: #1e3a8a; font-size: 15px; font-weight: 800; margin: 0 0 6px 0;">
+          Garantía y Asistencia Directa por WhatsApp
+        </h4>
+        <p style="color: #1e40af; font-size: 13px; margin: 0 0 16px 0; line-height: 1.5;">
+          ¿Tenés alguna consulta sobre la entrega, el funcionamiento o necesitás asistencia por la garantía oficial de tus productos? Nuestro equipo te responde directamente por WhatsApp.
+        </p>
+        <a
+          href="${whatsappUrl}"
+          target="_blank"
+          style="display: inline-block; background-color: #25d366; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 13px; padding: 12px 28px; border-radius: 30px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);"
+        >
+          Consultar por WhatsApp
+        </a>
+      </div>
+
+      <!-- PIE DE PÁGINA -->
+      <div style="border-top: 1px solid #f1f5f9; padding-top: 18px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.5;">
+        <p style="margin: 0 0 4px 0;"><strong>Papes Confort</strong> — Hogar & Confort</p>
+        <p style="margin: 0;">Basavilbaso, Entre Ríos | papesconfort.com</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: data.email,
+      subject: `¡Tu pedido #${data.orderNumber} fue despachado y está en camino! 🚚 - Papes Confort`,
+      html,
+    });
+  } catch (error: any) {
+    console.warn(`[email.service] Error enviando correo de orden enviada #${data.orderNumber} a ${data.email}:`, error.message);
+  }
+}

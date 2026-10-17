@@ -68,6 +68,7 @@ router.post('/login', async (req, res, next) => {
           httpOnly: true,
           secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
+          path: '/',
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
         });
 
@@ -105,6 +106,7 @@ router.post('/login', async (req, res, next) => {
           httpOnly: true,
           secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
+          path: '/',
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
@@ -178,6 +180,7 @@ router.post('/google', async (req, res) => {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -282,6 +285,7 @@ router.post('/google', async (req, res) => {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -340,6 +344,7 @@ router.post('/refresh', async (req, res) => {
           httpOnly: true,
           secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
+          path: '/',
         });
         res.status(401).json({
           success: false,
@@ -356,6 +361,7 @@ router.post('/refresh', async (req, res) => {
             httpOnly: true,
             secure: env.NODE_ENV === 'production',
             sameSite: 'strict',
+            path: '/',
           });
           res.status(401).json({
             success: false,
@@ -403,6 +409,7 @@ router.post('/refresh', async (req, res) => {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/',
       });
       res.status(401).json({
         success: false,
@@ -419,6 +426,7 @@ router.post('/refresh', async (req, res) => {
           httpOnly: true,
           secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
+          path: '/',
         });
         res.status(401).json({
           success: false,
@@ -450,6 +458,7 @@ router.post('/refresh', async (req, res) => {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
     });
     res.status(401).json({
       success: false,
@@ -464,6 +473,7 @@ router.post('/logout', (_req, res) => {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: '/',
   });
 
   res.json({

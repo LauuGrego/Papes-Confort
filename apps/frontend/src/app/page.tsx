@@ -6,6 +6,7 @@ import FlyersCarousel from '../components/FlyersCarousel';
 import CategoryGrid from '../components/CategoryGrid';
 import FeaturedProducts from '../components/FeaturedProducts';
 import WeeklyOffer from '../components/WeeklyOffer';
+import OutletSection from '../components/OutletSection';
 import BrandWall from '../components/BrandWall';
 import PaymentMethods from '../components/PaymentMethods';
 import AboutSection from '../components/AboutSection';
@@ -99,7 +100,10 @@ export default function HomePage() {
       {/* 4. Comprá por categoría */}
       <CategoryGrid cards={categoryCards} />
 
-      {/* 5. Productos destacados */}
+      {/* 5. Acceso directo al Rubro Outlet */}
+      <OutletSection />
+
+      {/* 6. Productos destacados */}
       <FeaturedProducts />
 
       {/* 6. Bloque de Ofertas de la Semana */}

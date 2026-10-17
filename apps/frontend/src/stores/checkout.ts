@@ -31,7 +31,7 @@ const initialShipping: ShippingState = {
 
 export const useCheckoutStore = create<CheckoutState>((set) => ({
   step: CheckoutStep.SHIPPING,
-  paymentMethod: null,
+  paymentMethod: PaymentMethod.TRANSFER,
   shipping: initialShipping,
   setStep: (step) => set({ step }),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
@@ -40,7 +40,7 @@ export const useCheckoutStore = create<CheckoutState>((set) => ({
   reset: () =>
     set({
       step: CheckoutStep.SHIPPING,
-      paymentMethod: null,
+      paymentMethod: PaymentMethod.TRANSFER,
       shipping: initialShipping,
     }),
 }));

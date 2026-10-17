@@ -46,7 +46,7 @@ export async function checkExpiredOrders(): Promise<number> {
           const reason =
             order.paymentMethod === 'CARD'
               ? 'Expiración automática por límite de tiempo en pasarela de pago'
-              : 'Expiración automática por cumplirse el plazo límite de transferencia bancaria (72 h)';
+              : 'Expiración automática por cumplirse el plazo límite de transferencia bancaria (72 hs hábiles)';
 
           await restoreStockAndCancel(order.id, reason);
           expiredCount++;

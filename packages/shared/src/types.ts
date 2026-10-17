@@ -323,7 +323,7 @@ export const DEFAULT_HERO_BANNER: HomeHeroBannerDto = {
   primaryBtnUrl: '/catalogo',
   secondaryBtnText: 'Ver Ofertas',
   secondaryBtnUrl: '/catalogo?offer=all',
-  searchTags: ['Heladeras', 'Lavarropas', 'Smart TV', 'Colchones', 'Aires'],
+  searchTags: ['Heladeras', 'Lavarropas', 'Smart TV', 'Colchones', 'Aires', 'Outlet'],
   linkUrl: '',
   showBadge: true,
   objectFit: 'cover',

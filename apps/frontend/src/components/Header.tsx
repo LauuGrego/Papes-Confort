@@ -117,15 +117,16 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      if (user?.type === 'customer') {
-        await fetchApi('/api/customer/auth/logout', { method: 'POST' });
-      } else {
-        await fetchApi('/api/auth/logout', { method: 'POST' });
-      }
+      await Promise.all([
+        fetchApi('/api/auth/logout', { method: 'POST' }),
+        fetchApi('/api/customer/auth/logout', { method: 'POST' }),
+      ]);
     } catch {}
     clearAuth();
     if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/mi-cuenta'))) {
-      router.push('/');
+      window.location.href = '/ingresar';
+    } else {
+      window.location.reload();
     }
   };
 
@@ -425,6 +426,15 @@ export default function Header() {
               </div>
             </div>
           )}
+
+          {/* ACCESO DIRECTO: Outlet (Rubro GesCom) */}
+          <Link
+            href="/catalogo?type=outlet"
+            className="text-amber-800 font-bold hover:text-amber-950 transition-all duration-200 flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 px-3 py-1.5 rounded-full border border-amber-500/30 shadow-2xs hover:shadow-xs cursor-pointer transform hover:-translate-y-0.5"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+            <span className="text-xs uppercase tracking-wider">Outlet</span>
+          </Link>
         </nav>
 
         {/* Acciones de usuario (Desktop): Mi Cuenta · Favoritos · Carrito */}
@@ -681,6 +691,19 @@ export default function Header() {
                         )}
                       </div>
                     )}
+
+                    {/* Acceso Móvil: Outlet (Rubro GesCom) */}
+                    <Link
+                      href="/catalogo?type=outlet"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition-all"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-600" />
+                        <span>Zona Outlet</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-amber-600" />
+                    </Link>
 
                     {/* Acordeón Móvil: Rubros */}
                     <div className="flex flex-col">

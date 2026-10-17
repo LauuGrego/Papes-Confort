@@ -11,6 +11,7 @@ import {
   Loader2,
   PackageOpen,
   Tag,
+  Sparkles,
 } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
 import { ProductDto, PaginatedResponse, OfferDto } from '@papes-confort/shared';
@@ -247,6 +248,8 @@ function CatalogoContent() {
             ? 'Ofertas y Promociones'
             : selectedOfferObj
             ? `Oferta: ${selectedOfferObj.name}`
+            : filters.selectedFamily?.toLowerCase() === 'outlet'
+            ? 'Zona Outlet · Oportunidades Únicas'
             : selectedCategoryObj
             ? selectedCategoryObj.name
             : selectedFamilyObj
@@ -259,6 +262,37 @@ function CatalogoContent() {
           {productsData ? `${productsData.total} productos encontrados` : 'Buscando productos...'}
         </p>
       </div>
+
+      {/* Banner exclusivo cuando se navega el rubro Outlet */}
+      {filters.selectedFamily?.toLowerCase() === 'outlet' && (
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/25 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-black shadow-xs">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <span>Rubro Outlet GesCom · Papes Confort</span>
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-500/30">
+                  Stock Limitado
+                </span>
+              </p>
+              <p className="text-[11px] sm:text-xs text-slate-600 font-normal">
+                Artículos seleccionados de última serie y liquidación con garantía oficial y entrega inmediata.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://wa.me/5493447400000?text=Hola%20Papes%20Confort,%20quisiera%20consultar%20por%20los%20productos%20disponibles%20en%20el%20rubro%20Outlet"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-full bg-white border border-amber-500/30 px-4 py-2 text-xs font-bold text-amber-900 hover:bg-amber-50 hover:border-amber-500/50 transition-colors shadow-2xs cursor-pointer self-start sm:self-auto"
+          >
+            <span>Consultar por WhatsApp</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      )}
 
       {/* Barra de Controles (Mobile: Filtrar + Ordenar / Desktop: Ordenar) */}
       <div className="flex items-center justify-between gap-4 py-3 border-y border-slate-100 mb-6">

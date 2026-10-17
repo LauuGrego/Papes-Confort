@@ -20,7 +20,30 @@ import {
   sendCustomerTransferPendingEmail,
   sendCustomerOrderCancelledEmail,
   sendAdminNewPaidOrderNotificationEmail,
+  sendCustomerOrderShippedEmail,
 } from './email.service';
+
+/**
+ * Calcula la fecha de expiración para pagos por transferencia considerando horas hábiles.
+ * 72 horas hábiles = 3 días hábiles completos (Lunes a Sábado), excluyendo Domingos.
+ */
+export function calculateBusinessHoursExpiration(startDate: Date, businessHours: number = 72): Date {
+  const date = new Date(startDate);
+  let remainingHours = businessHours;
+
+  while (remainingHours > 0) {
+    const step = Math.min(remainingHours, 24);
+    date.setTime(date.getTime() + step * 60 * 60 * 1000);
+    remainingHours -= step;
+
+    // Si el día resultante es Domingo (day === 0), saltar 24 hs adicionales para computar solo días hábiles
+    if (date.getDay() === 0) {
+      date.setDate(date.getDate() + 1);
+    }
+  }
+
+  return date;
+}
 
 /**
  * Mapea una orden de Prisma a OrderDetailDto
@@ -221,7 +244,7 @@ export async function createOrderFromCart(
       'transfer_expiration_hours',
       DEFAULT_SETTINGS.transfer_expiration_hours
     );
-    gatewayExpiresAt = new Date(now.getTime() + transferHours * 60 * 60 * 1000);
+    gatewayExpiresAt = calculateBusinessHoursExpiration(now, transferHours);
   }
 
   // 5. Transacción atómica: descontar stock, crear Order y OrderItems, y cerrar carrito
@@ -316,6 +339,15 @@ export async function createOrderFromCart(
 
   // 6. Si es con TARJETA (Mobbex): Crear Checkout en pasarela
   if (payload.paymentMethod === 'CARD') {
+    if (!env.MOBBEX_API_KEY || !env.MOBBEX_ACCESS_TOKEN) {
+      await restoreStockAndCancel(createdOrder.id, 'Pagos con tarjeta en proceso de habilitación');
+      const err: any = new Error(
+        'Los pagos con tarjeta se encuentran en proceso de habilitación comercial. Por favor selecciona Transferencia Bancaria.'
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
     const frontendBase = originUrl || env.CORS_ORIGIN || 'http://localhost:3000';
     const returnUrl = `${frontendBase}/pedido/resultado?orderNumber=${encodeURIComponent(createdOrder.orderNumber)}`;
     
@@ -797,6 +829,31 @@ export async function updateAdminOrderStatus(
 
   if (newStatus === OrderStatus.PAID && order.status !== OrderStatus.PAID) {
     notifyAdminOrderPaid(order.id).catch(() => {});
+  }
+
+  // Notificar al cliente por email cuando el pedido sea despachado (SHIPPED)
+  if (newStatus === OrderStatus.SHIPPED && order.status !== OrderStatus.SHIPPED) {
+    sendCustomerOrderShippedEmail({
+      name: updated.customerName,
+      email: updated.customerEmail,
+      orderNumber: updated.orderNumber,
+      shippingType: updated.shippingType,
+      shippingAddress: updated.shippingAddress,
+      shippingCity: updated.shippingCity,
+      shippingPostalCode: updated.shippingPostalCode,
+      customerPhone: updated.customerPhone,
+      items: updated.items.map((i) => ({
+        name: i.productNameSnapshot,
+        sku: i.skuSnapshot,
+        quantity: i.quantity,
+        unitPrice: Number(i.unitPrice),
+        total: Number(i.total),
+      })),
+      total: Number(updated.total),
+      notes: updated.notes,
+    }).catch((err) => {
+      console.warn(`[order.service] No se pudo enviar email de despacho para orden #${updated.orderNumber}:`, err?.message || err);
+    });
   }
 
   return mapOrderToDetailDto(updated, updated.items, updated.bankAccount);

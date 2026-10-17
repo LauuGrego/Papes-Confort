@@ -11,6 +11,7 @@ import {
   ArrowRight,
   MessageSquare,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,17 +20,21 @@ export default function AdminDashboardPage() {
   const [productCount, setProductCount] = useState<number | null>(null);
   const [offerCount, setOfferCount] = useState<number | null>(null);
   const [bannerCount, setBannerCount] = useState<number | null>(null);
+  const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [pendingTransferCount, setPendingTransferCount] = useState<number | null>(null);
   const [lastSync, setLastSync] = useState<any>(null);
   const [whatsappNumber, setWhatsappNumber] = useState<string>('');
 
   useEffect(() => {
     async function loadDashboardData() {
       setLoading(true);
-      const [productsRes, offersRes, settingsRes, syncRes] = await Promise.all([
+      const [productsRes, offersRes, settingsRes, syncRes, ordersRes, pendingTransfersRes] = await Promise.all([
         fetchApi<any>('/api/admin/products?limit=1'),
         fetchApi<any>('/api/offers'),
         fetchApi<any>('/api/admin/settings'),
         fetchApi<any>('/api/admin/sync-logs?limit=1'),
+        fetchApi<any>('/api/admin/orders?pageSize=1'),
+        fetchApi<any>('/api/admin/orders?status=PENDING_CONFIRMATION&pageSize=1'),
       ]);
 
       if (productsRes.success && productsRes.data) {
@@ -37,6 +42,12 @@ export default function AdminDashboardPage() {
       }
       if (offersRes.success && offersRes.data) {
         setOfferCount(Array.isArray(offersRes.data) ? offersRes.data.length : 0);
+      }
+      if (ordersRes.success && ordersRes.data) {
+        setOrderCount(ordersRes.data.total ?? 0);
+      }
+      if (pendingTransfersRes.success && pendingTransfersRes.data) {
+        setPendingTransferCount(pendingTransfersRes.data.total ?? 0);
       }
       if (settingsRes.success && settingsRes.data) {
         setWhatsappNumber(settingsRes.data.whatsapp_number || '');
@@ -85,8 +96,31 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Tarjetas Métricas Rápidas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
+        {/* Métrica 1: Pedidos */}
+        <Link
+          href="/admin/pedidos"
+          className="bg-white p-5 rounded-3xl border border-slate-200/80 hover:border-brand-navy/40 shadow-xs flex items-center gap-4 transition-all group"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy group-hover:scale-105 transition-transform shrink-0">
+            <ClipboardList className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pedidos</p>
+              {(pendingTransferCount ?? 0) > 0 && (
+                <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+              )}
+            </div>
+            <h2 className="text-xl font-black text-slate-800">{orderCount ?? 0}</h2>
+            <p className="text-[10px] text-amber-600 font-bold truncate">
+              {(pendingTransferCount ?? 0) > 0 ? `${pendingTransferCount} por validar` : 'Al día'}
+            </p>
+          </div>
+        </Link>
+
+        {/* Métrica 2: Productos */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red shrink-0">
             <ShoppingBag className="h-6 w-6" />
@@ -98,6 +132,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Métrica 3: Ofertas */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 shrink-0">
             <Tag className="h-6 w-6" />
@@ -109,6 +144,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Métrica 4: Banners */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 shrink-0">
             <ImageIcon className="h-6 w-6" />
@@ -120,6 +156,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Métrica 5: Sincronización */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
           <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 ${
             lastSync?.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
@@ -142,7 +179,25 @@ export default function AdminDashboardPage() {
       {/* Accesos Directos de Administración */}
       <div className="space-y-4">
         <h2 className="text-lg font-extrabold text-slate-800">Acceso Rápido a Secciones</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <Link
+            href="/admin/pedidos"
+            className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-brand-navy/40 hover:shadow-md transition-all group flex items-start justify-between gap-4"
+          >
+            <div className="space-y-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-extrabold text-slate-800 group-hover:text-brand-navy transition-colors">
+                Gestión de Pedidos
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Revisá las compras recibidas, validá transferencias bancarias y actualizá los estados de entrega.
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-brand-navy group-hover:translate-x-1 transition-all shrink-0 mt-2" />
+          </Link>
           
           <Link
             href="/admin/configuracion?tab=banners"
