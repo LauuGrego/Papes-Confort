@@ -166,6 +166,22 @@ export async function createOrderFromCart(
     throw error;
   }
 
+  // 1.1 Validar restricción comercial de Outlet (solo Transferencia Bancaria)
+  const hasOutletProduct = cartItems.some(
+    (item) =>
+      item.product.productType === 'OUTLET' ||
+      item.product.productFamily?.slug === 'outlet' ||
+      item.product.productFamily?.name?.toUpperCase() === 'OUTLET'
+  );
+
+  if (hasOutletProduct && payload.paymentMethod !== 'TRANSFER') {
+    const error: any = new Error(
+      'El pedido contiene artículos del rubro Outlet. Por política de liquidación y oportunidad, únicamente admiten pago mediante Transferencia Bancaria.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
   // 2. Revalidar precio y stock de cada ítem
   let calculatedSubtotal = 0;
   const verifiedItems: Array<{

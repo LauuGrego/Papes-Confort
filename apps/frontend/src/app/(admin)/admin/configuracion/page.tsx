@@ -30,6 +30,7 @@ import {
 import { useAuthStore } from '../../../../stores/auth';
 import AdminCategoriesConfig from '../../../../components/admin/AdminCategoriesConfig';
 import AdminWeeklyOfferConfig from '../../../../components/admin/AdminWeeklyOfferConfig';
+import AdminOutletConfig from '../../../../components/admin/AdminOutletConfig';
 import AdminTrustBarConfig from '../../../../components/admin/AdminTrustBarConfig';
 import AdminAboutConfig from '../../../../components/admin/AdminAboutConfig';
 import {
@@ -43,6 +44,8 @@ import {
   DEFAULT_CATEGORY_CARDS,
   HomeWeeklyOfferDto,
   DEFAULT_WEEKLY_OFFER,
+  HomeOutletDto,
+  DEFAULT_OUTLET_SECTION,
   HomeTrustBarItemDto,
   DEFAULT_TRUST_BAR,
   HomeAboutDto,
@@ -102,6 +105,7 @@ function AdminConfiguracionContent() {
     | 'flyers'
     | 'categories'
     | 'weekly_offer'
+    | 'outlet'
     | 'trust_bar'
     | 'about'
     | 'payment_cards'
@@ -137,6 +141,7 @@ function AdminConfiguracionContent() {
   // Landing Components States
   const [categoryCards, setCategoryCards] = useState<HomeCategoryCardDto[]>(DEFAULT_CATEGORY_CARDS);
   const [weeklyOffer, setWeeklyOffer] = useState<HomeWeeklyOfferDto>(DEFAULT_WEEKLY_OFFER);
+  const [outletConfig, setOutletConfig] = useState<HomeOutletDto>(DEFAULT_OUTLET_SECTION);
   const [trustBarItems, setTrustBarItems] = useState<HomeTrustBarItemDto[]>(DEFAULT_TRUST_BAR);
   const [aboutConfig, setAboutConfig] = useState<HomeAboutDto>(DEFAULT_ABOUT_SECTION);
 
@@ -261,6 +266,16 @@ function AdminConfiguracionContent() {
             console.error('Error al parsear home_about de DB:', e);
           }
         }
+        if (res.data.home_outlet_section) {
+          try {
+            const parsed = JSON.parse(res.data.home_outlet_section);
+            if (parsed && typeof parsed === 'object') {
+              setOutletConfig({ ...DEFAULT_OUTLET_SECTION, ...parsed });
+            }
+          } catch (e) {
+            console.error('Error al parsear home_outlet_section de DB:', e);
+          }
+        }
         if (res.data.installments_config) {
           try {
             const parsed = JSON.parse(res.data.installments_config);
@@ -285,7 +300,8 @@ function AdminConfiguracionContent() {
     updatedWeeklyOffer?: HomeWeeklyOfferDto,
     updatedTrustBar?: HomeTrustBarItemDto[],
     updatedAbout?: HomeAboutDto,
-    updatedInstallments?: InstallmentsConfigDto
+    updatedInstallments?: InstallmentsConfigDto,
+    updatedOutlet?: HomeOutletDto
   ) => {
     setSaveLoading(true);
     setSuccessMsg(null);
@@ -299,6 +315,7 @@ function AdminConfiguracionContent() {
     const trustBarToSave = updatedTrustBar || trustBarItems;
     const aboutToSave = updatedAbout || aboutConfig;
     const installmentsToSave = updatedInstallments || installmentsConfig;
+    const outletToSave = updatedOutlet || outletConfig;
 
     const body = {
       safety_stock: safetyStock,
@@ -309,6 +326,7 @@ function AdminConfiguracionContent() {
       home_hero_banner: JSON.stringify(heroToSave),
       home_category_cards: JSON.stringify(categoriesToSave),
       home_weekly_offer: JSON.stringify(weeklyOfferToSave),
+      home_outlet_section: JSON.stringify(outletToSave),
       home_trust_bar: JSON.stringify(trustBarToSave),
       home_about: JSON.stringify(aboutToSave),
       installments_config: JSON.stringify(installmentsToSave),
@@ -823,6 +841,8 @@ function AdminConfiguracionContent() {
             ? 'Categorías Destacadas'
             : activeTab === 'weekly_offer'
             ? 'Oferta de la Semana'
+            : activeTab === 'outlet'
+            ? 'Sección Destacada: Rubro Outlet'
             : activeTab === 'trust_bar'
             ? 'Barra de Beneficios'
             : activeTab === 'payment_cards'
@@ -842,6 +862,8 @@ function AdminConfiguracionContent() {
             ? 'Personaliza las categorías principales con accesos rápidos e imágenes de portada.'
             : activeTab === 'weekly_offer'
             ? 'Configura la oferta destacada semanal con cuenta regresiva y banner promocional.'
+            : activeTab === 'outlet'
+            ? 'Configura el bloque promocional de acceso directo al rubro Outlet, imagen de portada y llamado a la acción.'
             : activeTab === 'trust_bar'
             ? 'Administra los beneficios de confianza (envíos, garantía, cuotas) de la barra superior.'
             : activeTab === 'payment_cards'
@@ -1317,6 +1339,14 @@ function AdminConfiguracionContent() {
         <AdminWeeklyOfferConfig
           initialConfig={weeklyOffer}
           onSaved={(newOffer) => setWeeklyOffer(newOffer)}
+        />
+      )}
+
+      {/* TAB: Sección Outlet */}
+      {activeTab === 'outlet' && (
+        <AdminOutletConfig
+          initialConfig={outletConfig}
+          onSaved={(newOutlet) => setOutletConfig(newOutlet)}
         />
       )}
 

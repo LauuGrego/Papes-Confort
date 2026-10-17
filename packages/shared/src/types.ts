@@ -169,6 +169,7 @@ export interface CartItemDto {
   unitPrice: number;      // Precio base del producto al agregarlo
   discount: number;       // Descuento al agregarlo
   total: number;          // Campo computado: (unitPrice * (1 - discount / 100)) * quantity
+  isOutlet?: boolean;     // Indica si pertenece al rubro Outlet
 }
 
 export interface OrderDto {
@@ -522,6 +523,44 @@ export const DEFAULT_ABOUT_SECTION: HomeAboutDto = {
   isActive: true,
 };
 
+export interface HomeOutletDto {
+  badge: string;
+  title: string;
+  titleHighlight: string;
+  description: string;
+  primaryBtnText: string;
+  primaryBtnUrl: string;
+  whatsappText: string;
+  whatsappMessage: string;
+  imageUrl: string;
+  cardBadge: string;
+  cardSub: string;
+  cardTitle: string;
+  rubroGescom: string;
+  conditionText: string;
+  deliveryText: string;
+  isActive: boolean;
+}
+
+export const DEFAULT_OUTLET_SECTION: HomeOutletDto = {
+  badge: 'Outlet',
+  title: 'Oportunidades únicas en',
+  titleHighlight: 'Outlet',
+  description: 'Accedé directamente a los productos Outlet. Artículos seleccionados, últimas unidades y modelos en liquidación con el respaldo y la confianza de Papes Confort.',
+  primaryBtnText: 'Ver Productos del Outlet',
+  primaryBtnUrl: '/catalogo?type=outlet',
+  whatsappText: 'Consultar por WhatsApp',
+  whatsappMessage: '¡Hola Papes Confort! Quisiera consultar sobre los productos disponibles en la sección Outlet.',
+  imageUrl: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg',
+  cardBadge: 'Rubro Outlet',
+  cardSub: 'Disponibilidad inmediata',
+  cardTitle: 'Equipá tu casa pagando menos',
+  rubroGescom: 'OUTLET',
+  conditionText: 'Revisados y garantizados',
+  deliveryText: 'Retiro en local o envío',
+  isActive: true,
+};
+
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
 // ==========================================
@@ -767,15 +806,45 @@ export interface CreateBankAccountPayload {
 
 export type UpdateBankAccountPayload = Partial<CreateBankAccountPayload>;
 
-export interface CreatePromotionPayload {
+export interface BankPromotionDto {
+  id: string;
+  name: string;
+  description?: string | null;
   bankName: string;
   cardType: string;
-  dayOfWeek: number;
+  dayOfWeek: number | null; // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado, null = Todos los días
+  discountPercent: number;
+  maxReimbursement: number;
+  installmentsTotal: number;
+  installmentsPaid: number;
+  isActive: boolean;
+  validFrom: string;
+  validUntil: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const DAY_OF_WEEK_NAMES: Record<number, string> = {
+  0: 'Domingo',
+  1: 'Lunes',
+  2: 'Martes',
+  3: 'Miércoles',
+  4: 'Jueves',
+  5: 'Viernes',
+  6: 'Sábado',
+};
+
+export interface CreatePromotionPayload {
+  name: string;
+  description?: string | null;
+  bankName: string;
+  cardType: string;
+  dayOfWeek?: number | null;
   discountPercent: number;
   maxReimbursement?: number | null;
   installmentsTotal: number;
   installmentsPaid: number;
-  isActive: boolean;
+  isActive?: boolean;
   validFrom: string;
   validUntil: string;
 }

@@ -48,6 +48,7 @@ export async function getCartWithItems(cartId: string) {
       product: {
         include: {
           brand: true,
+          productFamily: true,
           images: {
             orderBy: { sortOrder: 'asc' },
           },
@@ -75,6 +76,7 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
     const unitPrice = Number(item.unitPriceAtAdd);
     const discount = Number(product.discountPercent);
     const total = unitPrice * item.quantity;
+    const isOutlet = product.productType === 'OUTLET' || product.productFamily?.slug === 'outlet' || product.productFamily?.name?.toUpperCase() === 'OUTLET';
 
     return {
       productId: item.productId,
@@ -86,6 +88,7 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
       unitPrice,
       discount,
       total,
+      isOutlet,
     };
   });
 

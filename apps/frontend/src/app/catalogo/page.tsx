@@ -249,7 +249,7 @@ function CatalogoContent() {
             : selectedOfferObj
             ? `Oferta: ${selectedOfferObj.name}`
             : filters.selectedFamily?.toLowerCase() === 'outlet'
-            ? 'Zona Outlet · Oportunidades Únicas'
+            ? 'Outlet · Oportunidades Únicas'
             : selectedCategoryObj
             ? selectedCategoryObj.name
             : selectedFamilyObj

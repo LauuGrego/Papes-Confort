@@ -18,6 +18,8 @@ import {
   DEFAULT_CATEGORY_CARDS,
   HomeWeeklyOfferDto,
   DEFAULT_WEEKLY_OFFER,
+  HomeOutletDto,
+  DEFAULT_OUTLET_SECTION,
   HomeAboutDto,
   DEFAULT_ABOUT_SECTION,
 } from '@papes-confort/shared';
@@ -27,13 +29,19 @@ export default function HomePage() {
   const [heroBanner, setHeroBanner] = useState<HomeHeroBannerDto>(DEFAULT_HERO_BANNER);
   const [categoryCards, setCategoryCards] = useState<HomeCategoryCardDto[]>(DEFAULT_CATEGORY_CARDS);
   const [weeklyOffer, setWeeklyOffer] = useState<HomeWeeklyOfferDto>(DEFAULT_WEEKLY_OFFER);
+  const [outletConfig, setOutletConfig] = useState<HomeOutletDto>(DEFAULT_OUTLET_SECTION);
   const [aboutConfig, setAboutConfig] = useState<HomeAboutDto>(DEFAULT_ABOUT_SECTION);
+  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
 
   useEffect(() => {
     async function loadLandingSettings() {
       try {
         const res = await fetchApi<Record<string, string>>('/api/settings/public');
         if (res.success && res.data) {
+          if (res.data.whatsapp_number) {
+            setWhatsappNumber(res.data.whatsapp_number);
+          }
+
           // 1. Hero Banner
           if (res.data.home_hero_banner) {
             try {
@@ -70,6 +78,18 @@ export default function HomePage() {
             }
           }
 
+          // 4. Outlet Section
+          if (res.data.home_outlet_section) {
+            try {
+              const parsed = JSON.parse(res.data.home_outlet_section);
+              if (parsed && typeof parsed === 'object') {
+                setOutletConfig((prev) => ({ ...prev, ...parsed }));
+              }
+            } catch (e) {
+              console.error('Error al parsear home_outlet_section:', e);
+            }
+          }
+
           // 5. About Section
           if (res.data.home_about) {
             try {
@@ -101,7 +121,7 @@ export default function HomePage() {
       <CategoryGrid cards={categoryCards} />
 
       {/* 5. Acceso directo al Rubro Outlet */}
-      <OutletSection />
+      <OutletSection outletConfig={outletConfig} whatsappNumber={whatsappNumber} />
 
       {/* 6. Productos destacados */}
       <FeaturedProducts />

@@ -3,11 +3,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, ShieldCheck, Tag, Box, MessageCircle } from 'lucide-react';
+import { HomeOutletDto, DEFAULT_OUTLET_SECTION } from '@papes-confort/shared';
 
-export default function OutletSection() {
-  const whatsappNumber = '5493447400000'; // Default store WhatsApp
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-    '¡Hola Papes Confort! Quisiera consultar sobre los productos disponibles en la sección Outlet.'
+interface OutletSectionProps {
+  outletConfig?: HomeOutletDto;
+  whatsappNumber?: string;
+}
+
+export default function OutletSection({ outletConfig, whatsappNumber }: OutletSectionProps) {
+  const config = outletConfig ? { ...DEFAULT_OUTLET_SECTION, ...outletConfig } : DEFAULT_OUTLET_SECTION;
+
+  if (!config.isActive) {
+    return null;
+  }
+
+  const cleanPhone = whatsappNumber ? whatsappNumber.replace(/\D/g, '') : '5493447400000';
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+    config.whatsappMessage || '¡Hola Papes Confort! Quisiera consultar sobre los productos disponibles en la sección Outlet.'
   )}`;
 
   return (
@@ -25,21 +37,19 @@ export default function OutletSection() {
               {/* Badge de rubro */}
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/15 px-3.5 py-1 text-xs font-black text-amber-300 uppercase tracking-widest backdrop-blur-md">
                 <Sparkles className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
-                <span>Outlet</span>
+                <span>{config.badge}</span>
               </div>
 
               {/* Título de gran impacto visual */}
               <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1] text-white">
-                Oportunidades únicas en{' '}
+                {config.title}{' '}
                 <span className="bg-gradient-to-r from-amber-300 via-amber-200 to-orange-400 bg-clip-text text-transparent">
-                  Zona Outlet
+                  {config.titleHighlight}
                 </span>
               </h2>
 
               <p className="text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed font-light max-w-xl">
-                Accedé directamente a los productos del rubro <strong>Outlet</strong> cargados en nuestro sistema.
-                Artículos seleccionados, últimas unidades y modelos en liquidación con el respaldo y la confianza de{' '}
-                <span className="text-white font-medium">Papes Confort</span>.
+                {config.description}
               </p>
 
               {/* Micro-beneficios destacados */}
@@ -64,7 +74,7 @@ export default function OutletSection() {
                   <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
                   <div className="text-left">
                     <p className="text-[11px] sm:text-xs font-bold text-white leading-tight">Respaldo</p>
-                    <p className="text-[9px] text-slate-400 font-normal">Garantía oficial</p>
+                    <p className="text-[9px] text-slate-400 font-normal">{config.conditionText}</p>
                   </div>
                 </div>
 
@@ -80,10 +90,10 @@ export default function OutletSection() {
               {/* Botones de acción */}
               <div className="pt-3 flex flex-wrap items-center gap-3.5">
                 <Link
-                  href="/catalogo?type=outlet"
+                  href={config.primaryBtnUrl || '/catalogo?type=outlet'}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-extrabold text-slate-950 hover:from-amber-400 hover:to-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.35)] hover:shadow-[0_6px_25px_rgba(245,158,11,0.45)] transition-all duration-200 transform hover:-translate-y-0.5 group cursor-pointer"
                 >
-                  <span>Ver Productos del Outlet</span>
+                  <span>{config.primaryBtnText || 'Ver Productos del Outlet'}</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
 
@@ -94,7 +104,7 @@ export default function OutletSection() {
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-5 sm:px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-200 hover:text-white border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200 backdrop-blur-xs cursor-pointer"
                 >
                   <MessageCircle className="h-4 w-4 text-emerald-400" />
-                  <span>Consultar por WhatsApp</span>
+                  <span>{config.whatsappText || 'Consultar por WhatsApp'}</span>
                 </a>
               </div>
             </div>
@@ -104,23 +114,23 @@ export default function OutletSection() {
               <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/10 via-white/5 to-transparent border border-white/15 p-5 sm:p-6 backdrop-blur-md shadow-2xl overflow-hidden group">
                 <div className="relative aspect-[16/10] w-full rounded-2xl bg-slate-950/80 overflow-hidden mb-4 border border-white/10 flex items-center justify-center">
                   <img
-                    src="https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg"
-                    alt="Outlet Papes Confort"
+                    src={config.imageUrl || 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg'}
+                    alt={config.cardTitle || 'Outlet Papes Confort'}
                     className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
                   {/* Badge flotante animado */}
                   <div className="absolute top-3 right-3 z-10 bg-amber-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-amber-300/40">
-                    Rubro Outlet
+                    {config.cardBadge}
                   </div>
 
                   <div className="absolute bottom-3 left-3 right-3 z-10 text-left">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300">
-                      Disponibilidad inmediata
+                      {config.cardSub}
                     </span>
                     <p className="text-white font-extrabold text-sm sm:text-base leading-tight mt-0.5">
-                      Equipá tu casa pagando menos
+                      {config.cardTitle}
                     </p>
                   </div>
                 </div>
@@ -129,23 +139,23 @@ export default function OutletSection() {
                   <div className="flex items-center justify-between text-xs text-slate-300">
                     <span className="text-slate-400">Categoría en GesCom:</span>
                     <span className="font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                      Rubro: OUTLET
+                      Rubro: {config.rubroGescom}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-300">
                     <span className="text-slate-400">Condición:</span>
-                    <span className="font-medium text-slate-200">Revisados y garantizados</span>
+                    <span className="font-medium text-slate-200">{config.conditionText}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-300">
                     <span className="text-slate-400">Entrega:</span>
-                    <span className="font-medium text-emerald-400">Retiro en local o envío</span>
+                    <span className="font-medium text-emerald-400">{config.deliveryText}</span>
                   </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
                   <span className="text-[11px] text-slate-400">Stock sujeto a disponibilidad física</span>
                   <Link
-                    href="/catalogo?type=outlet"
+                    href={config.primaryBtnUrl || '/catalogo?type=outlet'}
                     className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 group/link"
                   >
                     <span>Ingresar</span>
