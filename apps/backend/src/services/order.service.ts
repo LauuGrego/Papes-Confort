@@ -166,6 +166,24 @@ export async function createOrderFromCart(
     throw error;
   }
 
+  // 1.1 Validar restricción comercial de Outlet (solo Transferencia Bancaria)
+  const hasOutletProduct = cartItems.some(
+    (item) =>
+      item.product.productType === 'OUTLET' ||
+      item.product.productFamily?.slug === 'outlet' ||
+      item.product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+      item.product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+      (typeof item.product.specs === 'object' && item.product.specs !== null && String((item.product.specs as any).rubro || '').toLowerCase().includes('outlet'))
+  );
+
+  if (hasOutletProduct && payload.paymentMethod !== 'TRANSFER') {
+    const error: any = new Error(
+      'El pedido contiene artículos del rubro Outlet. Por política de liquidación y oportunidad, únicamente admiten pago mediante Transferencia Bancaria.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
   // 2. Revalidar precio y stock de cada ítem
   let calculatedSubtotal = 0;
   const verifiedItems: Array<{
@@ -195,16 +213,25 @@ export async function createOrderFromCart(
       throw error;
     }
 
-    const basePrice = Number(product.basePrice);
+    const isOutlet =
+      product.productType === 'OUTLET' ||
+      product.productFamily?.slug === 'outlet' ||
+      product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+      product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+      (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
+
+    const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
+      ? Number((product.specs as any).costof)
+      : null;
+    const basePrice = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice);
     const listPrice =
       product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
         ? Number(product.listPrice)
-        : basePrice > 0
-        ? basePrice / 0.8
-        : basePrice;
-    const offerDiscount = Number(product.discountPercent);
+        : (basePrice > 0 ? Math.round(basePrice * 1.25 * 100) / 100 : basePrice);
+    const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
 
-    const unitPrice = offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice;
+    // Para productos de outlet, el precio de transferencia es el precioFinal que está en la BDD (basePrice)
+    const unitPrice = isOutlet ? basePrice : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
     const itemTotal = unitPrice * item.quantity;
     calculatedSubtotal += itemTotal;
 

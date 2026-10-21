@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Building2, ArrowRight, ArrowLeft, AlertCircle, Clock, Info } from 'lucide-react';
+import { CreditCard, Building2, ArrowRight, ArrowLeft, AlertCircle, Clock, Info, Sparkles } from 'lucide-react';
 import { CheckoutStep, PaymentMethod } from '@papes-confort/shared';
 import { useCheckoutStore } from '../../stores/checkout';
+import { useCartStore } from '../../stores/cart';
 import { fetchApi } from '../../lib/api';
 
 interface PaymentStepProps {
@@ -13,6 +14,8 @@ interface PaymentStepProps {
 
 export default function PaymentStep({ onComplete, onBack }: PaymentStepProps) {
   const { paymentMethod, setPaymentMethod, setStep } = useCheckoutStore();
+  const { items } = useCartStore();
+  const hasOutletItems = items.some((item) => item.isOutlet);
   const [instructions, setInstructions] = useState<string>(
     'Aboná mediante transferencia y compartinos tu comprobante para procesar el pedido.'
   );
@@ -20,10 +23,10 @@ export default function PaymentStep({ onComplete, onBack }: PaymentStepProps) {
 
   // Asegurar que quede preseleccionada Transferencia Bancaria por defecto
   useEffect(() => {
-    if (!paymentMethod || paymentMethod === PaymentMethod.CARD) {
+    if (!paymentMethod || paymentMethod === PaymentMethod.CARD || hasOutletItems) {
       setPaymentMethod(PaymentMethod.TRANSFER);
     }
-  }, [paymentMethod, setPaymentMethod]);
+  }, [paymentMethod, setPaymentMethod, hasOutletItems]);
 
   useEffect(() => {
     fetchApi<Record<string, string>>('/api/settings/public').then((res) => {
@@ -46,6 +49,22 @@ export default function PaymentStep({ onComplete, onBack }: PaymentStepProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {hasOutletItems && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 flex items-start gap-3 shadow-2xs">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="space-y-0.5 text-left">
+            <h4 className="text-xs sm:text-sm font-extrabold text-amber-950">
+              Contenido exclusivo del Rubro Outlet
+            </h4>
+            <p className="text-[11px] sm:text-xs text-amber-900 leading-relaxed">
+              Tu pedido incluye productos de liquidación y oportunidades del rubro <strong>Outlet</strong>. Por tratarse de precios directos y stock limitado, únicamente admiten pago mediante <strong>Transferencia Bancaria o Efectivo</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
           Elegí cómo abonar

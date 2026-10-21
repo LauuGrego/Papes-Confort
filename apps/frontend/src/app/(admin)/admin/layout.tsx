@@ -26,6 +26,7 @@ import {
   Store,
   MessageSquare,
   Lock,
+  Flame,
 } from 'lucide-react';
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
@@ -111,6 +112,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
     { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin/productos', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin/promociones', label: 'Promociones Bancarias', icon: CreditCard },
     { href: '/admin/ofertas', label: 'Ofertas Destacadas', icon: Tag },
   ];
 
@@ -119,6 +121,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     { href: '/admin/configuracion?tab=flyers', label: 'Flyers Promocionales', icon: ImageIcon },
     { href: '/admin/configuracion?tab=categories', label: 'Categorías Destacadas', icon: Layers },
     { href: '/admin/configuracion?tab=weekly_offer', label: 'Oferta de la Semana', icon: Tag },
+    { href: '/admin/configuracion?tab=outlet', label: 'Sección Outlet', icon: Flame },
     { href: '/admin/configuracion?tab=trust_bar', label: 'Barra de Beneficios', icon: ShieldCheck },
     { href: '/admin/configuracion?tab=payment_cards', label: 'Medios de Pago', icon: CreditCard },
     { href: '/admin/configuracion?tab=about', label: 'Sobre Nosotros', icon: Store },

@@ -237,25 +237,35 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
               }
             }
 
-            const numericPrice = Number(basePrice);
-            const numericListPrice = listPrice !== undefined && listPrice !== null ? Number(listPrice) : numericPrice;
+            const isOutletRubro =
+              (rubro && String(rubro).toLowerCase().includes('outlet')) ||
+              (subrubro && String(subrubro).toLowerCase().includes('outlet'));
+
+            const costPrice = item.costPrice !== undefined && Number(item.costPrice) > 0 ? Number(item.costPrice) : undefined;
+            const numericPrice = (isOutletRubro && costPrice !== undefined) ? costPrice : Number(basePrice);
+            const numericListPrice =
+              listPrice !== undefined && listPrice !== null && Number(listPrice) > 0
+                ? Number(listPrice)
+                : (Number(basePrice) > 0 ? Math.round(Number(basePrice) * 1.25 * 100) / 100 : numericPrice);
             const numericStock = Number(stock);
 
             const offerTitle = item.offerName || item.listDescription || item.LDes || item.listName;
             const lPorc = item.LPorc !== undefined ? Number(item.LPorc) : undefined;
 
             let computedDiscount = 0;
-            if (discountPercent !== undefined && discountPercent !== null) {
-              computedDiscount = Number(discountPercent);
-            } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
-              computedDiscount = Math.abs(Math.round(lPorc));
-            } else if (numericListPrice > numericPrice && numericListPrice > 0) {
-              computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
+            if (!isOutletRubro) {
+              if (discountPercent !== undefined && discountPercent !== null) {
+                computedDiscount = Number(discountPercent);
+              } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
+                computedDiscount = Math.abs(Math.round(lPorc));
+              } else if (numericListPrice > numericPrice && numericListPrice > 0) {
+                computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
+              }
             }
 
             let finalProductType = productType;
-            if (!finalProductType) {
-              if (rubro && String(rubro).toLowerCase().includes('outlet')) {
+            if (!finalProductType || isOutletRubro) {
+              if (isOutletRubro) {
                 finalProductType = 'OUTLET';
               } else {
                 finalProductType = (computedDiscount > 0 || Boolean(offerTitle)) ? 'OFFER' : 'NORMAL';
@@ -276,6 +286,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
                 ...(unit !== undefined && { unit }),
                 ...(rubro !== undefined && { rubro }),
                 ...(subrubro !== undefined && { subrubro }),
+                ...(costPrice !== undefined && { costof: costPrice }),
               };
 
               const updatedProduct = await prisma.product.update({
@@ -307,6 +318,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
               if (unit !== undefined) newSpecs.unit = unit;
               if (rubro !== undefined) newSpecs.rubro = rubro;
               if (subrubro !== undefined) newSpecs.subrubro = subrubro;
+              if (costPrice !== undefined) newSpecs.costof = costPrice;
 
               const createdProduct = await prisma.product.create({
                 data: {

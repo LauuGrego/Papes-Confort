@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, BadgePercent, QrCode, ShieldCheck, ArrowRight, Truck } from 'lucide-react';
+import { CreditCard, BadgePercent, QrCode, ShieldCheck, ArrowRight, Truck, Sparkles, Building2 } from 'lucide-react';
 import { fetchApi } from '../lib/api';
-import { PaymentFeatureCardDto } from '@papes-confort/shared';
+import { PaymentFeatureCardDto, BankPromotionDto, DAY_OF_WEEK_NAMES } from '@papes-confort/shared';
 
 const DEFAULT_CARDS: PaymentFeatureCardDto[] = [
   {
@@ -46,18 +46,23 @@ const PAYMENT_LOGOS = [
 export default function PaymentMethods() {
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
   const [cards, setCards] = useState<PaymentFeatureCardDto[]>(DEFAULT_CARDS);
+  const [bankPromotions, setBankPromotions] = useState<BankPromotionDto[]>([]);
 
   useEffect(() => {
     async function loadSettings() {
       try {
-        const res = await fetchApi<{ whatsapp_number?: string; home_payment_cards?: string }>('/api/settings/public');
-        if (res.success && res.data) {
-          if (res.data.whatsapp_number) {
-            setWhatsappNumber(res.data.whatsapp_number);
+        const [settingsRes, promosRes] = await Promise.all([
+          fetchApi<{ whatsapp_number?: string; home_payment_cards?: string }>('/api/settings/public'),
+          fetchApi<{ promotions: BankPromotionDto[] }>('/api/bank-promotions'),
+        ]);
+
+        if (settingsRes.success && settingsRes.data) {
+          if (settingsRes.data.whatsapp_number) {
+            setWhatsappNumber(settingsRes.data.whatsapp_number);
           }
-          if (res.data.home_payment_cards) {
+          if (settingsRes.data.home_payment_cards) {
             try {
-              const parsed: PaymentFeatureCardDto[] = JSON.parse(res.data.home_payment_cards);
+              const parsed: PaymentFeatureCardDto[] = JSON.parse(settingsRes.data.home_payment_cards);
               const active = parsed.filter((c) => c.isActive).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
               if (active.length > 0) {
                 setCards(active);
@@ -66,6 +71,10 @@ export default function PaymentMethods() {
               console.error('Error al parsear home_payment_cards:', e);
             }
           }
+        }
+
+        if (promosRes.success && promosRes.data?.promotions) {
+          setBankPromotions(promosRes.data.promotions);
         }
       } catch (e) {
         console.error('Error al cargar ajustes de medios de pago:', e);
@@ -147,6 +156,74 @@ export default function PaymentMethods() {
             </div>
           ))}
         </div>
+
+        {/* Promociones Bancarias Activas (Configuradas desde Admin) */}
+        {bankPromotions.length > 0 && (
+          <div className="mb-12 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-brand-red" />
+                <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900">
+                  Promociones Bancarias y Tarjetas con Reintegro
+                </h3>
+              </div>
+              <span className="text-xs font-bold text-brand-navy bg-brand-navy/5 px-2.5 py-1 rounded-full border border-brand-navy/15">
+                {bankPromotions.length} Promociones Vigentes
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bankPromotions.map((bp) => {
+                const dayLabel = bp.dayOfWeek !== null ? DAY_OF_WEEK_NAMES[bp.dayOfWeek] : 'Todos los días';
+                const isSpecial = bp.installmentsTotal !== bp.installmentsPaid;
+
+                return (
+                  <div
+                    key={bp.id}
+                    className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between text-left space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                          {dayLabel}
+                        </span>
+                        <span className="font-black text-brand-red text-sm">
+                          {bp.discountPercent}% OFF
+                        </span>
+                      </div>
+
+                      <h4 className="font-extrabold text-slate-900 text-sm">{bp.name}</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                        <Building2 className="h-3 w-3 text-slate-400" />
+                        <span>{bp.bankName}</span>
+                        <span>·</span>
+                        <span>{bp.cardType}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 space-y-1 text-xs">
+                      {isSpecial ? (
+                        <p className="font-bold text-amber-800 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200/80 text-[11px]">
+                          {bp.installmentsTotal} cuotas (pagás {bp.installmentsPaid})
+                        </p>
+                      ) : bp.installmentsTotal > 1 ? (
+                        <p className="font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/80 text-[11px]">
+                          Hasta {bp.installmentsTotal} cuotas sin interés
+                        </p>
+                      ) : null}
+
+                      {bp.maxReimbursement > 0 && (
+                        <p className="text-[10px] text-slate-400">
+                          Tope de reintegro: ${bp.maxReimbursement.toLocaleString('es-AR')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Logos de medios de pago */}
         <div className="rounded-3xl bg-slate-50/60 border border-slate-200/80 p-6 sm:p-8">

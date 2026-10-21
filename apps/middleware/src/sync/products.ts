@@ -13,6 +13,7 @@ interface GescomStockRow extends RowDataPacket {
   ADes: string;
   AValor: number | string;
   AVenta: number | string;
+  ACostof?: number | string | null;
   AExis: number | string;
   ABarra: string | null;
   AIVA: number | string | null;
@@ -39,7 +40,7 @@ function computeProductHash(row: GescomStockRow, listPrice: number): string {
   const subrubroName = cleanGescomText(row.SubrubroName) || '';
   const brandName = cleanGescomText(row.BrandName) || '';
 
-  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
+  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${row.ACostof || ''}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -63,6 +64,7 @@ export async function syncProductsFromGescom() {
         sa.ADes, 
         sa.AValor,
         sa.AVenta, 
+        sa.ACostof,
         sa.AExis, 
         sa.ABarra, 
         sa.AIVA, 
@@ -98,9 +100,26 @@ export async function syncProductsFromGescom() {
 
     for (const row of rows) {
       const sku = String(row.ACod).trim();
-      const basePrice = Number(row.AVenta) || 0;
+      const rubro = cleanGescomText(row.RubroName)
+        || (row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined);
+
+      const subrubro = cleanGescomText(row.SubrubroName)
+        || (row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined);
+
+      const brandName = cleanGescomText(row.BrandName)
+        || (row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined);
+
+      const isOutletRubro = (rubro && rubro.toLowerCase().includes('outlet')) ||
+        (subrubro && subrubro.toLowerCase().includes('outlet'));
+
+      const costof = Number(row.ACostof) || 0;
+      const venta = Number(row.AVenta) || 0;
+      // Para productos outlet, el precio de transferencia/contado es el costof (ACostof)
+      const basePrice = isOutletRubro && costof > 0 ? costof : venta;
+
       const listaLpor = row.ListaLpor !== null && row.ListaLpor !== undefined ? Number(row.ListaLpor) : 25;
-      const listPrice = Math.round(basePrice * (1 + listaLpor / 100) * 100) / 100;
+      // El precio de lista se mantiene sobre el precio de venta habitual (AVenta)
+      const listPrice = Math.round(venta * (1 + listaLpor / 100) * 100) / 100;
 
       const currentHash = computeProductHash(row, listPrice);
       const savedHash = syncState.products[sku];
@@ -118,16 +137,6 @@ export async function syncProductsFromGescom() {
       const ivaPercent = row.AIVA !== null && row.AIVA !== undefined ? Number(row.AIVA) : undefined;
       const unit = cleanGescomText(row.AUNI);
 
-      // Extract descriptive names with fallbacks to code strings
-      const rubro = cleanGescomText(row.RubroName)
-        || (row.ARub !== null && row.ARub !== undefined ? String(row.ARub).trim() : undefined);
-
-      const subrubro = cleanGescomText(row.SubrubroName)
-        || (row.ASub !== null && row.ASub !== undefined ? String(row.ASub).trim() : undefined);
-
-      const brandName = cleanGescomText(row.BrandName)
-        || (row.AMar !== null && row.AMar !== undefined ? String(row.AMar).trim() : undefined);
-
       const isActive = Number(row.ANOVENTA) !== 1 && Number(row.ADESACT) !== 1;
 
       changedProducts.push({
@@ -137,6 +146,7 @@ export async function syncProductsFromGescom() {
         description,
         basePrice,
         listPrice,
+        costPrice: costof,
         stock: rawStock,
         gescomId: Number(row.KeyID),
         barcode,

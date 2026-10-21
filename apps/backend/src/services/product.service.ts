@@ -4,18 +4,31 @@ import { ProductDto, BrandDto, ProductTypeDto, ProductCategoryDto, ProductImageD
 export async function mapProductToDto(product: any, safetyStock?: number): Promise<ProductDto> {
   safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
-  const basePriceNum = Number(product.basePrice); // AVenta (Contado desde GesCom)
-  const listPriceNum = product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
-    ? Number(product.listPrice)
-    : basePriceNum; // AValor (Lista desde GesCom, fallback a AVenta si aún no se cargó AValor)
+  const isOutlet =
+    product.productType === 'OUTLET' ||
+    product.productFamily?.slug === 'outlet' ||
+    product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+    product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+    (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
 
-  const offerDiscount = Number(product.discountPercent);
+  const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
+    ? Number((product.specs as any).costof)
+    : null;
 
+  const basePriceNum = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice); // costof para outlet, o AVenta / precio base
+  const listPriceNum =
+    product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
+      ? Number(product.listPrice)
+      : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum); // AValor / Lista artificial (25% markup)
+
+  const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
+
+  // Para productos de outlet, el precio final y de transferencia es basePriceNum (el precioFinal que está en la BDD, sin descuentos adicionales)
   const finalPriceNum = offerDiscount > 0
     ? listPriceNum * (1 - offerDiscount / 100)
     : basePriceNum;
 
-  // discountPercent solo representa ofertas promocionales activas creadas explícitamente
+  // discountPercent solo representa ofertas promocionales activas creadas explícitamente (0 para outlet)
   const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
 
   const brandDto: BrandDto = {
@@ -77,7 +90,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     productType: productTypeDto,
     productCategory: productCategoryDto,
     images: imageDtos,
-    isOutlet: product.productType === 'OUTLET' || product.productFamily?.slug === 'outlet' || product.productFamily?.name?.toUpperCase() === 'OUTLET',
+    isOutlet,
     isActive: product.isActive,
     warrantyMonths: product.warrantyMonths ?? null,
     weightKg: product.weightKg ? Number(product.weightKg) : null,

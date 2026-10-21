@@ -83,14 +83,14 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* Zona de Imagen 1:1 con Carrusel Dinámico Desplazable, Botón de Favorito y Badge */}
       <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl bg-slate-50/70">
-        {/* Badge discreto único (máximo 1) */}
-        {product.discountPercent > 0 ? (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs pointer-events-none">
-            {product.discountPercent}% OFF
-          </span>
-        ) : product.isOutlet ? (
+        {/* Badge discreto único (máximo 1): Outlet tiene prioridad absoluta y nunca muestra % OFF */}
+        {product.isOutlet ? (
           <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs pointer-events-none">
             Outlet
+          </span>
+        ) : product.discountPercent > 0 ? (
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shadow-xs pointer-events-none">
+            {product.discountPercent}% OFF
           </span>
         ) : null}
 
@@ -188,7 +188,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           <p className="text-[11px] sm:text-xs font-semibold text-emerald-700 leading-tight">
-            Precio promocional por transferencia
+            {product.isOutlet ? 'Precio por transferencia o efectivo' : 'Precio promocional por transferencia'}
           </p>
 
           {/* Financiación en Cuotas al Precio de Lista */}

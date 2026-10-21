@@ -48,6 +48,7 @@ export async function getCartWithItems(cartId: string) {
       product: {
         include: {
           brand: true,
+          productFamily: true,
           images: {
             orderBy: { sortOrder: 'asc' },
           },
@@ -72,8 +73,14 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
     const product = item.product;
     const primaryImage = product.images.find((img) => img.isPrimary) || product.images[0];
     const imageUrl = primaryImage ? primaryImage.url : null;
+    const isOutlet =
+      product.productType === 'OUTLET' ||
+      product.productFamily?.slug === 'outlet' ||
+      product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+      product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+      (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
     const unitPrice = Number(item.unitPriceAtAdd);
-    const discount = Number(product.discountPercent);
+    const discount = isOutlet ? 0 : Number(product.discountPercent);
     const total = unitPrice * item.quantity;
 
     return {
@@ -86,6 +93,7 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
       unitPrice,
       discount,
       total,
+      isOutlet,
     };
   });
 
@@ -112,6 +120,7 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
 
   const product = await prisma.product.findUnique({
     where: { id: productId, isActive: true, deletedAt: null },
+    include: { productFamily: true },
   });
 
   if (!product) {
@@ -137,15 +146,26 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
     throw new Error(`Stock insuficiente. Solo quedan ${stockVisible} unidades disponibles.`);
   }
 
-  const basePrice = Number(product.basePrice);
-  const listPrice = product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
-    ? Number(product.listPrice)
-    : (basePrice > 0 ? basePrice / 0.8 : basePrice);
-  const offerDiscount = Number(product.discountPercent);
+  const isOutlet =
+    product.productType === 'OUTLET' ||
+    product.productFamily?.slug === 'outlet' ||
+    product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+    product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+    (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
 
-  const unitPrice = offerDiscount > 0
-    ? listPrice * (1 - offerDiscount / 100)
-    : basePrice;
+  const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
+    ? Number((product.specs as any).costof)
+    : null;
+  const basePrice = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice);
+  const listPrice =
+    product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
+      ? Number(product.listPrice)
+      : (basePrice > 0 ? basePrice / 0.8 : basePrice);
+  const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
+
+  const unitPrice = isOutlet
+    ? basePrice
+    : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
 
   await prisma.cartItem.upsert({
     where: {

@@ -700,7 +700,7 @@ export default function Header() {
                     >
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-amber-600" />
-                        <span>Zona Outlet</span>
+                        <span>Outlet</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-amber-600" />
                     </Link>
