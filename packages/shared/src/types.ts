@@ -9,9 +9,9 @@ import {
   SettingKey
 } from './enums';
 
-// ==========================================
+
 // 1. Tipos Base
-// ==========================================
+
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -36,9 +36,9 @@ export interface UserPayload {
   name?: string;
 }
 
-// ==========================================
+
 // 2. DTOs (Data Transfer Objects)
-// ==========================================
+
 
 export interface BrandDto {
   id: string;
@@ -563,9 +563,9 @@ export const DEFAULT_OUTLET_SECTION: HomeOutletDto = {
 
 export type SettingsMap = Record<SettingKey, string | number | boolean>;
 
-// ==========================================
+
 // 3. Payloads (Requests / Auth / ABMs)
-// ==========================================
+
 
 export interface CustomerDto {
   id: string;

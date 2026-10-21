@@ -185,7 +185,39 @@ describe('CartService', () => {
         unitPrice: 1000,
         discount: 10,
         total: 2000,
+        isOutlet: false,
       });
+    });
+
+    it('debería forzar discount a 0 y setear isOutlet a true para productos outlet', async () => {
+      const mockCart = { id: 'cart-1', sessionId: 'session-123', customerId: null };
+      const mockCartItems = [
+        {
+          productId: 'prod-outlet',
+          quantity: 1,
+          unitPriceAtAdd: 5000,
+          product: {
+            id: 'prod-outlet',
+            name: 'Producto Outlet',
+            sku: 'SKU-OUTLET',
+            discountPercent: 20, // en BD podría tener 20% residual pero es outlet
+            productType: 'OUTLET',
+            productFamily: { slug: 'outlet', name: 'Outlet' },
+            brand: { name: 'Confort' },
+            images: [],
+          },
+        },
+      ];
+
+      vi.mocked(prisma.cart.findUnique).mockResolvedValue(mockCart as any);
+      vi.mocked(prisma.cartItem.findMany).mockResolvedValue(mockCartItems as any);
+
+      const result = await cartService.getCartDto('session-123');
+
+      expect(result.items[0].isOutlet).toBe(true);
+      expect(result.items[0].discount).toBe(0);
+      expect(result.items[0].unitPrice).toBe(5000);
+      expect(result.items[0].total).toBe(5000);
     });
   });
 });

@@ -137,10 +137,13 @@ export default function CarritoPage() {
           {/* Listado de Productos */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
+              const itemUnitPrice = item.isOutlet
+                ? item.unitPrice
+                : item.unitPrice * (1 - item.discount / 100);
               const formattedPrice = new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',
-              }).format(item.unitPrice * (1 - item.discount / 100));
+              }).format(itemUnitPrice);
 
               return (
                 <div
@@ -165,7 +168,7 @@ export default function CarritoPage() {
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
                         <span className="font-extrabold text-brand-red">{formattedPrice}</span>
-                        {item.discount > 0 && (
+                        {!item.isOutlet && item.discount > 0 && (
                           <>
                             <span className="text-xs text-slate-400 line-through">
                               {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.unitPrice)}
@@ -174,6 +177,11 @@ export default function CarritoPage() {
                               {item.discount}% OFF
                             </span>
                           </>
+                        )}
+                        {item.isOutlet && (
+                          <span className="text-[10px] font-bold text-white bg-brand-navy px-2 py-0.5 rounded shadow-2xs">
+                            Outlet
+                          </span>
                         )}
                       </div>
                     </div>

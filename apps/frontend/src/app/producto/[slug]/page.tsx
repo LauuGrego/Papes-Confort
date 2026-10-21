@@ -313,14 +313,20 @@ export default function ProductDetailPage() {
                 }}
               />
 
-              {/* Badge de Oferta discreto */}
-              {product.discountPercent > 0 && (
+              {/* Badge discreto: Outlet tiene prioridad y nunca muestra % OFF */}
+              {product.isOutlet ? (
+                <div className="absolute left-5 top-5 z-10">
+                  <span className="rounded-full bg-brand-navy px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
+                    Outlet
+                  </span>
+                </div>
+              ) : product.discountPercent > 0 ? (
                 <div className="absolute left-5 top-5 z-10">
                   <span className="rounded-full bg-brand-red px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
                     {product.discountPercent}% OFF
                   </span>
                 </div>
-              )}
+              ) : null}
 
               {/* Hint para ampliar */}
               <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
@@ -403,7 +409,7 @@ export default function ProductDetailPage() {
                 <span className="text-3xl md:text-4xl font-black text-brand-red">
                   {formatPrice(product.finalPrice)}
                 </span>
-                {product.discountPercent > 0 && (
+                {!product.isOutlet && product.discountPercent > 0 && (
                   <span className="text-xs font-bold text-brand-red bg-brand-red/10 px-2.5 py-0.5 rounded-full">
                     Ahorras {product.discountPercent}%
                   </span>
@@ -412,11 +418,15 @@ export default function ProductDetailPage() {
 
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 pt-0.5">
                 <BadgePercent className="h-4 w-4 shrink-0 text-emerald-600" />
-                <span>Precio especial abonando por transferencia o efectivo</span>
+                <span>
+                  {product.isOutlet
+                    ? 'Precio por transferencia o efectivo'
+                    : 'Precio especial abonando por transferencia o efectivo'}
+                </span>
               </div>
             </div>
 
-            {/* Opción 2: Tarjeta de Crédito y Financiación en Cuotas al Precio de Lista */}
+            {/* Financiación en Cuotas al Precio de Lista */}
             {defaultInstallments > 1 && (
               <div className="pt-3 border-t border-slate-200/70 space-y-3">
                 <div className="space-y-1">
