@@ -38,9 +38,43 @@ app.use(
   })
 );
 
+const defaultAllowedOrigins = [
+  'https://www.papesconfort.com.ar',
+  'https://papesconfort.com.ar',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+];
+
+const customOrigins = (env.CORS_ORIGIN || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...customOrigins]));
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Peticiones sin origin (como apps móviles, llamadas servidor a servidor o curl)
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.trim().replace(/\/$/, '');
+
+      if (allowedOrigins.includes(cleanOrigin)) {
+        return callback(null, true);
+      }
+
+      // Permitir cualquier subdominio de papesconfort.com.ar o deploys preview de Vercel
+      if (
+        /^https:\/\/([a-z0-9-]+\.)*papesconfort\.com\.ar$/.test(cleanOrigin) ||
+        /^https:\/\/.*\.vercel\.app$/.test(cleanOrigin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
     credentials: true,
   })
 );

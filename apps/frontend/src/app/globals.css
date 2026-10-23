@@ -14,11 +14,7 @@
   --font-sans: 'Open Sans', 'Inter', sans-serif;
   --font-display: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
 }
-
-html {
-  scroll-behavior: smooth;
-}
-
+/* Scroll behaviour: removed global smooth scrolling on html to avoid conflicting with Next.js route transitions and dynamic content loads */
 html,
 body {
   background-color: var(--color-brand-bg);

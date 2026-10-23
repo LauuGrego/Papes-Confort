@@ -141,6 +141,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function loadProduct() {
       setLoading(true);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       const res = await fetchApi<ProductDto>(`/api/products/${slug}`);
       if (res.success && res.data) {
         setProduct(res.data);
@@ -161,6 +162,24 @@ export default function ProductDetailPage() {
       loadProduct();
     }
   }, [slug]);
+
+  // Garantizar que la pantalla siempre abra en la parte superior al entrar, cambiar de producto o terminar la carga
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [slug]);
+
+  useEffect(() => {
+    if (!loading && product) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }, 30);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    return undefined;
+  }, [loading, product]);
 
   // Load settings (WhatsApp)
   useEffect(() => {
