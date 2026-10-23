@@ -3,3 +3,4 @@ nixPkgs = ["...", "postgresql"]
 
 [variables]
 HOSTNAME = "0.0.0.0"
+NPM_CONFIG_PRODUCTION = "false"

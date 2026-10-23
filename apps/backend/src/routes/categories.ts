@@ -15,7 +15,7 @@ router.get('/top', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}); 
 
 router.get('/', async (_req, res, next) => {
   try {
