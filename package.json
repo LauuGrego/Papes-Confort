@@ -11,6 +11,7 @@
     "dev:backend": "turbo dev --filter=@papes-confort/backend",
     "dev:frontend": "turbo dev --filter=@papes-confort/frontend",
     "build": "turbo build",
+    "build:backend": "npm run db:generate && turbo build --filter=@papes-confort/backend --force",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "db:generate": "npm run db:generate --workspace=packages/database",
