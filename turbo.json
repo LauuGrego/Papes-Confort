@@ -6,6 +6,9 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**"]
     },
+    "@papes-confort/database#build": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true
