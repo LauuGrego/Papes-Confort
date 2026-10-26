@@ -204,7 +204,7 @@ export async function getProducts(params: {
     where.AND = andConditions;
   }
 
-  let orderBy: any = { createdAt: 'desc' };
+  let orderBy: any = { name: 'asc' };
   if (params.sort === 'price_asc') {
     orderBy = { basePrice: 'asc' };
   } else if (params.sort === 'price_desc') {
@@ -213,7 +213,10 @@ export async function getProducts(params: {
     orderBy = { createdAt: 'desc' };
   } else if (params.sort === 'offers') {
     orderBy = { discountPercent: 'desc' };
-  } else if (params.sort === 'name_asc') {
+  } else if (params.sort === 'name_desc') {
+    orderBy = { name: 'desc' };
+  } else {
+    // Por defecto (name_asc, relevance o sin sort): orden alfabético A-Z
     orderBy = { name: 'asc' };
   }
 

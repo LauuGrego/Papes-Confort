@@ -20,7 +20,8 @@ import Pagination from '../../components/Pagination';
 import ProductFiltersSidebar, { FilterState } from '../../components/products/ProductFiltersSidebar';
 
 const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Más relevantes' },
+  { value: 'name_asc', label: 'Alfabéticamente (A-Z)' },
+  { value: 'name_desc', label: 'Alfabéticamente (Z-A)' },
   { value: 'price_asc', label: 'Menor precio' },
   { value: 'price_desc', label: 'Mayor precio' },
   { value: 'recent', label: 'Más recientes' },
@@ -37,7 +38,7 @@ function CatalogoContent() {
 
   // Search & Sorting
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('relevance');
+  const [sort, setSort] = useState('name_asc');
   const [page, setPage] = useState(1);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
@@ -70,7 +71,7 @@ function CatalogoContent() {
 
     setPage(pageParam ? Number(pageParam) : 1);
     setSearch(searchParam || '');
-    setSort(sortParam || 'relevance');
+    setSort(sortParam === 'relevance' ? 'name_asc' : (sortParam || 'name_asc'));
 
     setFilters({
       selectedFamily: familyParam || null,
@@ -114,7 +115,7 @@ function CatalogoContent() {
     params.set('limit', '20');
 
     if (search) params.set('search', search);
-    if (sort && sort !== 'relevance') params.set('sort', sort);
+    if (sort && sort !== 'name_asc') params.set('sort', sort);
     if (filters.selectedFamily) params.set('type', filters.selectedFamily);
     if (filters.selectedCategory) params.set('categoryId', filters.selectedCategory);
     if (filters.selectedBrand) params.set('brandId', filters.selectedBrand);
@@ -144,7 +145,7 @@ function CatalogoContent() {
 
     if (page > 1) params.set('page', String(page));
     if (search) params.set('search', search);
-    if (sort && sort !== 'relevance') params.set('sort', sort);
+    if (sort && sort !== 'name_asc') params.set('sort', sort);
     if (filters.selectedFamily) params.set('type', filters.selectedFamily);
     if (filters.selectedCategory) params.set('categoryId', filters.selectedCategory);
     if (filters.selectedBrand) params.set('brandId', filters.selectedBrand);
@@ -175,7 +176,7 @@ function CatalogoContent() {
       maxPrice: '',
     });
     setSearch('');
-    setSort('relevance');
+    setSort('name_asc');
     setPage(1);
   };
 
