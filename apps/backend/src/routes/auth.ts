@@ -8,7 +8,7 @@ import { prisma } from '@papes-confort/database';
 import { compare, hash } from 'bcryptjs';
 import { mergeCart } from '../services/cart.service';
 import { mapCustomerToDto } from '../services/customer.service';
-import { sendCustomerWelcomeEmail } from '../services/email.service';
+import { sendCustomerWelcomeEmail, sendAdminNewCustomerNotificationEmail } from '../services/email.service';
 
 const router = Router();
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID || undefined);
@@ -267,6 +267,16 @@ router.post('/google', async (req, res) => {
       sendCustomerWelcomeEmail({
         name: customer.name,
         email: customer.email,
+      }).catch(() => {});
+
+      sendAdminNewCustomerNotificationEmail({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        city: customer.city,
+        province: customer.province,
+        marketingOptIn: customer.marketingOptIn,
+        source: 'Google Auth',
       }).catch(() => {});
     }
 

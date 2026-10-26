@@ -784,3 +784,135 @@ export async function sendCustomerOrderShippedEmail(data: CustomerOrderShippedDa
     console.warn(`[email.service] Error enviando correo de orden enviada #${data.orderNumber} a ${data.email}:`, error.message);
   }
 }
+
+export interface AdminNewCustomerNotificationData {
+  name: string;
+  email: string;
+  phone?: string | null;
+  city?: string | null;
+  province?: string | null;
+  marketingOptIn: boolean;
+  source?: string;
+  to?: string;
+}
+
+export async function sendAdminNewCustomerNotificationEmail(data: AdminNewCustomerNotificationData) {
+  try {
+    let recipient = data.to || process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL;
+    if (!recipient) {
+      const adminUser = await prisma.user.findFirst({
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true },
+        select: { email: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      recipient = adminUser?.email || 'papesconfort@gmail.com.ar';
+    }
+
+    const registrationDate = new Date().toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const locationText = [data.city, data.province].filter(Boolean).join(', ') || 'No especificada';
+    const phoneText = data.phone || 'No especificado';
+    const sourceText = data.source || 'Formulario Web';
+    const newsletterStatus = data.marketingOptIn
+      ? '<span style="color: #16a34a; font-weight: bold; background-color: #dcfce7; padding: 3px 10px; border-radius: 9999px; font-size: 12px;">Suscrito a Novedades (Opt-In Sí)</span>'
+      : '<span style="color: #64748b; font-weight: 500; background-color: #f1f5f9; padding: 3px 10px; border-radius: 9999px; font-size: 12px;">No suscrito a Novedades</span>';
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <title>Nuevo Usuario Registrado en Papes Confort</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 32px 16px;">
+          <tr>
+            <td align="center">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);">
+                
+                <!-- Header -->
+                <tr>
+                  <td style="padding: 24px 32px; background-color: #0f172a; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">PAPES CONFORT</h1>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Panel de Administración — Notificación del Sistema</p>
+                  </td>
+                </tr>
+
+                <!-- Contenido -->
+                <tr>
+                  <td style="padding: 32px;">
+                    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center;">
+                      <h2 style="color: #166534; font-size: 18px; margin: 0 0 4px 0; font-weight: 700;">¡Nuevo Usuario Registrado!</h2>
+                      <p style="color: #15803d; font-size: 13px; margin: 0;">Un nuevo cliente acaba de crear su cuenta en la tienda.</p>
+                    </div>
+
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; color: #334155;">
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 140px; color: #475569;">Nombre y Apellido:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 600;">${data.name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #475569;">Correo Electrónico:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0284c7; font-family: monospace; font-weight: 600;">${data.email}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #475569;">Teléfono:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">${phoneText}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #475569;">Ubicación:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">${locationText}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #475569;">Método de Registro:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #0f172a;">${sourceText}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #475569;">Novedades y Ofertas:</td>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">${newsletterStatus}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; font-weight: bold; color: #475569;">Fecha y Hora:</td>
+                        <td style="padding: 10px 0; color: #64748b;">${registrationDate}</td>
+                      </tr>
+                    </table>
+
+                    <div style="text-align: center; margin-top: 32px;">
+                      <a href="https://papesconfort.com/admin/suscriptores" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(228, 20, 20, 0.25);">
+                        Ver en Panel de Administración
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 12px;">
+                    <p style="margin: 0;">Papes Confort — Basavilbaso, Entre Ríos</p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    await sendEmail({
+      to: recipient,
+      subject: `[Nuevo Usuario] ${data.name} se registró en Papes Confort`,
+      html,
+    });
+  } catch (error: any) {
+    console.warn(`[email.service] No se pudo enviar el correo de aviso de nuevo registro al admin:`, error.message);
+  }
+}
+
