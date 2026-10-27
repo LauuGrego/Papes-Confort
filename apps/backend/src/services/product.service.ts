@@ -21,14 +21,13 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
       ? Number(product.listPrice)
       : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum); // AValor / Lista artificial (25% markup)
 
-  const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
+  const offerDiscount = Number(product.discountPercent) || 0;
 
-  // Para productos de outlet, el precio final y de transferencia es basePriceNum (el precioFinal que está en la BDD, sin descuentos adicionales)
+  // Para productos de outlet u ofertas sincronizadas de GesCom, el precio base ya es el precio exacto de venta
   const finalPriceNum = offerDiscount > 0
-    ? listPriceNum * (1 - offerDiscount / 100)
+    ? ((product.productType === 'OFFER' || isOutlet) && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
     : basePriceNum;
 
-  // discountPercent solo representa ofertas promocionales activas creadas explícitamente (0 para outlet)
   const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
 
   const brandDto: BrandDto = {

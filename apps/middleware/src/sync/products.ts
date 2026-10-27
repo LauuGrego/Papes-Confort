@@ -33,14 +33,20 @@ interface GescomStockRow extends RowDataPacket {
 import { loadSyncState, saveSyncState } from './state';
 import { cleanGescomText } from '../utils/encoding';
 
-function computeProductHash(row: GescomStockRow, listPrice: number): string {
+function computeProductHash(
+  row: GescomStockRow,
+  basePrice: number,
+  listPrice: number,
+  discountPercent: number,
+  productType: string
+): string {
   const name = cleanGescomText(row.ADes) || '';
   const note = cleanGescomText(row.ANota) || '';
   const rubroName = cleanGescomText(row.RubroName) || '';
   const subrubroName = cleanGescomText(row.SubrubroName) || '';
   const brandName = cleanGescomText(row.BrandName) || '';
 
-  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${row.ACostof || ''}|${listPrice}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
+  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${row.ACostof || ''}|${basePrice}|${listPrice}|${discountPercent}|${productType}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -94,6 +100,36 @@ export async function syncProductsFromGescom() {
 
     logger.info(`Fetched ${rows.length} records from Stock_Articulo (with Rubro/SubRubro/Marca descriptions)`);
 
+    // Consultar ofertas activas vigentes en stock_prexsuc (cualquier sucursal, menor precio primero)
+    const activeOffersMap = new Map<string, { offerPrice: number }>();
+    try {
+      const [offerRows]: any = await gescomPool.query(
+        `SELECT 
+          TRIM(PART) AS PART, 
+          PPRECIO
+        FROM stock_prexsuc
+        WHERE PDESDE <= CURDATE() 
+          AND PHASTA >= CURDATE() 
+          AND PPRECIO > 0
+        ORDER BY PPRECIO ASC`
+      );
+
+      if (offerRows && offerRows.length > 0) {
+        for (const off of offerRows) {
+          const partKey = String(off.PART).trim();
+          const precio = Number(off.PPRECIO) || 0;
+          if (precio > 0 && !activeOffersMap.has(partKey)) {
+            activeOffersMap.set(partKey, { offerPrice: precio });
+          }
+        }
+        logger.info(`Loaded ${activeOffersMap.size} active offers from stock_prexsuc`);
+      }
+    } catch (offerErr: any) {
+      logger.warn('Could not query stock_prexsuc table (continuing without offers):', {
+        error: offerErr.message,
+      });
+    }
+
     const syncState = loadSyncState();
     const nextStateProducts: Record<string, string> = {};
     const changedProducts: SyncProductItem[] = [];
@@ -114,14 +150,35 @@ export async function syncProductsFromGescom() {
 
       const costof = Number(row.ACostof) || 0;
       const venta = Number(row.AVenta) || 0;
-      // Para productos outlet, el precio de transferencia/contado es el costof (ACostof)
-      const basePrice = isOutletRubro && costof > 0 ? costof : venta;
-
       const listaLpor = row.ListaLpor !== null && row.ListaLpor !== undefined ? Number(row.ListaLpor) : 25;
-      // El precio de lista se mantiene sobre el precio de venta habitual (AVenta)
+      // El precio de lista habitual de la tienda (AVenta + recargo de lista)
       const listPrice = Math.round(venta * (1 + listaLpor / 100) * 100) / 100;
 
-      const currentHash = computeProductHash(row, listPrice);
+      let basePrice = isOutletRubro && costof > 0 ? costof : venta;
+      let discountPercent = 0;
+      let productType: 'NORMAL' | 'OUTLET' | 'OFFER' = isOutletRubro ? 'OUTLET' : 'NORMAL';
+
+      // Verificar si tiene oferta activa vigente en stock_prexsuc
+      const activeOffer = activeOffersMap.get(sku);
+      if (activeOffer && activeOffer.offerPrice > 0 && activeOffer.offerPrice < listPrice) {
+        if (!isOutletRubro || activeOffer.offerPrice < basePrice) {
+          basePrice = activeOffer.offerPrice;
+          if (!isOutletRubro) {
+            productType = 'OFFER';
+          }
+        }
+      }
+
+      // Descuento para ofertas y productos de outlet respecto al precio de lista habitual
+      if (isOutletRubro) {
+        if (basePrice > 0 && basePrice < listPrice) {
+          discountPercent = Math.round(((listPrice - basePrice) / listPrice) * 100);
+        }
+      } else if (productType === 'OFFER') {
+        discountPercent = Math.round(((listPrice - basePrice) / listPrice) * 100);
+      }
+
+      const currentHash = computeProductHash(row, basePrice, listPrice, discountPercent, productType);
       const savedHash = syncState.products[sku];
 
       if (savedHash === currentHash) {
@@ -147,6 +204,8 @@ export async function syncProductsFromGescom() {
         basePrice,
         listPrice,
         costPrice: costof,
+        discountPercent,
+        productType,
         stock: rawStock,
         gescomId: Number(row.KeyID),
         barcode,
@@ -160,6 +219,7 @@ export async function syncProductsFromGescom() {
 
       nextStateProducts[sku] = currentHash;
     }
+
 
     if (changedProducts.length === 0) {
       logger.info('No changes detected since last sync. Sincronización omitida.');

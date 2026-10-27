@@ -189,7 +189,7 @@ describe('CartService', () => {
       });
     });
 
-    it('debería forzar discount a 0 y setear isOutlet a true para productos outlet', async () => {
+    it('debería mantener discount y setear isOutlet a true para productos outlet', async () => {
       const mockCart = { id: 'cart-1', sessionId: 'session-123', customerId: null };
       const mockCartItems = [
         {
@@ -200,7 +200,7 @@ describe('CartService', () => {
             id: 'prod-outlet',
             name: 'Producto Outlet',
             sku: 'SKU-OUTLET',
-            discountPercent: 20, // en BD podría tener 20% residual pero es outlet
+            discountPercent: 20,
             productType: 'OUTLET',
             productFamily: { slug: 'outlet', name: 'Outlet' },
             brand: { name: 'Confort' },
@@ -215,7 +215,7 @@ describe('CartService', () => {
       const result = await cartService.getCartDto('session-123');
 
       expect(result.items[0].isOutlet).toBe(true);
-      expect(result.items[0].discount).toBe(0);
+      expect(result.items[0].discount).toBe(20);
       expect(result.items[0].unitPrice).toBe(5000);
       expect(result.items[0].total).toBe(5000);
     });

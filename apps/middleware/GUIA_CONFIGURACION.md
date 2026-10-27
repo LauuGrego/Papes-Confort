@@ -62,16 +62,16 @@ GESCOM_DB_PASS=guest                # Contraseña del usuario de MySQL
 # Reemplazar con la URL real de producción del backend cuando se despliegue.
 API_BASE_URL=http://localhost:3001
 # Debe coincidir exactamente con el valor 'API_SYNC_KEY' configurado en el backend
-API_SYNC_KEY=fc93497e-dfa4-419d-a289-6bbfe686c212
+API_SYNC_KEY=tu_sync_key_aqui
 
 # 3. Ruta Local de las Imágenes de GesCom
 # Ruta exacta donde GesCom guarda las fotos. Las fotos deben llamarse exactamente como el SKU (ej. 10025.jpg)
 IMAGES_PATH=D:\GESCOM28\Datos G\GESCOM\Imagenes
 
 # 4. Configuración de Cloudinary (Subida de fotos)
-CLOUDINARY_CLOUD_NAME=dotxvd5dc
-CLOUDINARY_API_KEY=494187312773391
-CLOUDINARY_API_SECRET=dxD8oLE73v6EYbyPT9yGfyhD5sE
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
 
 # 5. Ajustes de Sincronización
 # Expresión cron para la frecuencia. */1 * * * * significa cada 1 minuto.

@@ -228,10 +228,12 @@ export async function createOrderFromCart(
       product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
         ? Number(product.listPrice)
         : (basePrice > 0 ? Math.round(basePrice * 1.25 * 100) / 100 : basePrice);
-    const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
+    const offerDiscount = Number(product.discountPercent) || 0;
 
-    // Para productos de outlet, el precio de transferencia es el precioFinal que está en la BDD (basePrice)
-    const unitPrice = isOutlet ? basePrice : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
+    // Para productos de outlet u oferta sincronizada, el precio de transferencia es el precio base que esta en la BDD
+    const unitPrice = (product.productType === 'OFFER' || isOutlet) && basePrice < listPrice
+      ? basePrice
+      : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
     const itemTotal = unitPrice * item.quantity;
     calculatedSubtotal += itemTotal;
 
