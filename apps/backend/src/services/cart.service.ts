@@ -146,24 +146,14 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
     throw new Error(`Stock insuficiente. Solo quedan ${stockVisible} unidades disponibles.`);
   }
 
-  const isOutlet =
-    product.productType === 'OUTLET' ||
-    product.productFamily?.slug === 'outlet' ||
-    product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
-    product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
-    (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
-
-  const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
-    ? Number((product.specs as any).costof)
-    : null;
-  const basePrice = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice);
+  const basePrice = Number(product.basePrice);
   const listPrice =
     product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
       ? Number(product.listPrice)
       : (basePrice > 0 ? basePrice / 0.8 : basePrice);
   const offerDiscount = Number(product.discountPercent) || 0;
 
-  const unitPrice = (product.productType === 'OFFER' || isOutlet) && basePrice < listPrice
+  const unitPrice = product.productType === 'OFFER' && basePrice < listPrice
     ? basePrice
     : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
 

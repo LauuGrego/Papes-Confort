@@ -151,31 +151,22 @@ export async function syncProductsFromGescom() {
       const costof = Number(row.ACostof) || 0;
       const venta = Number(row.AVenta) || 0;
       const listaLpor = row.ListaLpor !== null && row.ListaLpor !== undefined ? Number(row.ListaLpor) : 25;
-      // El precio de lista habitual de la tienda (AVenta + recargo de lista)
+      // Precio de lista original habitual
       const listPrice = Math.round(venta * (1 + listaLpor / 100) * 100) / 100;
 
-      let basePrice = isOutletRubro && costof > 0 ? costof : venta;
+      // PARA OUTLET y NORMAL: Mantener precio original del articulo (basePrice = venta)
+      let basePrice = venta;
       let discountPercent = 0;
       let productType: 'NORMAL' | 'OUTLET' | 'OFFER' = isOutletRubro ? 'OUTLET' : 'NORMAL';
 
-      // Verificar si tiene oferta activa vigente en stock_prexsuc
+      // PARA OFERTA: Evaluar condiciones de fecha en stock_prexsuc (PPRECIO de oferta, precio de lista original tachado)
       const activeOffer = activeOffersMap.get(sku);
       if (activeOffer && activeOffer.offerPrice > 0 && activeOffer.offerPrice < listPrice) {
-        if (!isOutletRubro || activeOffer.offerPrice < basePrice) {
-          basePrice = activeOffer.offerPrice;
-          if (!isOutletRubro) {
-            productType = 'OFFER';
-          }
-        }
-      }
-
-      // Descuento para ofertas y productos de outlet respecto al precio de lista habitual
-      if (isOutletRubro) {
-        if (basePrice > 0 && basePrice < listPrice) {
-          discountPercent = Math.round(((listPrice - basePrice) / listPrice) * 100);
-        }
-      } else if (productType === 'OFFER') {
+        basePrice = activeOffer.offerPrice;
         discountPercent = Math.round(((listPrice - basePrice) / listPrice) * 100);
+        if (!isOutletRubro && discountPercent > 0) {
+          productType = 'OFFER';
+        }
       }
 
       const currentHash = computeProductHash(row, basePrice, listPrice, discountPercent, productType);

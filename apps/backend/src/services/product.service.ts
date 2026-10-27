@@ -11,21 +11,17 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
     (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
 
-  const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
-    ? Number((product.specs as any).costof)
-    : null;
-
-  const basePriceNum = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice); // costof para outlet, o AVenta / precio base
+  const basePriceNum = Number(product.basePrice);
   const listPriceNum =
     product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
       ? Number(product.listPrice)
-      : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum); // AValor / Lista artificial (25% markup)
+      : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum);
 
   const offerDiscount = Number(product.discountPercent) || 0;
 
-  // Para productos de outlet u ofertas sincronizadas de GesCom, el precio base ya es el precio exacto de venta
+  // Para ofertas, el precio final es el precio base (PPRECIO de GesCom)
   const finalPriceNum = offerDiscount > 0
-    ? ((product.productType === 'OFFER' || isOutlet) && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
+    ? (product.productType === 'OFFER' && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
     : basePriceNum;
 
   const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
