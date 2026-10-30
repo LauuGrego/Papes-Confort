@@ -19,7 +19,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
 
   const offerDiscount = Number(product.discountPercent) || 0;
 
-  // Para ofertas, el precio final es el precio base (PPRECIO de GesCom)
+  // Para ofertas, el precio final es el precio base (PPRELIS de GesCom)
   const finalPriceNum = offerDiscount > 0
     ? (product.productType === 'OFFER' && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
     : basePriceNum;
