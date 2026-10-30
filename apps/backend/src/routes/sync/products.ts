@@ -242,7 +242,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
               (subrubro && String(subrubro).toLowerCase().includes('outlet'));
 
             const costPrice = item.costPrice !== undefined && Number(item.costPrice) > 0 ? Number(item.costPrice) : undefined;
-            const numericPrice = (isOutletRubro && costPrice !== undefined) ? costPrice : Number(basePrice);
+            const numericPrice = Number(basePrice);
             const numericListPrice =
               listPrice !== undefined && listPrice !== null && Number(listPrice) > 0
                 ? Number(listPrice)
@@ -253,14 +253,12 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
             const lPorc = item.LPorc !== undefined ? Number(item.LPorc) : undefined;
 
             let computedDiscount = 0;
-            if (!isOutletRubro) {
-              if (discountPercent !== undefined && discountPercent !== null) {
-                computedDiscount = Number(discountPercent);
-              } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
-                computedDiscount = Math.abs(Math.round(lPorc));
-              } else if (numericListPrice > numericPrice && numericListPrice > 0) {
-                computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
-              }
+            if (discountPercent !== undefined && discountPercent !== null) {
+              computedDiscount = Number(discountPercent);
+            } else if (lPorc !== undefined && !isNaN(lPorc) && lPorc !== 0) {
+              computedDiscount = Math.abs(Math.round(lPorc));
+            } else if (numericListPrice > numericPrice && numericListPrice > 0 && Boolean(offerTitle)) {
+              computedDiscount = Math.round(((numericListPrice - numericPrice) / numericListPrice) * 100);
             }
 
             let finalProductType = productType;

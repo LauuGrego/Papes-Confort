@@ -865,3 +865,77 @@ export interface UpdateCartItemPayload {
   quantity: number;
 }
 
+// Suscriptores y Newsletter / Novedades
+export interface SubscriberDto {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  province: string | null;
+  cuilCuit: string | null;
+  marketingOptIn: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  ordersCount: number;
+}
+
+export interface SubscriberFilters {
+  search?: string;
+  status?: 'all' | 'subscribed' | 'unsubscribed';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SubscriberListResponse {
+  subscribers: SubscriberDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalCustomers: number;
+  totalSubscribed: number;
+  totalUnsubscribed: number;
+}
+
+export interface NewsletterCampaignDto {
+  id: string;
+  title: string;
+  subject: string;
+  previewText?: string;
+  content: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  frequency: 'MANUAL' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  daysOfWeek: number[]; // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  time: string; // HH:mm ej. "10:00"
+  status: 'ACTIVE' | 'PAUSED' | 'DRAFT';
+  lastSentAt?: string | null;
+  lastSentCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsletterSendLogDto {
+  id: string;
+  campaignId?: string;
+  campaignTitle: string;
+  subject: string;
+  sentAt: string;
+  recipientCount: number;
+  successCount: number;
+  errorCount: number;
+  sentBy: string;
+}
+
+export interface SendNewsletterPayload {
+  campaignId?: string;
+  subject: string;
+  content: string;
+  previewText?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  testEmail?: string;
+}
+

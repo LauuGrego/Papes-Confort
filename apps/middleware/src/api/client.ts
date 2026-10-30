@@ -28,6 +28,8 @@ export interface SyncProductItem {
   rubro?: string;
   subrubro?: string;
   isActive?: boolean;
+  discountPercent?: number;
+  productType?: 'NORMAL' | 'OUTLET' | 'OFFER' | 'BANK_PROMO';
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {

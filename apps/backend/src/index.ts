@@ -1,6 +1,7 @@
 import app from './app';
 import { env } from './config/env';
 import { startOrderExpiryJob } from './services/orderExpiry.job';
+import { startNewsletterJob } from './services/newsletter.job';
 
 app.listen(env.PORT, () => {
   console.log(`Backend server is running on http://localhost:${env.PORT}`);
@@ -8,5 +9,6 @@ app.listen(env.PORT, () => {
 
   // Iniciar cron jobs
   startOrderExpiryJob();
+  startNewsletterJob();
 });
 

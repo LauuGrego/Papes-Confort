@@ -26,6 +26,7 @@ import webhooksRouter from './routes/webhooks';
 import adminOrdersRouter from './routes/admin/orders';
 import bankPromotionsRouter from './routes/bankPromotions';
 import adminBankPromotionsRouter from './routes/admin/bankPromotions';
+import adminNewsletterRouter from './routes/admin/newsletter';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -101,6 +102,7 @@ app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/admin/products', adminProductsRouter);
 app.use('/api/admin/offers', adminOffersRouter);
 app.use('/api/admin/bank-promotions', adminBankPromotionsRouter);
+app.use('/api/admin/newsletter', adminNewsletterRouter);
 app.use('/api/admin/settings', adminSettingsRouter);
 app.use('/api/admin/sync-logs', adminSyncLogsRouter);
 app.use('/api/sync/products', syncProductsRouter);

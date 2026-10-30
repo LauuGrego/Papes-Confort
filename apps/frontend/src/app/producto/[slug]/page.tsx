@@ -332,20 +332,19 @@ export default function ProductDetailPage() {
                 }}
               />
 
-              {/* Badge discreto: Outlet tiene prioridad y nunca muestra % OFF */}
-              {product.isOutlet ? (
-                <div className="absolute left-5 top-5 z-10">
+              {/* Badges de producto: Outlet y/o % OFF */}
+              <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2">
+                {product.isOutlet && (
                   <span className="rounded-full bg-brand-navy px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
                     Outlet
                   </span>
-                </div>
-              ) : product.discountPercent > 0 ? (
-                <div className="absolute left-5 top-5 z-10">
+                )}
+                {product.discountPercent > 0 && (
                   <span className="rounded-full bg-brand-red px-3 py-1 text-xs font-bold text-white uppercase tracking-wider shadow-xs">
                     {product.discountPercent}% OFF
                   </span>
-                </div>
-              ) : null}
+                )}
+              </div>
 
               {/* Hint para ampliar */}
               <div className="absolute bottom-4 right-4 bg-black/60 text-white backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-medium pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity flex items-center gap-1 z-10">
@@ -428,7 +427,7 @@ export default function ProductDetailPage() {
                 <span className="text-3xl md:text-4xl font-black text-brand-red">
                   {formatPrice(product.finalPrice)}
                 </span>
-                {!product.isOutlet && product.discountPercent > 0 && (
+                {product.discountPercent > 0 && (
                   <span className="text-xs font-bold text-brand-red bg-brand-red/10 px-2.5 py-0.5 rounded-full">
                     Ahorras {product.discountPercent}%
                   </span>
@@ -439,7 +438,7 @@ export default function ProductDetailPage() {
                 <BadgePercent className="h-4 w-4 shrink-0 text-emerald-600" />
                 <span>
                   {product.isOutlet
-                    ? 'Precio por transferencia o efectivo'
+                    ? 'Precio outlet por transferencia o efectivo'
                     : 'Precio especial abonando por transferencia o efectivo'}
                 </span>
               </div>

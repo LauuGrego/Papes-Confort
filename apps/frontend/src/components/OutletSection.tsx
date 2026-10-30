@@ -137,12 +137,6 @@ export default function OutletSection({ outletConfig, whatsappNumber }: OutletSe
 
                 <div className="space-y-2 text-left">
                   <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span className="text-slate-400">Categoría en GesCom:</span>
-                    <span className="font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                      Rubro: {config.rubroGescom}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-300">
                     <span className="text-slate-400">Condición:</span>
                     <span className="font-medium text-slate-200">{config.conditionText}</span>
                   </div>

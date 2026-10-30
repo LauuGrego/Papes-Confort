@@ -11,24 +11,19 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
     (typeof product.specs === 'object' && product.specs !== null && String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
 
-  const costofFromSpecs = (typeof product.specs === 'object' && product.specs !== null && Number((product.specs as any).costof) > 0)
-    ? Number((product.specs as any).costof)
-    : null;
-
-  const basePriceNum = isOutlet && costofFromSpecs ? costofFromSpecs : Number(product.basePrice); // costof para outlet, o AVenta / precio base
+  const basePriceNum = Number(product.basePrice);
   const listPriceNum =
     product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
       ? Number(product.listPrice)
-      : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum); // AValor / Lista artificial (25% markup)
+      : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum);
 
-  const offerDiscount = isOutlet ? 0 : Number(product.discountPercent);
+  const offerDiscount = Number(product.discountPercent) || 0;
 
-  // Para productos de outlet, el precio final y de transferencia es basePriceNum (el precioFinal que está en la BDD, sin descuentos adicionales)
+  // Para ofertas, el precio final es el precio base (PPRECIO de GesCom)
   const finalPriceNum = offerDiscount > 0
-    ? listPriceNum * (1 - offerDiscount / 100)
+    ? (product.productType === 'OFFER' && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
     : basePriceNum;
 
-  // discountPercent solo representa ofertas promocionales activas creadas explícitamente (0 para outlet)
   const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
 
   const brandDto: BrandDto = {
@@ -204,7 +199,7 @@ export async function getProducts(params: {
     where.AND = andConditions;
   }
 
-  let orderBy: any = { createdAt: 'desc' };
+  let orderBy: any = { name: 'asc' };
   if (params.sort === 'price_asc') {
     orderBy = { basePrice: 'asc' };
   } else if (params.sort === 'price_desc') {
@@ -213,7 +208,10 @@ export async function getProducts(params: {
     orderBy = { createdAt: 'desc' };
   } else if (params.sort === 'offers') {
     orderBy = { discountPercent: 'desc' };
-  } else if (params.sort === 'name_asc') {
+  } else if (params.sort === 'name_desc') {
+    orderBy = { name: 'desc' };
+  } else {
+    // Por defecto (name_asc, relevance o sin sort): orden alfabético A-Z
     orderBy = { name: 'asc' };
   }
 

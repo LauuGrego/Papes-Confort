@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Lock,
   Flame,
+  Mail,
 } from 'lucide-react';
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
@@ -114,6 +115,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     { href: '/admin/productos', label: 'Productos', icon: ShoppingBag },
     { href: '/admin/promociones', label: 'Promociones Bancarias', icon: CreditCard },
     { href: '/admin/ofertas', label: 'Ofertas Destacadas', icon: Tag },
+    { href: '/admin/suscriptores', label: 'Suscriptores & Novedades', icon: Mail },
   ];
 
   const landingNav = [

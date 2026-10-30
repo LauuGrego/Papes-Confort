@@ -16,7 +16,11 @@ import {
 } from '@papes-confort/shared';
 import { env } from '../config/env';
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens';
-import { sendCustomerWelcomeEmail, sendCustomerRegistrationCodeEmail } from '../services/email.service';
+import {
+  sendCustomerWelcomeEmail,
+  sendCustomerRegistrationCodeEmail,
+  sendAdminNewCustomerNotificationEmail,
+} from '../services/email.service';
 import { mergeCart } from '../services/cart.service';
 import { mapCustomerToDto } from '../services/customer.service';
 import { requireCustomer } from '../middleware/auth';
@@ -293,8 +297,19 @@ router.post('/register-confirm', async (req, res, next) => {
       await mergeCart(sessionId, customer.id).catch(() => {});
     }
 
-    // Email de bienvenida
+    // Email de bienvenida al cliente
     sendCustomerWelcomeEmail({ name: customer.name, email: customer.email }).catch(() => {});
+
+    // Notificación por email al administrador
+    sendAdminNewCustomerNotificationEmail({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      city: customer.city,
+      province: customer.province,
+      marketingOptIn: customer.marketingOptIn,
+      source: 'Formulario Web (Código)',
+    }).catch(() => {});
 
     res.status(201).json({
       success: true,
@@ -425,7 +440,19 @@ router.post('/register', async (req, res, next) => {
       await mergeCart(sessionId, customer.id).catch(() => {});
     }
 
+    // Email de bienvenida al cliente
     sendCustomerWelcomeEmail({ name: customer.name, email: customer.email }).catch(() => {});
+
+    // Notificación por email al administrador
+    sendAdminNewCustomerNotificationEmail({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      city: customer.city,
+      province: customer.province,
+      marketingOptIn: customer.marketingOptIn,
+      source: 'Formulario Web',
+    }).catch(() => {});
 
     res.status(201).json({
       success: true,
@@ -627,6 +654,17 @@ router.post('/google', async (req, res) => {
       sendCustomerWelcomeEmail({
         name: customer.name,
         email: customer.email,
+      }).catch(() => {});
+
+      // Notificación por email al administrador
+      sendAdminNewCustomerNotificationEmail({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        city: customer.city,
+        province: customer.province,
+        marketingOptIn: customer.marketingOptIn,
+        source: 'Google Auth',
       }).catch(() => {});
     }
 
