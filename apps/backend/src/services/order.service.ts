@@ -220,7 +220,7 @@ export async function createOrderFromCart(
         : (basePrice > 0 ? Math.round(basePrice * 1.25 * 100) / 100 : basePrice);
     const offerDiscount = Number(product.discountPercent) || 0;
 
-    // Para productos de oferta activa, el precio final es el precio base sincronizado (PPRECIO)
+    // Para productos de oferta activa, el precio final es el precio base sincronizado (PPRELIS)
     const unitPrice = product.productType === 'OFFER' && basePrice < listPrice
       ? basePrice
       : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);

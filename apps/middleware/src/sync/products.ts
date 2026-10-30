@@ -106,18 +106,18 @@ export async function syncProductsFromGescom() {
       const [offerRows]: any = await gescomPool.query(
         `SELECT 
           TRIM(PART) AS PART, 
-          PPRECIO
+          PPRELIS
         FROM stock_prexsuc
         WHERE PDESDE <= CURDATE() 
           AND PHASTA >= CURDATE() 
-          AND PPRECIO > 0
-        ORDER BY PPRECIO ASC`
+          AND PPRELIS > 0
+        ORDER BY PPRELIS ASC`
       );
 
       if (offerRows && offerRows.length > 0) {
         for (const off of offerRows) {
           const partKey = String(off.PART).trim();
-          const precio = Number(off.PPRECIO) || 0;
+          const precio = Number(off.PPRELIS) || 0;
           if (precio > 0 && !activeOffersMap.has(partKey)) {
             activeOffersMap.set(partKey, { offerPrice: precio });
           }
@@ -159,7 +159,7 @@ export async function syncProductsFromGescom() {
       let discountPercent = 0;
       let productType: 'NORMAL' | 'OUTLET' | 'OFFER' = isOutletRubro ? 'OUTLET' : 'NORMAL';
 
-      // PARA OFERTA: Evaluar condiciones de fecha en stock_prexsuc (PPRECIO de oferta, precio de lista original tachado)
+      // PARA OFERTA: Evaluar condiciones de fecha en stock_prexsuc (PPRELIS como precio de contado de oferta, precio de lista original tachado)
       const activeOffer = activeOffersMap.get(sku);
       if (activeOffer && activeOffer.offerPrice > 0 && activeOffer.offerPrice < listPrice) {
         basePrice = activeOffer.offerPrice;
