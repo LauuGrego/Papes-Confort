@@ -95,13 +95,6 @@ router.post('/change-password-request', async (req, res, next) => {
     }
 
     if (customer.password) {
-      if (!currentPassword) {
-        res.status(400).json({
-          success: false,
-          error: 'Por favor ingresa tu contraseña actual.',
-        } as ApiResponse);
-        return;
-      }
       const isMatch = await compare(currentPassword, customer.password);
       if (!isMatch) {
         res.status(401).json({

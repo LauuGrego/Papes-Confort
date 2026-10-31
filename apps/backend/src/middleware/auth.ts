@@ -24,17 +24,6 @@ export function requireRole(allowedRoles: UserRole[]) {
   };
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  requireAuth(req, res, () => {
-    const user = req.user as UserPayload | undefined;
-    if (!user || user.type !== 'admin') {
-      res.status(403).json({ success: false, error: 'Forbidden: Insufficient permissions' });
-      return;
-    }
-    next();
-  });
-}
-
 export function requireCustomer(req: Request, res: Response, next: NextFunction): void {
   requireAuth(req, res, () => {
     const user = req.user as UserPayload | undefined;
@@ -45,4 +34,3 @@ export function requireCustomer(req: Request, res: Response, next: NextFunction)
     next();
   });
 }
-

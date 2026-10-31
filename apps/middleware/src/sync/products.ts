@@ -2,9 +2,6 @@ import { RowDataPacket } from 'mysql2';
 import { gescomPool } from '../db/gescom';
 import { sendProductsSyncBatch, SyncProductItem } from '../api/client';
 import { logger } from '../utils/logger';
-import { config } from '../config';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 
 interface GescomStockRow extends RowDataPacket {

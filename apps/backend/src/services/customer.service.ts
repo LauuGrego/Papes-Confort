@@ -6,8 +6,6 @@ import {
   isValidCuilCuit,
   cleanCuilCuit,
 } from '@papes-confort/shared';
-import { hash, compare } from 'bcryptjs';
-import { sendPasswordChangedEmail } from './email.service';
 import { mapOrderToDetailDto } from './order.service';
 
 export function mapCustomerToDto(customer: any): CustomerDto {
@@ -78,41 +76,6 @@ export async function updateCustomer(id: string, data: UpdateCustomerPayload): P
   });
 
   return mapCustomerToDto(updated);
-}
-
-export async function changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
-  if (!newPassword || newPassword.length < 6) {
-    throw new Error('La nueva contraseña debe tener al menos 6 caracteres');
-  }
-
-  const customer = await prisma.customer.findUnique({
-    where: { id, deletedAt: null },
-  });
-
-  if (!customer || !customer.password) {
-    throw new Error('Cliente no encontrado');
-  }
-
-  const isMatch = await compare(currentPassword, customer.password);
-  if (!isMatch) {
-    throw new Error('La contraseña actual es incorrecta');
-  }
-
-  const newHash = await hash(newPassword, 12);
-
-  await prisma.customer.update({
-    where: { id },
-    data: {
-      password: newHash,
-      passwordChangedAt: new Date(),
-    },
-  });
-
-  // Notificar por email en segundo plano
-  sendPasswordChangedEmail({
-    name: customer.name,
-    email: customer.email,
-  }).catch(() => {});
 }
 
 export async function getCustomerOrders(

@@ -167,7 +167,6 @@ function AdminConfiguracionContent() {
   const [editingCard, setEditingCard] = useState<PaymentFeatureCardDto | null>(null);
   const [cardTitle, setCardTitle] = useState('');
   const [cardDescription, setCardDescription] = useState('');
-  const [cardIcon, setCardIcon] = useState<'credit-card' | 'percent' | 'qr-code' | 'truck' | 'shield'>('credit-card');
   const [cardIsActive, setCardIsActive] = useState(true);
 
   const { user, clearAuth } = useAuthStore();
@@ -620,7 +619,6 @@ function AdminConfiguracionContent() {
     setEditingCard(null);
     setCardTitle('');
     setCardDescription('');
-    setCardIcon('credit-card');
     setCardIsActive(true);
     setIsCardModalOpen(true);
   };
@@ -629,7 +627,6 @@ function AdminConfiguracionContent() {
     setEditingCard(card);
     setCardTitle(card.title);
     setCardDescription(card.description);
-    setCardIcon(card.icon);
     setCardIsActive(card.isActive);
     setIsCardModalOpen(true);
   };
@@ -645,7 +642,6 @@ function AdminConfiguracionContent() {
               ...c,
               title: cardTitle,
               description: cardDescription,
-              icon: cardIcon,
               isActive: cardIsActive,
             }
           : c
@@ -655,7 +651,7 @@ function AdminConfiguracionContent() {
         id: `card-${Date.now()}`,
         title: cardTitle,
         description: cardDescription,
-        icon: cardIcon,
+        icon: 'credit-card',
         isActive: cardIsActive,
         sortOrder: paymentCards.length + 1,
       };

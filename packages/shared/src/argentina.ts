@@ -1,9 +1,9 @@
-export interface ArgentineProvince {
+interface ArgentineProvince {
   name: string;
   cities: string[];
 }
 
-export const ARGENTINE_PROVINCES: ArgentineProvince[] = [
+const ARGENTINE_PROVINCES: ArgentineProvince[] = [
   {
     name: 'Entre Ríos',
     cities: [

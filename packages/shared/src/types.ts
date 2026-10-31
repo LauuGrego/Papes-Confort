@@ -4,8 +4,6 @@ import {
   PaymentMethod,
   ShippingType,
   CartStatus,
-  WarrantyStatus,
-  SyncStatus,
   SettingKey
 } from './enums';
 
@@ -111,22 +109,6 @@ export interface OfferDto {
   products?: ProductDto[];
 }
 
-export interface CreateOfferDto {
-  name: string;
-  slug?: string;
-  description?: string;
-  discountPercent?: number;
-  isActive?: boolean;
-}
-
-export interface UpdateOfferDto {
-  name?: string;
-  slug?: string;
-  description?: string;
-  discountPercent?: number;
-  isActive?: boolean;
-}
-
 export interface BankAccountDto {
   id: string;
   alias: string;
@@ -134,20 +116,6 @@ export interface BankAccountDto {
   bankName: string;
   accountHolder: string;
   isActive: boolean;
-}
-
-export interface PromotionDto {
-  id: string;
-  bankName: string;
-  cardType: string; // e.g. "VISA", "MASTERCARD"
-  dayOfWeek: number; // 0 (Domingo) a 6 (Sábado)
-  discountPercent: number;
-  maxReimbursement: number | null;
-  installmentsTotal: number;
-  installmentsPaid: number; // e.g. 3 cuotas sin interés
-  isActive: boolean;
-  validFrom: string;
-  validUntil: string;
 }
 
 export interface CartDto {
@@ -218,42 +186,8 @@ export interface OrderDetailDto extends OrderDto {
   items: OrderItemDetailDto[];
 }
 
-export interface WarrantyDto {
-  id: string;
-  orderNumber: string;
-  customerEmail: string;
-  productName: string;
-  status: WarrantyStatus;
-  purchaseDate: string;
-  warrantyMonths: number;
-  expiryDate: string;
-}
-
-export interface SyncLogDto {
-  id: string;
-  startedAt: string;
-  finishedAt: string | null;
-  productsUpdated: number;
-  productsCreated: number;
-  imagesUploaded: number;
-  imagesSkipped: number;
-  brandsCreated: number;
-  status: SyncStatus;
-  errors: string | null;
-}
-
 export type FlyerAspectRatio = 'auto' | 'ultrawide' | 'wide' | 'compact' | 'tall';
 export type FlyerObjectFit = 'cover' | 'contain';
-export type FlyerObjectPosition =
-  | 'center'
-  | 'top'
-  | 'bottom'
-  | 'left'
-  | 'right'
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right';
 
 export interface HomeFlyerDto {
   id: string;
@@ -594,11 +528,6 @@ export interface CustomerDto {
 }
 
 // Autenticación
-export interface LoginPayload {
-  email: string;
-  password?: string; // opcional si se implementa login sin contraseña (magic links) o estándar
-}
-
 export interface GoogleAuthPayload {
   credential?: string;
   code?: string;
@@ -644,11 +573,6 @@ export interface UpdateCustomerPayload {
   province?: string | null;
   postalCode?: string | null;
   marketingOptIn?: boolean;
-}
-
-export interface ChangePasswordPayload {
-  currentPassword?: string;
-  newPassword: string;
 }
 
 export interface ChangePasswordConfirmPayload {
@@ -764,56 +688,6 @@ export interface ConfirmTransferPayload {
   bankAccountId: string;
 }
 
-// Sincronización desde Middleware (GesCom)
-export interface GesComSyncProduct {
-  sku: string;
-  gescomName: string;
-  basePrice: number;
-  listPrice?: number;
-  stock: number;
-  brandName: string;
-  gescomId?: string;
-}
-
-export interface GesComSyncImage {
-  sku: string;
-  filename: string;
-  fileBuffer?: string; // codificado en Base64 o FormData según implementación final
-}
-
-// Payloads de creación/edición (Admin ABM)
-export interface CreateProductPayload {
-  sku: string;
-  gescomName: string;
-  name: string;
-  slug: string;
-  description?: string;
-  basePrice: number;
-  listPrice?: number;
-  discountPercent: number;
-  stock: number;
-  brandId: string;
-  productTypeId: string;
-  productCategoryId: string;
-  isOutlet: boolean;
-  warrantyMonths?: number | null;
-  weightKg?: number;
-  dimensions?: string;
-  specs?: Record<string, any>;
-}
-
-export type UpdateProductPayload = Partial<CreateProductPayload>;
-
-export interface CreateBankAccountPayload {
-  alias: string;
-  cbu: string;
-  bankName: string;
-  accountHolder: string;
-  isActive: boolean;
-}
-
-export type UpdateBankAccountPayload = Partial<CreateBankAccountPayload>;
-
 export interface BankPromotionDto {
   id: string;
   name: string;
@@ -858,20 +732,6 @@ export interface CreatePromotionPayload {
 }
 
 export type UpdatePromotionPayload = Partial<CreatePromotionPayload>;
-
-export interface UpdateSettingsPayload {
-  settings: Partial<SettingsMap>;
-}
-
-// Carrito
-export interface AddCartItemPayload {
-  productId: string;
-  quantity: number;
-}
-
-export interface UpdateCartItemPayload {
-  quantity: number;
-}
 
 // Suscriptores y Newsletter / Novedades
 export interface SubscriberDto {
