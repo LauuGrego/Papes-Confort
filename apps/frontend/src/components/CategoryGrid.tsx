@@ -46,10 +46,18 @@ export default function CategoryGrid({ cards }: CategoryGridProps) {
               className="group relative flex flex-col justify-end overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/80 bg-slate-900 aspect-[4/5] sm:aspect-[3/4] shadow-sm hover:shadow-xl hover:border-brand-red/30 transition-all duration-300 transform hover:-translate-y-1"
             >
               {/* Fotografía de producto real desde Cloudinary */}
+              {cat.objectFit === 'contain' && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${cat.image})` }}
+                />
+              )}
               <img
                 src={cat.image}
                 alt={cat.name}
-                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                className={`absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-105 relative z-10 ${
+                  cat.objectFit === 'contain' ? 'object-contain p-3 mx-auto' : 'object-cover object-center'
+                }`}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/images/hero_home_ambience.jpg';
                 }}

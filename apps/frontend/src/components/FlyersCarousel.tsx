@@ -179,7 +179,7 @@ export default function FlyersCarousel() {
               alt={currentSlide.title}
               style={{ objectPosition: objectPositionStyle }}
               className={`w-full h-full block rounded-xl md:rounded-2xl transition-transform duration-500 hover:scale-[1.005] animate-in fade-in duration-300 ${
-                isContain ? 'object-contain mx-auto' : 'object-cover'
+                isContain ? 'object-contain mx-auto p-1 sm:p-2' : 'object-cover'
               }`}
             />
           </Link>

@@ -341,6 +341,7 @@ export interface HomeCategoryCardDto {
   href: string;
   isActive: boolean;
   sortOrder: number;
+  objectFit?: 'cover' | 'contain';
 }
 
 export const DEFAULT_CATEGORY_CARDS: HomeCategoryCardDto[] = [
@@ -433,9 +434,11 @@ export interface HomeWeeklyOfferDto {
   mainCtaText: string;
   mainCtaUrl: string;
   isActive: boolean;
+  objectFit?: 'cover' | 'contain';
 }
 
 export const DEFAULT_WEEKLY_OFFER: HomeWeeklyOfferDto = {
+  objectFit: 'cover',
   badge: 'Oportunidad de la semana',
   title: 'OFERTAS DE LA SEMANA',
   subtitle: 'Aprovechá precios especiales y planes de financiación exclusivos en productos seleccionados para renovar el confort de tu hogar.',
@@ -508,9 +511,11 @@ export interface HomeAboutDto {
   secondaryBtnText: string;
   secondaryBtnUrl: string;
   isActive: boolean;
+  objectFit?: 'cover' | 'contain';
 }
 
 export const DEFAULT_ABOUT_SECTION: HomeAboutDto = {
+  objectFit: 'cover',
   badge: 'Nuestra Historia & Compromiso',
   title: 'Más que electrodomésticos,',
   titleHighlight: 'confort para tu vida',
@@ -541,9 +546,11 @@ export interface HomeOutletDto {
   conditionText: string;
   deliveryText: string;
   isActive: boolean;
+  objectFit?: 'cover' | 'contain';
 }
 
 export const DEFAULT_OUTLET_SECTION: HomeOutletDto = {
+  objectFit: 'cover',
   badge: 'Outlet',
   title: 'Oportunidades únicas en',
   titleHighlight: 'Outlet',

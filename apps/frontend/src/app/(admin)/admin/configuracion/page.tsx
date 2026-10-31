@@ -836,20 +836,20 @@ function AdminConfiguracionContent() {
             : activeTab === 'security'
             ? 'Seguridad y Accesos Admin'
             : activeTab === 'flyers' || activeTab === 'banners'
-            ? 'Carrusel de Banners Promocionales'
+            ? 'Banners y Promociones Rotativas'
             : activeTab === 'categories'
-            ? 'Categorías Destacadas'
+            ? 'Comprá por Rubro (Categorías)'
             : activeTab === 'weekly_offer'
             ? 'Oferta de la Semana'
             : activeTab === 'outlet'
             ? 'Sección Destacada: Rubro Outlet'
             : activeTab === 'trust_bar'
-            ? 'Barra de Beneficios'
+            ? 'Barra de Beneficios (Envíos, Cuotas, Garantía)'
             : activeTab === 'payment_cards'
-            ? 'Tarjetas Informativas y Medios de Pago'
+            ? 'Medios de Pago y Financiación'
             : activeTab === 'about'
-            ? 'Sección Sobre Nosotros'
-            : 'Hero Principal de Portada'}
+            ? 'Sobre Nosotros (Historia y Local)'
+            : 'Portada Principal (Inicio)'}
         </h1>
         <p className="text-sm text-slate-400 mt-1">
           {activeTab === 'general'
@@ -857,20 +857,20 @@ function AdminConfiguracionContent() {
             : activeTab === 'security'
             ? 'Administra la contraseña y el correo de notificaciones del administrador.'
             : activeTab === 'flyers' || activeTab === 'banners'
-            ? 'Administra los banners publicitarios y afiches promocionales rotativos de la portada.'
+            ? 'Administra los carteles y afiches promocionales rotativos que aparecen debajo de la portada.'
             : activeTab === 'categories'
-            ? 'Personaliza las categorías principales con accesos rápidos e imágenes de portada.'
+            ? 'Personaliza los 8 rubros principales con accesos directos al catálogo y fotos de producto.'
             : activeTab === 'weekly_offer'
-            ? 'Configura la oferta destacada semanal con cuenta regresiva y banner promocional.'
+            ? 'Configura el producto en promoción especial de la semana y su llamado a la acción.'
             : activeTab === 'outlet'
             ? 'Configura el bloque promocional de acceso directo al rubro Outlet, imagen de portada y llamado a la acción.'
             : activeTab === 'trust_bar'
-            ? 'Administra los beneficios de confianza (envíos, garantía, cuotas) de la barra superior.'
+            ? 'Administra los 4 beneficios destacados (envíos sin cargo, cuotas fijas, ofertas y garantía oficial).'
             : activeTab === 'payment_cards'
-            ? 'Personaliza las tarjetas de beneficios de pagos (bancos, transferencias, QR).'
+            ? 'Personaliza las tarjetas de beneficios de pagos (bancos, transferencias, QR y cuotas sin interés).'
             : activeTab === 'about'
-            ? 'Edita la reseña histórica, valores y fotos de la sucursal del bloque Sobre Nosotros.'
-            : 'Personaliza la foto principal del encabezado, titular H1, subtítulo, botones y etiquetas.'}
+            ? 'Edita la reseña histórica, valores y fotografía de la casa central en Basavilbaso.'
+            : 'Personaliza la foto de bienvenida, títulos, frases y botones destacados del inicio de la tienda.'}
         </p>
       </div>
 
@@ -898,10 +898,10 @@ function AdminConfiguracionContent() {
               <div>
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-brand-red" />
-                  <h2 className="text-lg font-extrabold text-slate-800">Banner Principal de Portada (Hero)</h2>
+                  <h2 className="text-lg font-extrabold text-slate-800">Portada Principal de la Tienda</h2>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Personaliza la foto principal que se muestra en el encabezado de la tienda (junto al lema &quot;Llevamos el confort que tu hogar merece&quot;).
+                  Personaliza la foto principal de bienvenida, frases y botones destacados del inicio.
                 </p>
               </div>
 
@@ -913,7 +913,7 @@ function AdminConfiguracionContent() {
                   title="Restaurar valores y foto original del edificio"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Foto por Defecto</span>
+                  <span>Restaurar Foto Original</span>
                 </button>
 
                 <button
@@ -930,7 +930,7 @@ function AdminConfiguracionContent() {
                   ) : (
                     <>
                       <Save className="h-3.5 w-3.5" />
-                      <span>Guardar Banner Principal</span>
+                      <span>Guardar Portada Principal</span>
                     </>
                   )}
                 </button>
@@ -943,7 +943,7 @@ function AdminConfiguracionContent() {
                 {/* Image Upload File */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Imagen del Banner *
+                    Foto Principal de Portada *
                   </label>
                   <label className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
                     {uploadingHeroImage ? (
@@ -951,7 +951,7 @@ function AdminConfiguracionContent() {
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
-                    <span>{uploadingHeroImage ? 'Subiendo foto a Cloudinary...' : 'Subir Foto de Banner (Archivo)'}</span>
+                    <span>{uploadingHeroImage ? 'Subiendo foto a Cloudinary...' : 'Subir Foto de Portada (Archivo)'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -965,11 +965,67 @@ function AdminConfiguracionContent() {
                   </p>
                 </div>
 
+                {/* Recomendación de dimensiones y Modo de Ajuste del Hero */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">Tamaño Recomendado</span>
+                      <span className="text-[11px] text-slate-500">Para encajar sin deformarse ni recortar información</span>
+                    </div>
+                    <span className="text-[11px] font-extrabold text-brand-red bg-brand-red/10 px-2.5 py-1 rounded-full border border-brand-red/20">
+                      1200 x 750 px (16:10)
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-200/60">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                      Modo de Visualización de la Foto
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setHeroBanner({ ...heroBanner, objectFit: 'contain' })}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          heroBanner.objectFit === 'contain'
+                            ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                          {heroBanner.objectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                        </div>
+                        <span className="text-[10px] text-slate-500">
+                          Adapta la imagen entera con margen y fondo difuminado. No recorta nada.
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setHeroBanner({ ...heroBanner, objectFit: 'cover' })}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          heroBanner.objectFit !== 'contain'
+                            ? 'border-brand-red bg-rose-50/50 ring-2 ring-brand-red/20 shadow-xs'
+                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800">Llenar espacio (Cover)</span>
+                          {heroBanner.objectFit !== 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
+                        </div>
+                        <span className="text-[10px] text-slate-500">
+                          Llena toda la caja de la portada. Ideal para fotos de ambientes o muebles.
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Galería / Carrusel Multi-Imagen del Hero Banner */}
                 <div className="space-y-2 pt-1 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block">
-                      Imágenes del Carrusel Hero (Multi-Imagen)
+                      Fotos Adicionales de Portada (Rotativas)
                     </label>
                     <span className="text-[11px] text-slate-400 font-medium">
                       {(heroBanner.images || []).length} foto(s) configurada(s)
@@ -1044,7 +1100,7 @@ function AdminConfiguracionContent() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Titular Principal (H1)
+                      Título Principal de Portada
                     </label>
                     <input
                       type="text"
@@ -1057,7 +1113,7 @@ function AdminConfiguracionContent() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Subtítulo / Bajada Editorial
+                      Subtítulo o Frase de Presentación
                     </label>
                     <textarea
                       rows={2}
@@ -1073,7 +1129,7 @@ function AdminConfiguracionContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                      Texto Botón Principal (Rojo)
+                      Texto del Botón Rojo (Ej: Ver Catálogo)
                     </span>
                     <input
                       type="text"
@@ -1086,7 +1142,7 @@ function AdminConfiguracionContent() {
 
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                      Texto Botón Secundario (Blanco)
+                      Texto del Botón Blanco (Ej: Ver Ofertas)
                     </span>
                     <input
                       type="text"
@@ -1101,7 +1157,7 @@ function AdminConfiguracionContent() {
                 {/* Tendencias / Tags de Búsqueda Popular */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Tendencias / Búsquedas Rápidas (separadas por coma)
+                    Botones de Acceso Rápido (separados por coma)
                   </label>
                   <input
                     type="text"
@@ -1119,7 +1175,7 @@ function AdminConfiguracionContent() {
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:bg-white focus:ring-4 focus:ring-brand-red/10 transition-all"
                   />
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Cada palabra o frase generará un botón de búsqueda directa en la portada.
+                    Cada palabra generará un botón de búsqueda rápida en la portada (Ej: Heladeras, Smart TV).
                   </p>
                 </div>
 
@@ -1128,7 +1184,7 @@ function AdminConfiguracionContent() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-brand-red" />
-                      <span className="text-xs font-bold text-slate-700">Etiqueta Flotante / Badge de Ubicación</span>
+                      <span className="text-xs font-bold text-slate-700">Cartelito sobre la Foto (Ubicación o Mensaje)</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -1151,7 +1207,7 @@ function AdminConfiguracionContent() {
                         className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs text-brand-black placeholder-slate-400 outline-none focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 transition-all"
                       />
                       <p className="text-[10px] text-slate-400 mt-1">
-                        Aparece en la esquina inferior izquierda de la imagen con diseño traslúcido y el ícono de ubicación.
+                        Aparece en la esquina de la foto con diseño transparente (Ej: Basavilbaso, Entre Ríos).
                       </p>
                     </div>
                   )}
@@ -1162,16 +1218,26 @@ function AdminConfiguracionContent() {
               <div className="lg:col-span-5 space-y-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                   <ImageIcon className="h-3.5 w-3.5 text-brand-red" />
-                  <span>Vista Previa del Banner</span>
+                  <span>Vista Previa de la Portada</span>
                 </span>
 
                 <div className="relative overflow-hidden rounded-3xl shadow-lg border border-slate-200/80 bg-slate-100 aspect-[16/10] max-h-[380px] flex items-center justify-center">
                   {heroBanner.imageUrl ? (
-                    <img
-                      src={heroBanner.imageUrl}
-                      alt={heroBanner.title || 'Banner Principal'}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      {heroBanner.objectFit === 'contain' && (
+                        <div
+                          className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                          style={{ backgroundImage: `url(${heroBanner.imageUrl})` }}
+                        />
+                      )}
+                      <img
+                        src={heroBanner.imageUrl}
+                        alt={heroBanner.title || 'Banner Principal'}
+                        className={`w-full h-full relative z-10 ${
+                          heroBanner.objectFit === 'contain' ? 'object-contain mx-auto p-3' : 'object-cover'
+                        }`}
+                      />
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
                       <ImageIcon className="h-10 w-10 text-slate-300 mb-2" />
@@ -1203,9 +1269,9 @@ function AdminConfiguracionContent() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div>
-                <h2 className="text-lg font-extrabold text-slate-800">Carrusel de Banners Promocionales</h2>
+                <h2 className="text-lg font-extrabold text-slate-800">Banners y Promociones Rotativas</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Banners rotativos secundarios que se muestran encima de la sección principal.
+                  Carteles y afiches promocionales que rotan automáticamente debajo de la portada principal.
                 </p>
               </div>
               <button
@@ -2192,7 +2258,7 @@ function AdminConfiguracionContent() {
                     <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
                       <div className="w-full h-2.5 bg-slate-400/80 rounded-xs" />
                     </div>
-                    <span className="text-[10px] text-slate-400">Banner delgado horizontal</span>
+                    <span className="text-[10px] text-slate-400">Recomendado: 1920 x 420 px</span>
                   </button>
 
                   <button
@@ -2212,7 +2278,7 @@ function AdminConfiguracionContent() {
                     <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
                       <div className="w-10 h-5 bg-slate-400/80 rounded-xs" />
                     </div>
-                    <span className="text-[10px] text-slate-400">Hero clásico rectangular</span>
+                    <span className="text-[10px] text-slate-400">Recomendado: 1920 x 1080 px</span>
                   </button>
 
                   <button
@@ -2232,7 +2298,7 @@ function AdminConfiguracionContent() {
                     <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
                       <div className="w-12 h-4 bg-slate-400/80 rounded-xs" />
                     </div>
-                    <span className="text-[10px] text-slate-400">Mediano balanceado</span>
+                    <span className="text-[10px] text-slate-400">Recomendado: 1920 x 600 px</span>
                   </button>
 
                   <button
@@ -2252,7 +2318,7 @@ function AdminConfiguracionContent() {
                     <div className="h-7 w-full bg-slate-200/80 rounded-lg flex items-center justify-center p-1">
                       <div className="w-8 h-6 bg-slate-400/80 rounded-xs" />
                     </div>
-                    <span className="text-[10px] text-slate-400">Destacado de mayor altura</span>
+                    <span className="text-[10px] text-slate-400">Recomendado: 1200 x 800 px</span>
                   </button>
                   </div>
                 </div>
