@@ -74,7 +74,7 @@ export async function sendCustomerWelcomeEmail(customer: { name: string; email: 
             Tu cuenta en <strong>Papes Confort</strong> ha sido creada exitosamente. A partir de ahora podrás realizar compras más rápido, seguir el estado de tus pedidos y gestionar tus datos de facturación y entrega.
           </p>
           <div style="text-align: center; margin: 28px 0;">
-            <a href="https://papesconfort.com/catalogo" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
+            <a href="https://papesconfort.com.ar/catalogo" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
               Explorar Catálogo
             </a>
           </div>
@@ -237,7 +237,7 @@ export async function sendCustomerOrderCreatedEmail(data: {
 }) {
   const firstName = data.name.split(' ')[0] || data.name;
   const formattedTotal = Number(data.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const trackingLink = data.trackingUrl || `https://papesconfort.com/mi-cuenta/pedidos`;
+  const trackingLink = data.trackingUrl || `https://papesconfort.com.ar/mi-cuenta/pedidos`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -299,7 +299,7 @@ export async function sendCustomerPaymentApprovedEmail(data: {
           Ya comenzamos con el empaquetado y preparación para el despacho de tus productos.
         </p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="https://papesconfort.com/mi-cuenta/pedidos" style="background-color: #16a34a; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
+          <a href="https://papesconfort.com.ar/mi-cuenta/pedidos" style="background-color: #16a34a; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
             Seguir mi Pedido
           </a>
         </div>
@@ -411,7 +411,7 @@ export async function sendCustomerOrderCancelledEmail(data: {
           Si tuviste algún inconveniente con el método de pago o deseas reintentar tu compra, podés comunicarte con nuestro equipo por WhatsApp o visitar nuevamente nuestra tienda.
         </p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="https://papesconfort.com/catalogo" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
+          <a href="https://papesconfort.com.ar/catalogo" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;">
             Volver a la Tienda
           </a>
         </div>
@@ -769,7 +769,7 @@ export async function sendCustomerOrderShippedEmail(data: CustomerOrderShippedDa
       <!-- PIE DE PÁGINA -->
       <div style="border-top: 1px solid #f1f5f9; padding-top: 18px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.5;">
         <p style="margin: 0 0 4px 0;"><strong>Papes Confort</strong> — Hogar & Confort</p>
-        <p style="margin: 0;">Basavilbaso, Entre Ríos | papesconfort.com</p>
+        <p style="margin: 0;">Basavilbaso, Entre Ríos | papesconfort.com.ar</p>
       </div>
     </div>
   `;
@@ -884,7 +884,7 @@ export async function sendAdminNewCustomerNotificationEmail(data: AdminNewCustom
                     </table>
 
                     <div style="text-align: center; margin-top: 32px;">
-                      <a href="https://papesconfort.com/admin/suscriptores" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(228, 20, 20, 0.25);">
+                      <a href="https://papesconfort.com.ar/admin/suscriptores" style="background-color: #e41414; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(228, 20, 20, 0.25);">
                         Ver en Panel de Administración
                       </a>
                     </div>

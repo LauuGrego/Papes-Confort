@@ -202,7 +202,7 @@ export default function AdminSuscriptoresPage() {
       previewText: '',
       content: '¡Hola {{nombre}}!\n\nTe presentamos nuestras novedades y ofertas exclusivas de esta semana en Papes Confort. Aprovechá hasta 12 cuotas sin interés y envíos bonificados en productos seleccionados.\n\nNo te quedes sin renovar tu hogar.',
       ctaText: 'Ver Catálogo y Ofertas',
-      ctaUrl: 'https://papesconfort.com/catalogo',
+      ctaUrl: 'https://papesconfort.com.ar/catalogo',
       frequency: 'WEEKLY',
       daysOfWeek: [1, 5], // Lunes y Viernes
       time: '10:00',
@@ -1167,7 +1167,7 @@ export default function AdminSuscriptoresPage() {
                       </label>
                       <input
                         type="text"
-                        placeholder="https://papesconfort.com/catalogo?sort=offers"
+                        placeholder="https://papesconfort.com.ar/catalogo"
                         value={editingCampaign.ctaUrl || ''}
                         onChange={(e) =>
                           setEditingCampaign({ ...editingCampaign, ctaUrl: e.target.value })
