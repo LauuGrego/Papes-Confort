@@ -1116,21 +1116,10 @@ export default function AdminSuscriptoresPage() {
                               content: (editingCampaign.content || '') + ' {{nombre}} ',
                             })
                           }
-                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono rounded font-bold transition"
+                          className="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono rounded-lg font-bold transition cursor-pointer"
+                          title="Inserta el nombre del suscriptor en el mensaje"
                         >
                           {'{{nombre}}'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditingCampaign({
-                              ...editingCampaign,
-                              content: (editingCampaign.content || '') + ' {{email}} ',
-                            })
-                          }
-                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono rounded font-bold transition"
-                        >
-                          {'{{email}}'}
                         </button>
                       </div>
                     </div>
@@ -1291,7 +1280,7 @@ export default function AdminSuscriptoresPage() {
                       </div>
 
                       <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                        {(editingCampaign.content || '').replace(/\{\{nombre\}\}/gi, 'Juan')}
+                        {(editingCampaign.content || '').replace(/\{\{nombre\}\}/gi, 'Juan').replace(/\{\{email\}\}/gi, '')}
                       </div>
 
                       {editingCampaign.ctaText && (
@@ -1370,7 +1359,7 @@ export default function AdminSuscriptoresPage() {
                   </div>
 
                   <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {previewModalCampaign.content.replace(/\{\{nombre\}\}/gi, 'Lautaro')}
+                    {previewModalCampaign.content.replace(/\{\{nombre\}\}/gi, 'Lautaro').replace(/\{\{email\}\}/gi, '')}
                   </div>
 
                   {previewModalCampaign.ctaText && (
