@@ -93,6 +93,7 @@ export interface ProductDto {
   weightKg: number | null;
   dimensions: string | null; // e.g. "120x80x40"
   specs: Record<string, any>; // Atributos flexibles guardados como JSON en BD
+  offerEndDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }

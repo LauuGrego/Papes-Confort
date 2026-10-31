@@ -38,7 +38,8 @@ function computeProductHash(
   basePrice: number,
   listPrice: number,
   discountPercent: number,
-  productType: string
+  productType: string,
+  offerEndDate?: string
 ): string {
   const name = cleanGescomText(row.ADes) || '';
   const note = cleanGescomText(row.ANota) || '';
@@ -46,7 +47,7 @@ function computeProductHash(
   const subrubroName = cleanGescomText(row.SubrubroName) || '';
   const brandName = cleanGescomText(row.BrandName) || '';
 
-  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${row.ACostof || ''}|${basePrice}|${listPrice}|${discountPercent}|${productType}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
+  const dataString = `${row.ACod}|${name}|${row.AValor || ''}|${row.AVenta}|${row.ACostof || ''}|${basePrice}|${listPrice}|${discountPercent}|${productType}|${offerEndDate || ''}|${row.AExis}|${row.ABarra || ''}|${row.ARub || ''}|${row.ASub || ''}|${row.AMar || ''}|${rubroName}|${subrubroName}|${brandName}|${row.ANOVENTA || ''}|${row.ADESACT || ''}|${note}`;
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
@@ -101,12 +102,13 @@ export async function syncProductsFromGescom() {
     logger.info(`Fetched ${rows.length} records from Stock_Articulo (with Rubro/SubRubro/Marca descriptions)`);
 
     // Consultar ofertas activas vigentes en stock_prexsuc (cualquier sucursal, menor precio primero)
-    const activeOffersMap = new Map<string, { offerPrice: number }>();
+    const activeOffersMap = new Map<string, { offerPrice: number; endDate?: string }>();
     try {
       const [offerRows]: any = await gescomPool.query(
         `SELECT 
           TRIM(PART) AS PART, 
-          PPRELIS
+          PPRELIS,
+          PHASTA
         FROM stock_prexsuc
         WHERE PDESDE <= CURDATE() 
           AND PHASTA >= CURDATE() 
@@ -119,7 +121,21 @@ export async function syncProductsFromGescom() {
           const partKey = String(off.PART).trim();
           const precio = Number(off.PPRELIS) || 0;
           if (precio > 0 && !activeOffersMap.has(partKey)) {
-            activeOffersMap.set(partKey, { offerPrice: precio });
+            let endDateStr: string | undefined = undefined;
+            if (off.PHASTA) {
+              if (off.PHASTA instanceof Date) {
+                const y = off.PHASTA.getFullYear();
+                const m = String(off.PHASTA.getMonth() + 1).padStart(2, '0');
+                const d = String(off.PHASTA.getDate()).padStart(2, '0');
+                endDateStr = `${y}-${m}-${d}`;
+              } else {
+                const str = String(off.PHASTA).trim();
+                if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+                  endDateStr = str.substring(0, 10);
+                }
+              }
+            }
+            activeOffersMap.set(partKey, { offerPrice: precio, endDate: endDateStr });
           }
         }
         logger.info(`Loaded ${activeOffersMap.size} active offers from stock_prexsuc`);
@@ -158,6 +174,7 @@ export async function syncProductsFromGescom() {
       let basePrice = venta;
       let discountPercent = 0;
       let productType: 'NORMAL' | 'OUTLET' | 'OFFER' = isOutletRubro ? 'OUTLET' : 'NORMAL';
+      let offerEndDate: string | undefined = undefined;
 
       // PARA OFERTA: Evaluar condiciones de fecha en stock_prexsuc (PPRELIS como precio de contado de oferta, precio de lista original tachado)
       const activeOffer = activeOffersMap.get(sku);
@@ -166,10 +183,11 @@ export async function syncProductsFromGescom() {
         discountPercent = Math.round(((listPrice - basePrice) / listPrice) * 100);
         if (!isOutletRubro && discountPercent > 0) {
           productType = 'OFFER';
+          offerEndDate = activeOffer.endDate;
         }
       }
 
-      const currentHash = computeProductHash(row, basePrice, listPrice, discountPercent, productType);
+      const currentHash = computeProductHash(row, basePrice, listPrice, discountPercent, productType, offerEndDate);
       const savedHash = syncState.products[sku];
 
       if (savedHash === currentHash) {
@@ -197,6 +215,7 @@ export async function syncProductsFromGescom() {
         costPrice: costof,
         discountPercent,
         productType,
+        offerEndDate,
         stock: rawStock,
         gescomId: Number(row.KeyID),
         barcode,

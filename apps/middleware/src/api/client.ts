@@ -30,6 +30,7 @@ export interface SyncProductItem {
   isActive?: boolean;
   discountPercent?: number;
   productType?: 'NORMAL' | 'OUTLET' | 'OFFER' | 'BANK_PROMO';
+  offerEndDate?: string;
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {

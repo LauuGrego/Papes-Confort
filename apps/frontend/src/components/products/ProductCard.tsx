@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProductDto } from '@papes-confort/shared';
-import { ArrowRight, CreditCard, Heart } from 'lucide-react';
+import { ArrowRight, CreditCard, Heart, Clock } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
 import { useFavoritesStore } from '../../stores/favorites';
 import { useInstallmentsStore } from '../../stores/installments';
@@ -40,6 +40,16 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     return () => clearInterval(interval);
   }, [hasMultipleImages, images.length, isHovered]);
+
+  const formatOfferDate = (dateStr?: string | null) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day}/${month}/${year}`;
+    }
+    return dateStr;
+  };
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -194,6 +204,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           <p className="text-[11px] sm:text-xs font-semibold text-emerald-700 leading-tight">
             {product.isOutlet ? 'Precio por transferencia o efectivo' : 'Precio promocional por transferencia'}
           </p>
+
+          {Boolean(product.offerEndDate) && (
+            <p className="text-[10px] sm:text-[11px] font-semibold text-amber-800 flex items-center gap-1 pt-0.5">
+              <Clock className="h-3 w-3 text-amber-700 shrink-0" />
+              <span>Oferta hasta el {formatOfferDate(product.offerEndDate)}</span>
+            </p>
+          )}
 
           {/* Financiación en Cuotas al Precio de Lista */}
           {defaultInstallments > 1 && (

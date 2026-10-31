@@ -207,6 +207,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
               rubro,
               subrubro,
               isActive,
+              offerEndDate,
             } = item;
 
             const sanitizedDescription = description !== undefined ? sanitizeCorruptedSpanishText(String(description)) : undefined;
@@ -285,6 +286,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
                 ...(rubro !== undefined && { rubro }),
                 ...(subrubro !== undefined && { subrubro }),
                 ...(costPrice !== undefined && { costof: costPrice }),
+                ...(offerEndDate !== undefined ? { offerEndDate } : (finalProductType !== 'OFFER' ? { offerEndDate: null } : {})),
               };
 
               const updatedProduct = await prisma.product.update({
@@ -317,6 +319,7 @@ router.post('/', validateBody(syncProductsSchema), async (req, res, next) => {
               if (rubro !== undefined) newSpecs.rubro = rubro;
               if (subrubro !== undefined) newSpecs.subrubro = subrubro;
               if (costPrice !== undefined) newSpecs.costof = costPrice;
+              if (offerEndDate !== undefined) newSpecs.offerEndDate = offerEndDate;
 
               const createdProduct = await prisma.product.create({
                 data: {
