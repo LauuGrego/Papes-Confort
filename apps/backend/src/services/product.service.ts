@@ -1,6 +1,58 @@
 import { prisma } from '@papes-confort/database';
 import { ProductDto, BrandDto, ProductTypeDto, ProductCategoryDto, ProductImageDto } from '@papes-confort/shared';
 
+/**
+ * Valida de forma estricta si un producto posee una oferta activa y vigente sincronizada desde GesCom (stock_prexsuc).
+ * Reglas de negocio:
+ * 1. Los productos de Outlet NUNCA son ofertas.
+ * 2. Debe poseer productType === 'OFFER' (asignado en la sincronización desde stock_prexsuc).
+ * 3. Debe poseer un porcentaje de descuento > 0.
+ * 4. Debe tener fecha de vigencia (offerEndDate) y dicha fecha debe ser >= hoy en zona horaria de Argentina.
+ */
+export function isProductOfferActive(product: {
+  productType?: string;
+  discountPercent?: any;
+  specs?: any;
+  productFamily?: any;
+  isOutlet?: boolean;
+}): boolean {
+  if (!product) return false;
+
+  const isOutlet =
+    product.isOutlet ||
+    product.productType === 'OUTLET' ||
+    product.productFamily?.slug === 'outlet' ||
+    product.productFamily?.slug?.toLowerCase()?.includes('outlet') ||
+    product.productFamily?.name?.toUpperCase()?.includes('OUTLET') ||
+    (typeof product.specs === 'object' &&
+      product.specs !== null &&
+      String((product.specs as any).rubro || '').toLowerCase().includes('outlet'));
+
+  if (isOutlet) return false;
+
+  if (product.productType !== 'OFFER') return false;
+
+  const discount = Number(product.discountPercent) || 0;
+  if (discount <= 0) return false;
+
+  const specs = typeof product.specs === 'object' && product.specs !== null ? (product.specs as any) : {};
+  const offerEndDate = specs.offerEndDate ? String(specs.offerEndDate).trim() : null;
+  if (!offerEndDate) return false;
+
+  const todayInArgentina = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+  if (offerEndDate < todayInArgentina) {
+    return false;
+  }
+
+  return true;
+}
+
 export async function mapProductToDto(product: any, safetyStock?: number): Promise<ProductDto> {
   safetyStock = 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
 
@@ -17,11 +69,12 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
       ? Number(product.listPrice)
       : (basePriceNum > 0 ? Math.round(basePriceNum * 1.25 * 100) / 100 : basePriceNum);
 
-  const offerDiscount = Number(product.discountPercent) || 0;
+  const isOffer = isProductOfferActive(product);
+  const offerDiscount = isOffer ? (Number(product.discountPercent) || 0) : 0;
 
-  // Para ofertas, el precio final es el precio base (PPRELIS de GesCom)
+  // Para ofertas válidas de GesCom (stock_prexsuc), el precio final es el precio base (PPRELIS de GesCom)
   const finalPriceNum = offerDiscount > 0
-    ? (product.productType === 'OFFER' && basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
+    ? (basePriceNum < listPriceNum ? basePriceNum : listPriceNum * (1 - offerDiscount / 100))
     : basePriceNum;
 
   const discountPercentNum = offerDiscount > 0 ? offerDiscount : 0;
@@ -91,7 +144,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     weightKg: product.weightKg ? Number(product.weightKg) : null,
     dimensions: dimensionsStr,
     specs: (product.specs as Record<string, any>) || {},
-    offerEndDate: (product.specs as any)?.offerEndDate ? String((product.specs as any).offerEndDate) : null,
+    offerEndDate: isOffer && (product.specs as any)?.offerEndDate ? String((product.specs as any).offerEndDate) : null,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
   };
@@ -150,22 +203,39 @@ export async function getProducts(params: {
     }
   }
 
-  if (params.productType) {
-    where.productType = params.productType;
-  }
+  const isOfferQuery =
+    params.productType === 'OFFER' ||
+    params.offerSlug === 'all' ||
+    params.offerSlug === 'todas';
 
-  if (params.offerId) {
-    where.offers = { some: { offerId: params.offerId } };
-  } else if (params.offerSlug) {
-    if (params.offerSlug === 'all' || params.offerSlug === 'todas') {
-      andConditions.push({
-        OR: [
-          { offers: { some: { offer: { isActive: true } } } },
-          { productType: 'OFFER' },
-          { discountPercent: { gt: 0 } },
-        ],
-      });
-    } else {
+  if (isOfferQuery) {
+    const todayInArgentina = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+
+    andConditions.push({
+      productType: 'OFFER',
+      discountPercent: { gt: 0 },
+      specs: {
+        path: ['offerEndDate'],
+        gte: todayInArgentina,
+      },
+      NOT: [
+        { productFamily: { slug: 'outlet' } },
+        { productFamily: { name: { equals: 'OUTLET', mode: 'insensitive' } } },
+      ],
+    });
+  } else {
+    if (params.productType) {
+      where.productType = params.productType;
+    }
+
+    if (params.offerId) {
+      where.offers = { some: { offerId: params.offerId } };
+    } else if (params.offerSlug) {
       where.offers = { some: { offer: { slug: params.offerSlug } } };
     }
   }

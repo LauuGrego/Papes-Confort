@@ -13,6 +13,7 @@ import {
 import { Customer, Order, OrderItem, Prisma } from '@prisma/client';
 import { env } from '../config/env';
 import { getOrCreateCart, getCartWithItems } from './cart.service';
+import { isProductOfferActive } from './product.service';
 import { createMobbexCheckout } from './mobbex.service';
 import {
   sendCustomerOrderCreatedEmail,
@@ -218,10 +219,11 @@ export async function createOrderFromCart(
       product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
         ? Number(product.listPrice)
         : (basePrice > 0 ? Math.round(basePrice * 1.25 * 100) / 100 : basePrice);
-    const offerDiscount = Number(product.discountPercent) || 0;
+    const isOffer = isProductOfferActive(product);
+    const offerDiscount = isOffer ? (Number(product.discountPercent) || 0) : 0;
 
-    // Para productos de oferta activa, el precio final es el precio base sincronizado (PPRELIS)
-    const unitPrice = product.productType === 'OFFER' && basePrice < listPrice
+    // Para productos de oferta activa sincronizada desde GesCom, el precio final es el precio base (PPRELIS)
+    const unitPrice = isOffer && basePrice < listPrice
       ? basePrice
       : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
     const itemTotal = unitPrice * item.quantity;
