@@ -13,6 +13,7 @@ interface AboutSectionProps {
 export default function AboutSection({ aboutConfig }: AboutSectionProps) {
   const [whatsappNumber, setWhatsappNumber] = useState('5493445454261');
   const config = aboutConfig ? { ...DEFAULT_ABOUT_SECTION, ...aboutConfig } : DEFAULT_ABOUT_SECTION;
+  const isContain = config.objectFit === 'contain';
 
   useEffect(() => {
     async function loadSettings() {
@@ -130,11 +131,19 @@ export default function AboutSection({ aboutConfig }: AboutSectionProps) {
               <div className="absolute -inset-2 bg-gradient-to-tr from-brand-red/15 via-slate-200/50 to-transparent blur-2xl rounded-3xl opacity-70" />
 
               {/* Contenedor de la foto del local */}
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-xl group">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-xl group h-80 sm:h-96 flex items-center justify-center">
+                {isContain && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${config.imageUrl})` }}
+                  />
+                )}
                 <img
                   src={config.imageUrl}
                   alt={config.title}
-                  className="w-full h-80 sm:h-96 object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                  className={`w-full h-full transition-transform duration-500 group-hover:scale-105 relative z-10 ${
+                    isContain ? 'object-contain mx-auto p-3 sm:p-4' : 'object-cover object-center'
+                  }`}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/edificio.webp';
                   }}

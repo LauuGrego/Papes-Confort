@@ -177,10 +177,18 @@ export default function AdminCategoriesConfig({
 
             {/* Imagen Preview con botón de subida a Cloudinary */}
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 mb-3 group">
+              {card.objectFit === 'contain' && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${card.image})` }}
+                />
+              )}
               <img
                 src={card.image}
                 alt={card.name}
-                className="w-full h-full object-cover"
+                className={`w-full h-full relative z-10 ${
+                  card.objectFit === 'contain' ? 'object-contain mx-auto p-2' : 'object-cover'
+                }`}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/images/hero_home_ambience.jpg';
                 }}
@@ -205,6 +213,35 @@ export default function AdminCategoriesConfig({
                   }}
                 />
               </label>
+            </div>
+
+            {/* Modo de ajuste de imagen */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Ajuste de foto</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleCardChange(idx, 'objectFit', 'contain')}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all ${
+                    card.objectFit === 'contain'
+                      ? 'bg-brand-red text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Completa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCardChange(idx, 'objectFit', 'cover')}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all ${
+                    card.objectFit !== 'contain'
+                      ? 'bg-brand-red text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Llenar
+                </button>
+              </div>
             </div>
 
             {/* Campos de texto */}

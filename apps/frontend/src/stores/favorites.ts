@@ -10,7 +10,6 @@ interface FavoritesState {
   getCount: (customerId?: string | null) => number;
   isFavorite: (productId: string, customerId?: string | null) => boolean;
   toggleFavorite: (product: ProductDto, customerId: string) => boolean;
-  removeFavorite: (productId: string, customerId: string) => void;
   clearFavorites: (customerId: string) => void;
 }
 
@@ -62,19 +61,6 @@ export const useFavoritesStore = create<FavoritesState>()(
         }));
 
         return isNowFavorite;
-      },
-
-      removeFavorite: (productId: string, customerId: string) => {
-        if (!customerId) return;
-        set((state) => {
-          const currentList = state.favoritesByCustomer[customerId] || [];
-          return {
-            favoritesByCustomer: {
-              ...state.favoritesByCustomer,
-              [customerId]: currentList.filter((item) => item.id !== productId),
-            },
-          };
-        });
       },
 
       clearFavorites: (customerId: string) => {

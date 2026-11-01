@@ -32,6 +32,7 @@ export default function EditorialHero({ bannerConfig }: EditorialHeroProps) {
       : config.secondaryBtnUrl;
 
   const objectFit = config.objectFit || 'cover';
+  const isContain = objectFit === 'contain';
   const objectPosition = `${config.objectPositionX ?? 50}% ${config.objectPositionY ?? 50}%`;
 
   const imageList = (config.images && config.images.length > 0
@@ -123,13 +124,23 @@ export default function EditorialHero({ bannerConfig }: EditorialHeroProps) {
               <div className="absolute -inset-2 bg-gradient-to-tr from-brand-red/10 via-slate-200/40 to-transparent blur-2xl rounded-3xl opacity-70" />
 
               {/* Contenedor de imagen */}
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 shadow-lg group aspect-[16/10] max-h-[340px] sm:max-h-[380px]">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-900/5 shadow-lg group aspect-[16/10] max-h-[340px] sm:max-h-[380px] flex items-center justify-center">
+                {/* Fondo difuminado sutil si está en modo contain (sin recortes) */}
+                {isContain && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-30 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${activeImageUrl})` }}
+                  />
+                )}
+
                 <img
                   key={activeImageUrl}
                   src={activeImageUrl}
                   alt={title || 'Equipamiento y confort para el hogar en Papes Confort'}
-                  style={{ objectFit, objectPosition }}
-                  className="w-full h-full transition-transform duration-700 group-hover:scale-103 animate-in fade-in duration-300"
+                  style={{ objectPosition }}
+                  className={`w-full h-full transition-transform duration-700 group-hover:scale-103 animate-in fade-in duration-300 relative z-10 ${
+                    isContain ? 'object-contain mx-auto p-2 sm:p-3.5' : 'object-cover'
+                  }`}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = DEFAULT_HERO_BANNER.imageUrl;
                   }}
@@ -170,7 +181,7 @@ export default function EditorialHero({ bannerConfig }: EditorialHeroProps) {
 
                 {/* Badge superpuesto sutil */}
                 {config.showBadge && (
-                  <div className="absolute bottom-4 left-4 rounded-2xl bg-white/90 backdrop-blur-md px-4 py-2 border border-slate-200/60 shadow-sm z-10">
+                  <div className="absolute bottom-4 left-4 rounded-2xl bg-white/90 backdrop-blur-md px-4 py-2 border border-slate-200/60 shadow-sm z-20">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-brand-red animate-pulse" />
                       <span className="text-xs font-bold text-slate-800">

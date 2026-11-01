@@ -8,7 +8,6 @@ interface InstallmentsState {
   isLoading: boolean;
   load: (force?: boolean) => Promise<void>;
   updateConfigLocally: (config: Partial<InstallmentsConfigDto>) => void;
-  calculateInstallment: (listPrice: number, customInstallments?: number) => number;
 }
 
 export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
@@ -69,14 +68,6 @@ export const useInstallmentsStore = create<InstallmentsState>((set, get) => ({
     set((state) => ({
       config: { ...state.config, ...newConfig },
     }));
-  },
-
-  calculateInstallment: (listPrice: number, customInstallments?: number) => {
-    const installments = customInstallments && customInstallments > 0
-      ? customInstallments
-      : get().config.defaultInstallments || 1;
-    if (installments <= 0 || !listPrice || listPrice <= 0) return 0;
-    return Math.round(listPrice / installments);
   },
 }));
 

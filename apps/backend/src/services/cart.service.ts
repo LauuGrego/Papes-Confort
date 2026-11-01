@@ -58,13 +58,6 @@ export async function getCartWithItems(cartId: string) {
   });
 }
 
-export async function markCartOrdered(cartId: string) {
-  return prisma.cart.update({
-    where: { id: cartId },
-    data: { status: 'ORDERED' },
-  });
-}
-
 export async function getCartDto(sessionId: string, customerId?: string | null): Promise<CartDto> {
   const cart = await getOrCreateCart(sessionId, customerId);
   const cartItems = await getCartWithItems(cart.id);

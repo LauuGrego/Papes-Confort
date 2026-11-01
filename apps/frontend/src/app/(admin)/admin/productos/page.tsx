@@ -21,7 +21,6 @@ export default function AdminProductosPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Form Fields
-  const [name, setName] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [warrantyMonths, setWarrantyMonths] = useState<number | ''>('');
   const [specs, setSpecs] = useState<{ key: string; val: string }[]>([]);
@@ -58,7 +57,6 @@ export default function AdminProductosPage() {
 
   const openEditModal = (product: ProductDto) => {
     setEditingProduct(product);
-    setName(product.name);
     setDiscountPercent(product.discountPercent);
     setWarrantyMonths(product.warrantyMonths ?? '');
 
@@ -340,7 +338,7 @@ export default function AdminProductosPage() {
                   <input
                     type="text"
                     readOnly
-                    value={name}
+                    value={editingProduct.name}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-100 bg-slate-100 text-sm text-slate-500 outline-none cursor-not-allowed"
                   />
                 </div>

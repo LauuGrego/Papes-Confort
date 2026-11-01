@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
+  ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
   ArrowUpDown,
@@ -12,6 +13,8 @@ import {
   PackageOpen,
   Tag,
   Sparkles,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 import { fetchApi } from '../../lib/api';
 import { ProductDto, PaginatedResponse, OfferDto } from '@papes-confort/shared';
@@ -20,12 +23,12 @@ import Pagination from '../../components/Pagination';
 import ProductFiltersSidebar, { FilterState } from '../../components/products/ProductFiltersSidebar';
 
 const SORT_OPTIONS = [
-  { value: 'name_asc', label: 'Alfabéticamente (A-Z)' },
-  { value: 'name_desc', label: 'Alfabéticamente (Z-A)' },
+  { value: 'name_asc', label: 'Nombre (A-Z)' },
+  { value: 'name_desc', label: 'Nombre (Z-A)' },
   { value: 'price_asc', label: 'Menor precio' },
   { value: 'price_desc', label: 'Mayor precio' },
   { value: 'recent', label: 'Más recientes' },
-  { value: 'offers', label: 'Ofertas destacadas' },
+  { value: 'offers', label: 'Ofertas' },
 ];
 
 function CatalogoContent() {
@@ -45,6 +48,8 @@ function CatalogoContent() {
   // Mobile drawer state
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+
+
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
     selectedFamily: null,
@@ -55,6 +60,43 @@ function CatalogoContent() {
     minPrice: '',
     maxPrice: '',
   });
+
+  // Quick Chips Scroll State & Logic
+  const chipsScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const el = chipsScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 2);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+  }, []);
+
+  useEffect(() => {
+    const el = chipsScrollRef.current;
+    if (!el) return;
+
+    updateScrollButtons();
+    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    window.addEventListener('resize', updateScrollButtons);
+
+    const timer = setTimeout(updateScrollButtons, 100);
+
+    return () => {
+      el.removeEventListener('scroll', updateScrollButtons);
+      window.removeEventListener('resize', updateScrollButtons);
+      clearTimeout(timer);
+    };
+  }, [updateScrollButtons, filters, sort]);
+
+  const scrollChips = (direction: 'left' | 'right') => {
+    const el = chipsScrollRef.current;
+    if (!el) return;
+    const offset = direction === 'left' ? -130 : 130;
+    el.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   // 1. Read URL params
   useEffect(() => {
@@ -73,12 +115,26 @@ function CatalogoContent() {
     setSearch(searchParam || '');
     setSort(sortParam === 'relevance' ? 'name_asc' : (sortParam || 'name_asc'));
 
+    const isInitialOffer = Boolean(offerParam);
+    const isInitialOutlet = productTypeParam === 'OUTLET' || familyParam?.toLowerCase() === 'outlet';
+
+    let initialOffer = offerParam || null;
+    let initialProductType = productTypeParam || null;
+    let initialFamily = familyParam || null;
+
+    if (isInitialOffer && isInitialOutlet) {
+      initialProductType = null;
+      if (initialFamily?.toLowerCase() === 'outlet') {
+        initialFamily = null;
+      }
+    }
+
     setFilters({
-      selectedFamily: familyParam || null,
+      selectedFamily: initialFamily,
       selectedCategory: categoryParam || null,
       selectedBrand: brandParam || null,
-      selectedProductType: productTypeParam || null,
-      selectedOffer: offerParam || null,
+      selectedProductType: initialProductType,
+      selectedOffer: initialOffer,
       minPrice: minPriceParam || '',
       maxPrice: maxPriceParam || '',
     });
@@ -161,7 +217,27 @@ function CatalogoContent() {
 
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    setFilters((prev) => {
+      const updated = { ...prev, ...newFilters };
+
+      // Regla de negocio: Outlet y Ofertas son mutuamente excluyentes (uno u otro o ninguno)
+      if (newFilters.selectedOffer) {
+        if (updated.selectedProductType === 'OUTLET') {
+          updated.selectedProductType = null;
+        }
+        if (updated.selectedFamily?.toLowerCase() === 'outlet') {
+          updated.selectedFamily = null;
+          updated.selectedCategory = null;
+        }
+      } else if (
+        newFilters.selectedProductType === 'OUTLET' ||
+        newFilters.selectedFamily?.toLowerCase() === 'outlet'
+      ) {
+        updated.selectedOffer = null;
+      }
+
+      return updated;
+    });
     setPage(1);
   };
 
@@ -207,6 +283,16 @@ function CatalogoContent() {
     filters.maxPrice ||
     search
   );
+
+  const activeFiltersCount = [
+    Boolean(filters.selectedFamily),
+    Boolean(filters.selectedCategory),
+    Boolean(filters.selectedBrand),
+    Boolean(filters.selectedProductType),
+    Boolean(filters.selectedOffer),
+    Boolean(filters.minPrice || filters.maxPrice),
+    Boolean(search),
+  ].filter(Boolean).length;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-10">
@@ -295,43 +381,160 @@ function CatalogoContent() {
         </div>
       )}
 
-      {/* Barra de Controles (Mobile: Filtrar + Ordenar / Desktop: Ordenar) */}
-      <div className="flex items-center justify-between gap-4 py-3 border-y border-slate-100 mb-6">
-        {/* Botón Mobile Filtrar */}
-        <div className="lg:hidden flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMobileFiltersOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Filtrar</span>
+      {/* Barra de Controles Adhesiva (Sticky Mobile + Quick Filters) */}
+      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-y border-slate-200/80 -mx-4 px-4 sm:mx-0 sm:px-0 py-2.5 mb-5 shadow-2xs overflow-hidden">
+        <div className="flex items-center justify-between gap-2 w-full">
+          {/* Botón Mobile Filtrar + Contador numérico + Botón rápido Limpiar */}
+          <div className="lg:hidden flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+                activeFiltersCount > 0
+                  ? 'bg-brand-red text-white hover:bg-brand-red-dark shadow-brand-red/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              <span>Filtrar</span>
+              {activeFiltersCount > 0 && (
+                <span className="flex items-center justify-center h-4.5 min-w-4.5 px-1 rounded-full bg-white text-brand-red text-[10px] font-black leading-none">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+
             {hasActiveFilters && (
-              <span className="h-2 w-2 rounded-full bg-brand-red" />
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-brand-red text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                title="Limpiar todos los filtros"
+                aria-label="Limpiar todos los filtros"
+              >
+                <RotateCcw className="h-3 w-3 shrink-0" />
+                <span className="text-[11px] hidden sm:inline">Limpiar</span>
+              </button>
             )}
-          </button>
+          </div>
+
+          {/* Selector de Ordenamiento */}
+          <div className="flex items-center gap-1.5 min-w-0 justify-end ml-auto">
+            <span className="text-xs font-medium text-slate-500 hidden sm:inline shrink-0">Ordenar por:</span>
+            <div className="relative min-w-0 max-w-[155px] sm:max-w-none">
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl pl-2.5 pr-7 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-brand-red/40 transition-colors truncate"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ArrowUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        {/* Selector de Ordenamiento */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs font-medium text-slate-500 hidden sm:inline">Ordenar por:</span>
-          <div className="relative">
-            <select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value);
+        {/* Fila de Filtros Rápidos con Botones Flotantes de Desplazamiento e Indicadores */}
+        <div className="relative pt-2 mt-2 border-t border-slate-100">
+          {/* Botón flotante izquierdo */}
+          {canScrollLeft && (
+            <div className="absolute left-0 top-2 bottom-0 z-10 flex items-center pr-3 bg-gradient-to-r from-white via-white/95 to-transparent">
+              <button
+                type="button"
+                onClick={() => scrollChips('left')}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50 transition-transform active:scale-90 cursor-pointer"
+                aria-label="Desplazar a la izquierda"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Chips contenedor */}
+          <div
+            ref={chipsScrollRef}
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth text-xs"
+          >
+            {/* Chip Ofertas */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextOffer = filters.selectedOffer ? null : 'all';
+                handleFilterChange({
+                  selectedOffer: nextOffer,
+                  ...(nextOffer ? { selectedProductType: null } : {}),
+                });
+              }}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                filters.selectedOffer
+                  ? 'bg-brand-red text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+              }`}
+            >
+              <Tag className="h-3 w-3" />
+              <span>Ofertas</span>
+              {filters.selectedOffer && <Check className="h-3 w-3 ml-0.5" />}
+            </button>
+
+            {/* Chip Outlet */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextOutlet = filters.selectedProductType === 'OUTLET' ? null : 'OUTLET';
+                handleFilterChange({
+                  selectedProductType: nextOutlet,
+                  ...(nextOutlet ? { selectedOffer: null } : {}),
+                });
+              }}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                filters.selectedProductType === 'OUTLET'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300/60'
+              }`}
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>Outlet</span>
+              {filters.selectedProductType === 'OUTLET' && <Check className="h-3 w-3 ml-0.5" />}
+            </button>
+
+            {/* Chip Menor Precio */}
+            <button
+              type="button"
+              onClick={() => {
+                setSort(sort === 'price_asc' ? 'name_asc' : 'price_asc');
                 setPage(1);
               }}
-              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-brand-red/40"
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                sort === 'price_asc'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+              }`}
             >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ArrowUpDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+              <span>Menor precio</span>
+              {sort === 'price_asc' && <Check className="h-3 w-3 ml-0.5" />}
+            </button>
           </div>
+
+          {/* Botón flotante derecho */}
+          {canScrollRight && (
+            <div className="absolute right-0 top-2 bottom-0 z-10 flex items-center pl-3 bg-gradient-to-l from-white via-white/95 to-transparent">
+              <button
+                type="button"
+                onClick={() => scrollChips('right')}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50 transition-transform active:scale-90 cursor-pointer"
+                aria-label="Desplazar a la derecha"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

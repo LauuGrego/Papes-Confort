@@ -12,6 +12,7 @@ interface OutletSectionProps {
 
 export default function OutletSection({ outletConfig, whatsappNumber }: OutletSectionProps) {
   const config = outletConfig ? { ...DEFAULT_OUTLET_SECTION, ...outletConfig } : DEFAULT_OUTLET_SECTION;
+  const isContain = config.objectFit === 'contain';
 
   if (!config.isActive) {
     return null;
@@ -113,10 +114,18 @@ export default function OutletSection({ outletConfig, whatsappNumber }: OutletSe
             <div className="lg:col-span-5 relative flex justify-center">
               <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/10 via-white/5 to-transparent border border-white/15 p-5 sm:p-6 backdrop-blur-md shadow-2xl overflow-hidden group">
                 <div className="relative aspect-[16/10] w-full rounded-2xl bg-slate-950/80 overflow-hidden mb-4 border border-white/10 flex items-center justify-center">
+                  {isContain && (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                      style={{ backgroundImage: `url(${config.imageUrl || 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg'})` }}
+                    />
+                  )}
                   <img
                     src={config.imageUrl || 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg'}
                     alt={config.cardTitle || 'Outlet Papes Confort'}
-                    className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
+                    className={`w-full h-full opacity-75 transition-transform duration-700 group-hover:scale-105 relative z-10 ${
+                      isContain ? 'object-contain mx-auto p-2 sm:p-3' : 'object-cover'
+                    }`}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 

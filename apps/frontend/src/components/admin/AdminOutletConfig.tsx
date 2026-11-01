@@ -259,7 +259,7 @@ export default function AdminOutletConfig({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Nombre de Rubro en GesCom
+                Código o Nombre de Rubro en GesCom (Ej: 09)
               </label>
               <input
                 type="text"
@@ -295,7 +295,7 @@ export default function AdminOutletConfig({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Badge de Tarjeta
+                  Cartelito Dorado (Ej: Liquidación)
                 </label>
                 <input
                   type="text"
@@ -307,7 +307,7 @@ export default function AdminOutletConfig({
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Subtítulo de Tarjeta
+                  Subtítulo en la Foto (Ej: Últimas unidades)
                 </label>
                 <input
                   type="text"
@@ -319,7 +319,7 @@ export default function AdminOutletConfig({
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Título de Tarjeta
+                  Título en la Foto (Ej: Productos en Liquidación)
                 </label>
                 <input
                   type="text"
@@ -333,7 +333,7 @@ export default function AdminOutletConfig({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Condición del Producto
+                  Condición (Ej: Nuevos de exhibición)
                 </label>
                 <input
                   type="text"
@@ -345,7 +345,7 @@ export default function AdminOutletConfig({
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Modalidad de Entrega
+                  Modalidad de Entrega (Ej: Retiro o envío a coordinar)
                 </label>
                 <input
                   type="text"
@@ -361,9 +361,42 @@ export default function AdminOutletConfig({
         {/* Columna Derecha: Imagen y Previsualización */}
         <div className="lg:col-span-5 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Fotografía de Portada del Outlet
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Fotografía de Portada del Outlet
+              </label>
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                Recomendado: 1200 x 750 px (16:10)
+              </span>
+            </div>
+
+            {/* Selector de modo de ajuste */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => handleChange('objectFit', 'contain')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  config.objectFit === 'contain'
+                    ? 'border-amber-500 bg-amber-50/70 text-slate-900 ring-2 ring-amber-500/20'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span className="text-xs font-bold block">Ver completa</span>
+                <span className="text-[10px] text-slate-500">Con margen y fondo difuminado</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('objectFit', 'cover')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  config.objectFit !== 'contain'
+                    ? 'border-amber-500 bg-amber-50/70 text-slate-900 ring-2 ring-amber-500/20'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span className="text-xs font-bold block">Llenar tarjeta</span>
+                <span className="text-[10px] text-slate-500">Ocupa todo el espacio de portada</span>
+              </button>
+            </div>
             <div className="flex items-center gap-2 mb-2">
               <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
                 {uploadingImage ? (
@@ -398,10 +431,18 @@ export default function AdminOutletConfig({
             </span>
             <div className="relative w-full rounded-2xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border border-amber-500/30 p-4 text-white shadow-lg overflow-hidden">
               <div className="relative aspect-[16/10] w-full rounded-xl bg-slate-950 overflow-hidden mb-3 border border-white/10 flex items-center justify-center">
+                {config.objectFit === 'contain' && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${config.imageUrl || 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg'})` }}
+                  />
+                )}
                 <img
                   src={config.imageUrl || 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg'}
                   alt="Outlet"
-                  className="w-full h-full object-cover opacity-60"
+                  className={`w-full h-full relative z-10 ${
+                    config.objectFit === 'contain' ? 'object-contain mx-auto p-2 opacity-85' : 'object-cover opacity-60'
+                  }`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 

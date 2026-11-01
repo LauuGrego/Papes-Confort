@@ -5,12 +5,6 @@ export const UserRole = {
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
-export const SessionType = {
-  ADMIN: 'admin',
-  CUSTOMER: 'customer',
-} as const;
-export type SessionType = (typeof SessionType)[keyof typeof SessionType];
-
 export const OrderStatus = {
   PENDING_GATEWAY: 'PENDING_GATEWAY',
   PENDING_PAYMENT: 'PENDING_PAYMENT',
@@ -65,27 +59,12 @@ export const CartStatus = {
 } as const;
 export type CartStatus = (typeof CartStatus)[keyof typeof CartStatus];
 
-export const WarrantyStatus = {
-  ACTIVE: 'ACTIVE',
-  EXPIRED: 'EXPIRED',
-  CLAIMED: 'CLAIMED',
-} as const;
-export type WarrantyStatus = (typeof WarrantyStatus)[keyof typeof WarrantyStatus];
-
 export const SyncStatus = {
   SUCCESS: 'SUCCESS',
   PARTIAL: 'PARTIAL',
   FAILED: 'FAILED',
 } as const;
 export type SyncStatus = (typeof SyncStatus)[keyof typeof SyncStatus];
-
-// Reglas de métodos de pago según tipo de producto
-export const PAYMENT_RULES: Record<ProductType, PaymentMethod[]> = {
-  [ProductType.NORMAL]: [PaymentMethod.CARD, PaymentMethod.TRANSFER],
-  [ProductType.OUTLET]: [PaymentMethod.TRANSFER], // solo efectivo/transferencia
-  [ProductType.OFFER]: [PaymentMethod.CARD, PaymentMethod.TRANSFER], // WhatsApp para cuotas
-  [ProductType.BANK_PROMO]: [PaymentMethod.CARD], // solo tarjeta según promo bancaria
-};
 
 // Configuración predeterminada (Settings)
 export const DEFAULT_SETTINGS = {

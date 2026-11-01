@@ -71,7 +71,7 @@ export default function AdminTrustBarConfig({
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-brand-red" />
             <h2 className="text-lg font-extrabold text-slate-800">
-              Barra de Beneficios (TrustBar)
+              Barra de Beneficios (Envíos, Cuotas, Garantía)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">

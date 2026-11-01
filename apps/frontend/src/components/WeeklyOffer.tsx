@@ -11,6 +11,7 @@ interface WeeklyOfferProps {
 
 export default function WeeklyOffer({ offerConfig }: WeeklyOfferProps) {
   const config = offerConfig ? { ...DEFAULT_WEEKLY_OFFER, ...offerConfig } : DEFAULT_WEEKLY_OFFER;
+  const isContain = config.objectFit === 'contain';
   const mainCtaUrl =
     !config.mainCtaUrl || config.mainCtaUrl === '/catalogo'
       ? '/catalogo?offer=all'
@@ -75,10 +76,18 @@ export default function WeeklyOffer({ offerConfig }: WeeklyOfferProps) {
           <div className="lg:col-span-5 relative flex justify-center">
             <div className="w-full max-w-md rounded-3xl bg-gradient-to-b from-white/10 to-white/5 border border-white/15 p-5 sm:p-6 backdrop-blur-md shadow-2xl relative overflow-hidden group">
               <div className="relative aspect-[4/3] w-full rounded-2xl bg-white/10 overflow-hidden mb-5 flex items-center justify-center">
+                {isContain && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${config.imageUrl})` }}
+                  />
+                )}
                 <img
                   src={config.imageUrl}
                   alt={config.productHeadline}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className={`w-full h-full transition-transform duration-500 group-hover:scale-105 relative z-10 ${
+                    isContain ? 'object-contain mx-auto p-2 sm:p-3' : 'object-cover'
+                  }`}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/categories/climatizacion.jpg';
                   }}

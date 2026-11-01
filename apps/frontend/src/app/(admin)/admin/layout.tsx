@@ -119,14 +119,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   ];
 
   const landingNav = [
-    { href: '/admin/configuracion?tab=hero', label: 'Hero Principal', icon: Sparkles },
-    { href: '/admin/configuracion?tab=flyers', label: 'Flyers Promocionales', icon: ImageIcon },
-    { href: '/admin/configuracion?tab=categories', label: 'Categorías Destacadas', icon: Layers },
+    { href: '/admin/configuracion?tab=hero', label: 'Portada Principal', icon: Sparkles },
+    { href: '/admin/configuracion?tab=flyers', label: 'Banners y Promociones', icon: ImageIcon },
+    { href: '/admin/configuracion?tab=categories', label: 'Comprá por Rubro', icon: Layers },
     { href: '/admin/configuracion?tab=weekly_offer', label: 'Oferta de la Semana', icon: Tag },
     { href: '/admin/configuracion?tab=outlet', label: 'Sección Outlet', icon: Flame },
     { href: '/admin/configuracion?tab=trust_bar', label: 'Barra de Beneficios', icon: ShieldCheck },
-    { href: '/admin/configuracion?tab=payment_cards', label: 'Medios de Pago', icon: CreditCard },
-    { href: '/admin/configuracion?tab=about', label: 'Sobre Nosotros', icon: Store },
+    { href: '/admin/configuracion?tab=payment_cards', label: 'Medios de Pago y Financiación', icon: CreditCard },
+    { href: '/admin/configuracion?tab=about', label: 'Sobre Nosotros (Local)', icon: Store },
   ];
 
   const systemNav = [

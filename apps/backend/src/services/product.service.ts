@@ -91,6 +91,7 @@ export async function mapProductToDto(product: any, safetyStock?: number): Promi
     weightKg: product.weightKg ? Number(product.weightKg) : null,
     dimensions: dimensionsStr,
     specs: (product.specs as Record<string, any>) || {},
+    offerEndDate: (product.specs as any)?.offerEndDate ? String((product.specs as any).offerEndDate) : null,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
   };

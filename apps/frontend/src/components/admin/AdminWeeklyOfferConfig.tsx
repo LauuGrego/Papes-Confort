@@ -207,7 +207,7 @@ export default function AdminWeeklyOfferConfig({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Pill Cuotas
+                Etiqueta de Cuotas (Ej: Hasta 12 cuotas fijas)
               </label>
               <input
                 type="text"
@@ -219,7 +219,7 @@ export default function AdminWeeklyOfferConfig({
 
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Pill Contado
+                Etiqueta de Contado (Ej: Descuento al contado)
               </label>
               <input
                 type="text"
@@ -231,7 +231,7 @@ export default function AdminWeeklyOfferConfig({
 
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Pill Garantía
+                Etiqueta de Garantía (Ej: Garantía oficial)
               </label>
               <input
                 type="text"
@@ -246,7 +246,7 @@ export default function AdminWeeklyOfferConfig({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Texto Botón Principal
+                Texto del Botón Rojo (Ej: Ver Todas las Ofertas)
               </label>
               <input
                 type="text"
@@ -260,16 +260,57 @@ export default function AdminWeeklyOfferConfig({
 
         {/* Columna Derecha: Tarjeta Spotlight de Producto */}
         <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-4">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-red-400">
-            Tarjeta Spotlight de Producto
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-red-400">
+              Tarjeta Spotlight de Producto
+            </span>
+            <span className="text-[10px] font-bold text-red-300 bg-red-950/80 px-2.5 py-0.5 rounded-full border border-red-500/30">
+              Recomendado: 800 x 600 px (4:3)
+            </span>
+          </div>
+
+          {/* Selector de modo de ajuste */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => handleChange('objectFit', 'contain')}
+              className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                config.objectFit === 'contain'
+                  ? 'border-brand-red bg-red-950/60 text-white ring-1 ring-brand-red'
+                  : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <span className="text-[11px] font-bold block">Ver completo</span>
+              <span className="text-[9px] opacity-75">Sin recortar márgenes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChange('objectFit', 'cover')}
+              className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                config.objectFit !== 'contain'
+                  ? 'border-brand-red bg-red-950/60 text-white ring-1 ring-brand-red'
+                  : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <span className="text-[11px] font-bold block">Llenar tarjeta</span>
+              <span className="text-[9px] opacity-75">Ocupa todo el recuadro</span>
+            </button>
+          </div>
 
           {/* Imagen y subida a Cloudinary */}
           <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-800 border border-slate-700 group">
+            {config.objectFit === 'contain' && (
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${config.imageUrl})` }}
+              />
+            )}
             <img
               src={config.imageUrl}
               alt={config.productHeadline}
-              className="w-full h-full object-cover"
+              className={`w-full h-full relative z-10 ${
+                config.objectFit === 'contain' ? 'object-contain mx-auto p-2' : 'object-cover'
+              }`}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/images/categories/climatizacion.jpg';
               }}
@@ -302,7 +343,7 @@ export default function AdminWeeklyOfferConfig({
 
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-              Categoría Spotlight
+              Rubro o Categoría (Ej: Climatización y Confort)
             </label>
             <input
               type="text"
@@ -314,7 +355,7 @@ export default function AdminWeeklyOfferConfig({
 
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-              Titular del Producto
+              Título del Producto Destacado (Ej: Aire Acondicionado Split)
             </label>
             <input
               type="text"
@@ -326,7 +367,7 @@ export default function AdminWeeklyOfferConfig({
 
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-              Texto Enlace
+              Texto del Enlace (Ej: Ver modelos)
             </label>
             <input
               type="text"

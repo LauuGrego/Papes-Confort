@@ -18,6 +18,7 @@ import {
   CreditCard,
   BadgePercent,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { fetchApi } from '../../../lib/api';
 import { ProductDto, PaginatedResponse, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
@@ -191,6 +192,16 @@ export default function ProductDetailPage() {
     }
     loadSettings();
   }, []);
+
+  const formatOfferDate = (dateStr?: string | null) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day}/${month}/${year}`;
+    }
+    return dateStr;
+  };
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -442,6 +453,13 @@ export default function ProductDetailPage() {
                     : 'Precio especial abonando por transferencia o efectivo'}
                 </span>
               </div>
+
+              {Boolean(product.offerEndDate) && (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl w-fit mt-2">
+                  <Clock className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                  <span>Oferta válida hasta el {formatOfferDate(product.offerEndDate)}</span>
+                </div>
+              )}
             </div>
 
             {/* Financiación en Cuotas al Precio de Lista */}

@@ -258,15 +258,56 @@ export default function AdminAboutConfig({
 
         {/* Foto del Edificio / Local */}
         <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-            Fotografía del Local / Casa Central
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              Fotografía del Local / Casa Central
+            </span>
+            <span className="text-[10px] font-bold text-brand-red bg-brand-red/10 px-2.5 py-0.5 rounded-full border border-brand-red/20">
+              Recomendado: 1200 x 900 px (4:3)
+            </span>
+          </div>
 
-          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 group">
+          {/* Selector de modo de ajuste */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleChange('objectFit', 'contain')}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                config.objectFit === 'contain'
+                  ? 'border-brand-red bg-rose-50/70 text-slate-900 ring-2 ring-brand-red/20'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span className="text-xs font-bold block">Ver completa</span>
+              <span className="text-[10px] text-slate-500">Con margen y fondo difuminado</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChange('objectFit', 'cover')}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                config.objectFit !== 'contain'
+                  ? 'border-brand-red bg-rose-50/70 text-slate-900 ring-2 ring-brand-red/20'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span className="text-xs font-bold block">Llenar espacio</span>
+              <span className="text-[10px] text-slate-500">Ocupa todo el contenedor</span>
+            </button>
+          </div>
+
+          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 group flex items-center justify-center">
+            {config.objectFit === 'contain' && (
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
+                style={{ backgroundImage: 'url(' + config.imageUrl + ')' }}
+              />
+            )}
             <img
               src={config.imageUrl}
               alt="Local Papes Confort"
-              className="w-full h-full object-cover"
+              className={`w-full h-full relative z-10 ${
+                config.objectFit === 'contain' ? 'object-contain mx-auto p-3' : 'object-cover'
+              }`}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/images/edificio.webp';
               }}
@@ -295,7 +336,7 @@ export default function AdminAboutConfig({
 
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Ubicación y Leyenda
+              Texto de Ubicación (Ej: Basavilbaso, Entre Ríos • Atención personalizada)
             </label>
             <input
               type="text"
