@@ -28,7 +28,7 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Menor precio' },
   { value: 'price_desc', label: 'Mayor precio' },
   { value: 'recent', label: 'Más recientes' },
-  { value: 'offers', label: 'Ofertas' },
+  { value: 'offers', label: 'Mayor descuento' },
 ];
 
 function CatalogoContent() {
@@ -115,11 +115,11 @@ function CatalogoContent() {
     setSearch(searchParam || '');
     setSort(sortParam === 'relevance' ? 'name_asc' : (sortParam || 'name_asc'));
 
-    const isInitialOffer = Boolean(offerParam);
+    const isInitialOffer = Boolean(offerParam) || productTypeParam === 'OFFER';
     const isInitialOutlet = productTypeParam === 'OUTLET' || familyParam?.toLowerCase() === 'outlet';
 
-    let initialOffer = offerParam || null;
-    let initialProductType = productTypeParam || null;
+    let initialOffer = offerParam || (productTypeParam === 'OFFER' ? 'all' : null);
+    let initialProductType = productTypeParam === 'OFFER' ? null : (productTypeParam || null);
     let initialFamily = familyParam || null;
 
     if (isInitialOffer && isInitialOutlet) {
@@ -466,21 +466,21 @@ function CatalogoContent() {
             <button
               type="button"
               onClick={() => {
-                const nextOffer = filters.selectedOffer ? null : 'all';
+                const nextOffer = filters.selectedOffer === 'all' ? null : 'all';
                 handleFilterChange({
                   selectedOffer: nextOffer,
                   ...(nextOffer ? { selectedProductType: null } : {}),
                 });
               }}
               className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                filters.selectedOffer
+                filters.selectedOffer === 'all'
                   ? 'bg-brand-red text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
               }`}
             >
               <Tag className="h-3 w-3" />
               <span>Ofertas</span>
-              {filters.selectedOffer && <Check className="h-3 w-3 ml-0.5" />}
+              {filters.selectedOffer === 'all' && <Check className="h-3 w-3 ml-0.5" />}
             </button>
 
             {/* Chip Outlet */}
@@ -584,13 +584,14 @@ function CatalogoContent() {
             </span>
           )}
 
-          {filters.selectedProductType && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-              <span>{filters.selectedProductType === 'OFFER' ? 'Ofertas' : 'Outlet'}</span>
+          {filters.selectedProductType && filters.selectedProductType !== 'OFFER' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300/60 text-xs font-semibold">
+              <Sparkles className="h-3 w-3" />
+              <span>Outlet</span>
               <button
                 type="button"
                 onClick={() => handleFilterChange({ selectedProductType: null })}
-                className="text-slate-400 hover:text-red-500 cursor-pointer"
+                className="text-amber-800 hover:text-red-500 cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -602,7 +603,7 @@ function CatalogoContent() {
               <Tag className="h-3 w-3" />
               <span>
                 {isAllOffers
-                  ? 'Todas las promociones'
+                  ? 'Todos los productos en oferta'
                   : `Oferta: ${selectedOfferObj?.name || filters.selectedOffer}`}
               </span>
               <button

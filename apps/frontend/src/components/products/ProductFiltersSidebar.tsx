@@ -65,6 +65,7 @@ export default function ProductFiltersSidebar({
     filters.selectedCategory ||
     filters.selectedBrand ||
     filters.selectedProductType ||
+    filters.selectedOffer ||
     filters.minPrice ||
     filters.maxPrice
   );
@@ -366,8 +367,10 @@ export default function ProductFiltersSidebar({
             <button
               type="button"
               onClick={() => {
+                const nextOffer = filters.selectedOffer === 'all' ? null : 'all';
                 onFilterChange({
-                  selectedOffer: filters.selectedOffer === 'all' ? null : 'all',
+                  selectedOffer: nextOffer,
+                  ...(nextOffer ? { selectedProductType: null } : {}),
                 });
               }}
               className={`w-full flex items-center gap-2.5 text-xs py-1.5 px-2 rounded-lg transition-colors text-left cursor-pointer ${

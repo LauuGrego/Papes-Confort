@@ -1,5 +1,6 @@
 import { prisma } from '@papes-confort/database';
 import { CartDto, CartItemDto } from '@papes-confort/shared';
+import { isProductOfferActive } from './product.service';
 
 async function getSafetyStock(): Promise<number> {
   return 0; // Se desactiva el stock de seguridad para mostrar siempre el stock real
@@ -144,9 +145,10 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
     product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
       ? Number(product.listPrice)
       : (basePrice > 0 ? basePrice / 0.8 : basePrice);
-  const offerDiscount = Number(product.discountPercent) || 0;
+  const isOffer = isProductOfferActive(product);
+  const offerDiscount = isOffer ? (Number(product.discountPercent) || 0) : 0;
 
-  const unitPrice = product.productType === 'OFFER' && basePrice < listPrice
+  const unitPrice = isOffer && basePrice < listPrice
     ? basePrice
     : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
 
