@@ -77,6 +77,8 @@ app.use(
       return callback(null, false);
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Cart-Session', 'x-api-key'],
+    exposedHeaders: ['X-Cart-Session'],
   })
 );
 app.use(express.json({ limit: '10mb' }));

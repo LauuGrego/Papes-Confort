@@ -20,7 +20,7 @@ import {
   Sparkles,
   Clock,
 } from 'lucide-react';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../lib/api';
 import { ProductDto, PaginatedResponse, sanitizeCorruptedSpanishText } from '@papes-confort/shared';
 import { useCartStore } from '../../../stores/cart';
 import { useAuthStore } from '../../../stores/auth';
@@ -528,9 +528,15 @@ export default function ProductDetailPage() {
               <p className="text-xs font-semibold text-rose-600 text-center">{addError}</p>
             )}
             {addSuccess && (
-              <p className="text-xs font-semibold text-emerald-600 text-center">
-                Producto agregado al carrito con éxito
-              </p>
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800">
+                <span>Producto agregado al carrito con éxito</span>
+                <Link
+                  href="/carrito"
+                  className="shrink-0 font-bold text-emerald-700 underline hover:text-emerald-900"
+                >
+                  Ver carrito
+                </Link>
+              </div>
             )}
 
             {/* Botón Principal: Comprar / Agregar al Carrito */}
@@ -551,7 +557,7 @@ export default function ProductDetailPage() {
               ) : (
                 <>
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Comprar ahora</span>
+                  <span>{ONLINE_PURCHASES_ENABLED ? 'Comprar ahora' : 'Agregar al carrito'}</span>
                 </>
               )}
             </button>

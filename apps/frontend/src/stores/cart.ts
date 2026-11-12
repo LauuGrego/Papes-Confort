@@ -3,6 +3,7 @@ import { CartDto, CartItemDto } from '@papes-confort/shared';
 import { fetchApi } from '../lib/api';
 
 interface CartState {
+  sessionId: string | null;
   items: CartItemDto[];
   subtotal: number;
   totalItems: number;
@@ -15,7 +16,8 @@ interface CartState {
   clear: () => Promise<void>;
 }
 
-export const useCartStore = create<CartState>((set) => ({
+export const useCartStore = create<CartState>((set, get) => ({
+  sessionId: null,
   items: [],
   subtotal: 0,
   totalItems: 0,
@@ -26,8 +28,25 @@ export const useCartStore = create<CartState>((set) => ({
     set({ isLoading: true, error: null });
     const res = await fetchApi<CartDto>('/api/cart');
     if (res.success && res.data) {
+      const currentState = get();
+      const serverItems = res.data.items || [];
+
+      // Si ya teníamos productos en memoria de una sesión activa y el servidor devuelve vacío con otro sessionId,
+      // conservamos el estado en memoria para evitar vaciado accidental por bloqueo de cookies cross-domain
+      if (
+        serverItems.length === 0 &&
+        currentState.items.length > 0 &&
+        currentState.sessionId &&
+        res.data.sessionId &&
+        res.data.sessionId !== currentState.sessionId
+      ) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({
-        items: res.data.items,
+        sessionId: res.data.sessionId || currentState.sessionId,
+        items: serverItems,
         subtotal: res.data.subtotal,
         totalItems: res.data.totalItems,
         isLoading: false,
@@ -45,6 +64,7 @@ export const useCartStore = create<CartState>((set) => ({
     });
     if (res.success && res.data) {
       set({
+        sessionId: res.data.sessionId || get().sessionId,
         items: res.data.items,
         subtotal: res.data.subtotal,
         totalItems: res.data.totalItems,
@@ -65,6 +85,7 @@ export const useCartStore = create<CartState>((set) => ({
     });
     if (res.success && res.data) {
       set({
+        sessionId: res.data.sessionId || get().sessionId,
         items: res.data.items,
         subtotal: res.data.subtotal,
         totalItems: res.data.totalItems,
@@ -84,6 +105,7 @@ export const useCartStore = create<CartState>((set) => ({
     });
     if (res.success && res.data) {
       set({
+        sessionId: res.data.sessionId || get().sessionId,
         items: res.data.items,
         subtotal: res.data.subtotal,
         totalItems: res.data.totalItems,
@@ -103,6 +125,7 @@ export const useCartStore = create<CartState>((set) => ({
     });
     if (res.success && res.data) {
       set({
+        sessionId: res.data.sessionId || get().sessionId,
         items: res.data.items,
         subtotal: res.data.subtotal,
         totalItems: res.data.totalItems,

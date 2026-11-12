@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -16,7 +16,7 @@ import {
   Check,
   Building2,
 } from 'lucide-react';
-import { fetchApi } from '../../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../../lib/api';
 import { OrderDetailDto, OrderStatus } from '@papes-confort/shared';
 
 function getStatusBadge(status: OrderStatus) {
@@ -90,6 +90,7 @@ function getTimelineStepIndex(status: OrderStatus): number {
 
 export default function DetallePedidoPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -97,6 +98,11 @@ export default function DetallePedidoPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ONLINE_PURCHASES_ENABLED) {
+      router.replace('/mi-cuenta');
+      return;
+    }
+
     async function loadOrder() {
       try {
         const res = await fetchApi<OrderDetailDto>(`/api/customer/account/orders/${id}`);

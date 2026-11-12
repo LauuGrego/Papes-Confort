@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -15,10 +15,11 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { OrderDetailDto, PaymentResult } from '@papes-confort/shared';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../lib/api';
 
 function ResultadoPedidoContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const orderNumber = searchParams.get('order') || searchParams.get('orderNumber');
   const method = searchParams.get('method') || 'CARD';
@@ -29,6 +30,21 @@ function ResultadoPedidoContent() {
   const [pollCount, setPollCount] = useState(0);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [expirationHours, setExpirationHours] = useState<number>(72);
+
+  useEffect(() => {
+    if (!ONLINE_PURCHASES_ENABLED) {
+      router.replace('/carrito');
+    }
+  }, [router]);
+
+  if (!ONLINE_PURCHASES_ENABLED) {
+    return (
+      <div className="py-24 text-center max-w-md mx-auto px-4">
+        <Loader2 className="h-10 w-10 animate-spin text-brand-red mx-auto mb-4" />
+        <p className="text-xs text-slate-500">Redirigiendo a tu carrito...</p>
+      </div>
+    );
+  }
 
   // Cargar settings públicos (ej: expiration hours)
   useEffect(() => {

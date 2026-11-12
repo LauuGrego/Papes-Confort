@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { fetchApi } from '../../../../lib/api';
+import { useRouter } from 'next/navigation';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../../lib/api';
 import {
   OrderDetailDto,
   OrderStatus,
@@ -131,7 +132,14 @@ const STATUS_CONFIG: Record<
 };
 
 export default function AdminPedidosPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!ONLINE_PURCHASES_ENABLED) {
+      router.replace('/admin');
+    }
+  }, [router]);
   const [ordersData, setOrdersData] = useState<PaginatedResponse<OrderDetailDto> | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

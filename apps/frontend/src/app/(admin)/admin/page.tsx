@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../lib/api';
 import {
   Loader2,
   ShoppingBag,
@@ -96,29 +96,31 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Tarjetas Métricas Rápidas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${ONLINE_PURCHASES_ENABLED ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4`}>
         
         {/* Métrica 1: Pedidos */}
-        <Link
-          href="/admin/pedidos"
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 hover:border-brand-navy/40 shadow-xs flex items-center gap-4 transition-all group"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy group-hover:scale-105 transition-transform shrink-0">
-            <ClipboardList className="h-6 w-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pedidos</p>
-              {(pendingTransferCount ?? 0) > 0 && (
-                <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-              )}
+        {ONLINE_PURCHASES_ENABLED && (
+          <Link
+            href="/admin/pedidos"
+            className="bg-white p-5 rounded-3xl border border-slate-200/80 hover:border-brand-navy/40 shadow-xs flex items-center gap-4 transition-all group"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy group-hover:scale-105 transition-transform shrink-0">
+              <ClipboardList className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-black text-slate-800">{orderCount ?? 0}</h2>
-            <p className="text-[10px] text-amber-600 font-bold truncate">
-              {(pendingTransferCount ?? 0) > 0 ? `${pendingTransferCount} por validar` : 'Al día'}
-            </p>
-          </div>
-        </Link>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pedidos</p>
+                {(pendingTransferCount ?? 0) > 0 && (
+                  <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+                )}
+              </div>
+              <h2 className="text-xl font-black text-slate-800">{orderCount ?? 0}</h2>
+              <p className="text-[10px] text-amber-600 font-bold truncate">
+                {(pendingTransferCount ?? 0) > 0 ? `${pendingTransferCount} por validar` : 'Al día'}
+              </p>
+            </div>
+          </Link>
+        )}
 
         {/* Métrica 2: Productos */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
@@ -181,23 +183,25 @@ export default function AdminDashboardPage() {
         <h2 className="text-lg font-extrabold text-slate-800">Acceso Rápido a Secciones</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           
-          <Link
-            href="/admin/pedidos"
-            className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-brand-navy/40 hover:shadow-md transition-all group flex items-start justify-between gap-4"
-          >
-            <div className="space-y-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy">
-                <ClipboardList className="h-5 w-5" />
+          {ONLINE_PURCHASES_ENABLED && (
+            <Link
+              href="/admin/pedidos"
+              className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-brand-navy/40 hover:shadow-md transition-all group flex items-start justify-between gap-4"
+            >
+              <div className="space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-navy/10 text-brand-navy">
+                  <ClipboardList className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-800 group-hover:text-brand-navy transition-colors">
+                  Gestión de Pedidos
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Revisá las compras recibidas, validá transferencias bancarias y actualizá los estados de entrega.
+                </p>
               </div>
-              <h3 className="text-base font-extrabold text-slate-800 group-hover:text-brand-navy transition-colors">
-                Gestión de Pedidos
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Revisá las compras recibidas, validá transferencias bancarias y actualizá los estados de entrega.
-              </p>
-            </div>
-            <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-brand-navy group-hover:translate-x-1 transition-all shrink-0 mt-2" />
-          </Link>
+              <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-brand-navy group-hover:translate-x-1 transition-all shrink-0 mt-2" />
+            </Link>
+          )}
           
           <Link
             href="/admin/configuracion?tab=banners"

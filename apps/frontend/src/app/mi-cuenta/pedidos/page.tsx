@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Package, Loader2, ArrowRight, AlertCircle, Clock, CheckCircle2, Truck, XCircle } from 'lucide-react';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../lib/api';
 import { OrderDto, OrderStatus, PaginatedResponse } from '@papes-confort/shared';
 
 function getStatusBadge(status: OrderStatus) {
@@ -27,12 +28,18 @@ function getStatusBadge(status: OrderStatus) {
 }
 
 export default function MisPedidosPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ONLINE_PURCHASES_ENABLED) {
+      router.replace('/mi-cuenta');
+      return;
+    }
+
     async function loadOrders() {
       try {
         const res = await fetchApi<PaginatedResponse<OrderDto>>('/api/customer/account/orders?limit=30');
