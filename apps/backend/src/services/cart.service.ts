@@ -72,8 +72,12 @@ export async function getCartWithItems(cartId: string) {
   });
 }
 
-export async function getCartDto(sessionId: string, customerId?: string | null): Promise<CartDto> {
-  const cart = await getOrCreateCart(sessionId, customerId);
+async function buildCartDto(cart: {
+  id: string;
+  sessionId: string;
+  customerId?: string | null;
+  status: any;
+}): Promise<CartDto> {
   const cartItems = await getCartWithItems(cart.id);
 
   const itemDtos: CartItemDto[] = cartItems.map((item) => {
@@ -116,6 +120,11 @@ export async function getCartDto(sessionId: string, customerId?: string | null):
     subtotal,
     totalItems,
   };
+}
+
+export async function getCartDto(sessionId: string, customerId?: string | null): Promise<CartDto> {
+  const cart = await getOrCreateCart(sessionId, customerId);
+  return buildCartDto(cart);
 }
 
 export async function addItem(sessionId: string, productId: string, quantity: number, customerId?: string | null) {
@@ -184,7 +193,7 @@ export async function addItem(sessionId: string, productId: string, quantity: nu
     },
   });
 
-  return getCartDto(cart.sessionId, cart.customerId);
+  return buildCartDto(cart);
 }
 
 export async function updateQuantity(sessionId: string, productId: string, quantity: number, customerId?: string | null) {
@@ -235,7 +244,7 @@ export async function updateQuantity(sessionId: string, productId: string, quant
     },
   });
 
-  return getCartDto(cart.sessionId, cart.customerId);
+  return buildCartDto(cart);
 }
 
 export async function removeItem(sessionId: string, productId: string, customerId?: string | null) {
@@ -254,7 +263,7 @@ export async function removeItem(sessionId: string, productId: string, customerI
     // Si no existía, ignoramos el error
   }
 
-  return getCartDto(cart.sessionId, cart.customerId);
+  return buildCartDto(cart);
 }
 
 export async function clearCart(sessionId: string, customerId?: string | null) {
@@ -262,7 +271,7 @@ export async function clearCart(sessionId: string, customerId?: string | null) {
   await prisma.cartItem.deleteMany({
     where: { cartId: cart.id },
   });
-  return getCartDto(cart.sessionId, cart.customerId);
+  return buildCartDto(cart);
 }
 
 /**
