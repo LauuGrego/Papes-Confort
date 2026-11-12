@@ -10,6 +10,7 @@ describe('CartStore (Zustand)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useCartStore.setState({
+      sessionId: null,
       items: [],
       subtotal: 0,
       totalItems: 0,
@@ -101,5 +102,46 @@ describe('CartStore (Zustand)', () => {
     });
     expect(useCartStore.getState().items).toEqual(mockCartResponse.items);
     expect(useCartStore.getState().totalItems).toBe(1);
+  });
+
+  it('no debería vaciar el carrito en memoria si load() devuelve un carrito vacío de una sesión distinta', async () => {
+    const existingItem = {
+      productId: 'prod-1',
+      productName: 'Heladera',
+      brand: 'Drean',
+      sku: 'HEL-001',
+      imageUrl: 'url',
+      quantity: 1,
+      unitPrice: 500000,
+      discount: 0,
+      total: 500000,
+    };
+
+    useCartStore.setState({
+      sessionId: 'session-original',
+      items: [existingItem],
+      subtotal: 500000,
+      totalItems: 1,
+      isLoading: false,
+      error: null,
+    });
+
+    vi.mocked(fetchApi).mockResolvedValue({
+      success: true,
+      data: {
+        id: 'cart-empty',
+        sessionId: 'session-new-mismatched',
+        status: 'ACTIVE',
+        items: [],
+        subtotal: 0,
+        totalItems: 0,
+      },
+    });
+
+    await useCartStore.getState().load();
+
+    expect(useCartStore.getState().items).toEqual([existingItem]);
+    expect(useCartStore.getState().totalItems).toBe(1);
+    expect(useCartStore.getState().subtotal).toBe(500000);
   });
 });

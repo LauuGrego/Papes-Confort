@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { User, Package, Heart, Lock, LogOut, Loader2, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
-import { fetchApi } from '../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../lib/api';
 
 export default function MiCuentaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,7 +40,9 @@ export default function MiCuentaLayout({ children }: { children: React.ReactNode
 
   const navItems = [
     { href: '/mi-cuenta', label: 'Mis Datos', icon: User, exact: true },
-    { href: '/mi-cuenta/pedidos', label: 'Mis Pedidos', icon: Package },
+    ...(ONLINE_PURCHASES_ENABLED
+      ? [{ href: '/mi-cuenta/pedidos', label: 'Mis Pedidos', icon: Package }]
+      : []),
     { href: '/mi-cuenta/favoritos', label: 'Mis Favoritos', icon: Heart },
     { href: '/mi-cuenta/contrasena', label: 'Contraseña y Seguridad', icon: Lock },
   ];

@@ -7,9 +7,24 @@ async function getSafetyStock(): Promise<number> {
 }
 
 export async function getOrCreateCart(sessionId: string, customerId?: string | null) {
-  // Si viene customerId, buscar carrito activo por Id
+  // 1. Buscar primero por sessionId para priorizar el carrito activo en la sesión actual
+  let cart = await prisma.cart.findUnique({
+    where: { sessionId },
+  });
+
+  if (cart) {
+    if (customerId && !cart.customerId) {
+      cart = await prisma.cart.update({
+        where: { id: cart.id },
+        data: { customerId },
+      });
+    }
+    return cart;
+  }
+
+  // 2. Si no existe carrito para el sessionId actual y viene customerId, buscar carrito activo del cliente
   if (customerId) {
-    let customerCart = await prisma.cart.findFirst({
+    const customerCart = await prisma.cart.findFirst({
       where: { customerId, status: 'ACTIVE' },
     });
 
@@ -18,12 +33,8 @@ export async function getOrCreateCart(sessionId: string, customerId?: string | n
     }
   }
 
-  // Buscar por sessionId
-  let cart = await prisma.cart.findUnique({
-    where: { sessionId },
-  });
-
-  if (!cart) {
+  // 3. Crear carrito nuevo (con manejo de condición de carrera ante peticiones simultáneas)
+  try {
     cart = await prisma.cart.create({
       data: {
         sessionId,
@@ -31,12 +42,14 @@ export async function getOrCreateCart(sessionId: string, customerId?: string | n
         status: 'ACTIVE',
       },
     });
-  } else if (customerId && !cart.customerId) {
-    // Si el carrito de sesión no tenía customerId, asignárselo
-    cart = await prisma.cart.update({
-      where: { id: cart.id },
-      data: { customerId },
+  } catch (err) {
+    const existing = await prisma.cart.findUnique({
+      where: { sessionId },
     });
+    if (existing) {
+      return existing;
+    }
+    throw err;
   }
 
   return cart;
@@ -183,6 +196,7 @@ export async function updateQuantity(sessionId: string, productId: string, quant
 
   const product = await prisma.product.findUnique({
     where: { id: productId, isActive: true, deletedAt: null },
+    include: { productFamily: true },
   });
 
   if (!product) {
@@ -196,7 +210,17 @@ export async function updateQuantity(sessionId: string, productId: string, quant
     throw new Error(`Stock insuficiente. Solo quedan ${stockVisible} unidades disponibles.`);
   }
 
-  const unitPrice = Number(product.basePrice);
+  const basePrice = Number(product.basePrice);
+  const listPrice =
+    product.listPrice !== null && product.listPrice !== undefined && Number(product.listPrice) > 0
+      ? Number(product.listPrice)
+      : (basePrice > 0 ? basePrice / 0.8 : basePrice);
+  const isOffer = isProductOfferActive(product);
+  const offerDiscount = isOffer ? (Number(product.discountPercent) || 0) : 0;
+
+  const unitPrice = isOffer && basePrice < listPrice
+    ? basePrice
+    : (offerDiscount > 0 ? listPrice * (1 - offerDiscount / 100) : basePrice);
 
   await prisma.cartItem.update({
     where: {

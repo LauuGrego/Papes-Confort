@@ -19,6 +19,7 @@ import { CheckoutStep } from '@papes-confort/shared';
 import { useAuthStore } from '../../stores/auth';
 import { useCartStore } from '../../stores/cart';
 import { useCheckoutStore } from '../../stores/checkout';
+import { ONLINE_PURCHASES_ENABLED } from '../../lib/api';
 import ShippingStep from '../../components/checkout/ShippingStep';
 import PaymentStep from '../../components/checkout/PaymentStep';
 import ReviewStep from '../../components/checkout/ReviewStep';
@@ -31,8 +32,13 @@ export default function CheckoutPage() {
 
   const [completedSteps, setCompletedSteps] = useState<Set<CheckoutStep>>(new Set());
 
-  // 1. Guard de Autenticación
+  // 1. Guard de Autenticación y Compra Online Habilitada
   useEffect(() => {
+    if (!ONLINE_PURCHASES_ENABLED) {
+      router.replace('/carrito');
+      return;
+    }
+
     if (!hasHydrated) return;
 
     if (!isAuthenticated) {
@@ -41,6 +47,15 @@ export default function CheckoutPage() {
       loadCart();
     }
   }, [hasHydrated, isAuthenticated, router, loadCart]);
+
+  if (!ONLINE_PURCHASES_ENABLED) {
+    return (
+      <main className="min-h-[70vh] flex flex-col items-center justify-center p-6">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-brand-red mb-4"></div>
+        <p className="text-sm font-medium text-slate-500">Redirigiendo a tu carrito...</p>
+      </main>
+    );
+  }
 
   // Si está hidratando o cargando auth
   if (!hasHydrated || (!isAuthenticated && hasHydrated)) {

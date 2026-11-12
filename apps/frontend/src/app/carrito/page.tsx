@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trash2, Plus, Minus, ArrowLeft, MessageSquare, AlertCircle, Truck, CreditCard } from 'lucide-react';
 import { useCartStore } from '../../stores/cart';
-import { fetchApi } from '../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../lib/api';
 
 export default function CarritoPage() {
   const { items, subtotal, totalItems, isLoading, error, load, updateQuantity, removeItem } = useCartStore();
@@ -137,13 +137,15 @@ export default function CarritoPage() {
           {/* Listado de Productos */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
-              const itemUnitPrice = item.isOutlet
-                ? item.unitPrice
-                : item.unitPrice * (1 - item.discount / 100);
+              const itemUnitPrice = item.unitPrice;
               const formattedPrice = new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',
               }).format(itemUnitPrice);
+              const originalUnitPrice =
+                !item.isOutlet && item.discount > 0 && item.discount < 100
+                  ? item.unitPrice / (1 - item.discount / 100)
+                  : item.unitPrice;
 
               return (
                 <div
@@ -171,7 +173,7 @@ export default function CarritoPage() {
                         {!item.isOutlet && item.discount > 0 && (
                           <>
                             <span className="text-xs text-slate-400 line-through">
-                              {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.unitPrice)}
+                              {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(originalUnitPrice)}
                             </span>
                             <span className="text-[10px] font-bold text-white bg-green-500 px-1.5 py-0.5 rounded">
                               {item.discount}% OFF
@@ -192,6 +194,7 @@ export default function CarritoPage() {
                     {/* Controladores de cantidad */}
                     <div className="flex items-center border border-slate-200 rounded-full bg-slate-50 p-1">
                       <button
+                        type="button"
                         onClick={() => handleUpdateQty(item.productId, item.quantity, -1)}
                         className="h-8 w-8 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 active:scale-95 transition-all"
                         aria-label="Disminuir cantidad"
@@ -202,6 +205,7 @@ export default function CarritoPage() {
                         {item.quantity}
                       </span>
                       <button
+                        type="button"
                         onClick={() => handleUpdateQty(item.productId, item.quantity, 1)}
                         className="h-8 w-8 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 active:scale-95 transition-all"
                         aria-label="Aumentar cantidad"
@@ -212,6 +216,7 @@ export default function CarritoPage() {
 
                     {/* Eliminar item */}
                     <button
+                      type="button"
                       onClick={() => handleRemove(item.productId)}
                       className="h-10 w-10 flex items-center justify-center rounded-full text-slate-400 hover:text-brand-red hover:bg-red-50 transition-all duration-200"
                       aria-label="Eliminar producto"
@@ -254,24 +259,43 @@ export default function CarritoPage() {
               </span>
             </div>
 
-            <Link
-              href="/checkout"
-              className="w-full h-14 flex items-center justify-center gap-3 rounded-full bg-brand-red text-base font-bold text-white shadow-lg shadow-brand-red/20 hover:bg-brand-red-dark transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <CreditCard className="h-5 w-5" />
-              Ir a pagar
-            </Link>
+            {ONLINE_PURCHASES_ENABLED ? (
+              <>
+                <Link
+                  href="/checkout"
+                  className="w-full h-14 flex items-center justify-center gap-3 rounded-full bg-brand-red text-base font-bold text-white shadow-lg shadow-brand-red/20 hover:bg-brand-red-dark transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <CreditCard className="h-5 w-5" />
+                  Ir a pagar
+                </Link>
 
-            <button
-              onClick={handleSendWhatsApp}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors mt-3"
-            >
-              <MessageSquare className="h-4 w-4 text-emerald-600" />
-              O pedir por WhatsApp
-            </button>
-            <p className="text-center text-xs text-slate-400 mt-3 leading-relaxed">
-              Pago con tarjeta o transferencia bancaria.
-            </p>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  className="w-full h-11 flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors mt-3 cursor-pointer"
+                >
+                  <MessageSquare className="h-4 w-4 text-emerald-600" />
+                  O pedir por WhatsApp
+                </button>
+                <p className="text-center text-xs text-slate-400 mt-3 leading-relaxed">
+                  Pago con tarjeta o transferencia bancaria.
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  className="w-full h-14 flex items-center justify-center gap-3 rounded-full bg-emerald-600 text-base font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  Enviar pedido por WhatsApp
+                </button>
+                <p className="text-center text-xs text-slate-500 mt-3 leading-relaxed">
+                  Se abrirá WhatsApp con el detalle de tu carrito para coordinar el pago y la entrega con un asesor.
+                </p>
+              </>
+            )}
 
             {/* Opciones de Entrega y Envíos */}
             <div className="mt-6 pt-5 border-t border-slate-200/80 space-y-2.5">

@@ -24,7 +24,7 @@ import {
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { useFavoritesStore } from '../stores/favorites';
-import { fetchApi } from '../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../lib/api';
 import { OfferDto } from '@papes-confort/shared';
 
 interface Category {
@@ -496,14 +496,16 @@ export default function Header() {
                         <User className="h-4 w-4" />
                         Mis Datos
                       </Link>
-                      <Link
-                        href="/mi-cuenta/pedidos"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-colors"
-                      >
-                        <Package className="h-4 w-4" />
-                        Mis Pedidos
-                      </Link>
+                      {ONLINE_PURCHASES_ENABLED && (
+                        <Link
+                          href="/mi-cuenta/pedidos"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-colors"
+                        >
+                          <Package className="h-4 w-4" />
+                          Mis Pedidos
+                        </Link>
+                      )}
                       <Link
                         href="/mi-cuenta/favoritos"
                         onClick={() => setUserDropdownOpen(false)}
@@ -931,14 +933,16 @@ export default function Header() {
                           <User className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
                           <span>Mi Cuenta ({customer?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Perfil'})</span>
                         </Link>
-                        <Link
-                          href="/mi-cuenta/pedidos"
-                          onClick={() => setMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
-                        >
-                          <Package className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
-                          <span>Mis Pedidos</span>
-                        </Link>
+                        {ONLINE_PURCHASES_ENABLED && (
+                          <Link
+                            href="/mi-cuenta/pedidos"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-brand-red hover:bg-slate-50 transition-all group"
+                          >
+                            <Package className="h-4.5 w-4.5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                            <span>Mis Pedidos</span>
+                          </Link>
+                        )}
                         <Link
                           href="/mi-cuenta/favoritos"
                           onClick={() => setMenuOpen(false)}

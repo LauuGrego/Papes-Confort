@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '../../../stores/auth';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, ONLINE_PURCHASES_ENABLED } from '../../../lib/api';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -111,7 +111,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const mainNav = [
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
-    { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
+    ...(ONLINE_PURCHASES_ENABLED
+      ? [{ href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList }]
+      : []),
     { href: '/admin/productos', label: 'Productos', icon: ShoppingBag },
     { href: '/admin/promociones', label: 'Promociones Bancarias', icon: CreditCard },
     { href: '/admin/ofertas', label: 'Ofertas Destacadas', icon: Tag },
