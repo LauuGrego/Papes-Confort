@@ -69,17 +69,24 @@ export async function startImageWatcher() {
     });
 
     if (imageFiles.length > 0) {
-      logger.info(`Found ${imageFiles.length} image files locally. Verifying database and Cloudinary sync...`);
+      logger.info(`Found ${imageFiles.length} image files locally. Checking sync state...`);
       const state = loadSyncState();
       let stateChanged = false;
+      let upToDateCount = 0;
+      let newlyUploadedCount = 0;
+      let failedCount = 0;
 
       for (const filename of imageFiles) {
         const filePath = path.join(imagesDir, filename);
-        const stats = fs.statSync(filePath);
-        const sku = extractSkuFromFilename(filename);
+        let stats: fs.Stats;
+        try {
+          stats = fs.statSync(filePath);
+        } catch {
+          continue;
+        }
 
+        const sku = extractSkuFromFilename(filename);
         if (!sku) {
-          logger.warn(`[Startup Sync] Skipped "${filename}" because SKU could not be extracted.`);
           continue;
         }
 
@@ -89,37 +96,39 @@ export async function startImageWatcher() {
         const isPrimary = isPrimaryImage(filename);
         const sortOrder = extractSuffixNumber(filename);
 
+        // Si ya está subida a Cloudinary y tamaño/fecha no variaron, omitir completamente para no saturar la red ni la CPU
         if (existing && existing.size === size && existing.mtime === mtime && existing.url) {
-          // Already uploaded to Cloudinary, but send backend notification to heal the database link just in case
-          logger.info(`[Startup Sync] "${filename}" already in local state. Healing/notifying backend...`);
-          try {
-            await sendImageSyncNotification(sku, filename, existing.url, isPrimary, sortOrder);
-          } catch (backendErr: any) {
-            logger.warn(`[Startup Sync] Backend notification failed for "${filename}" (SKU: ${sku}): ${backendErr.message}`);
-          }
-        } else {
-          // Upload or re-upload
-          logger.info(`[Startup Sync] Uploading "${filename}" (SKU: "${sku}") to Cloudinary...`);
-          try {
-            const ext = path.extname(filename);
-            const publicId = path.basename(filename, ext).trim();
-            const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
+          upToDateCount++;
+          continue;
+        }
 
-            if (cloudinaryUrl) {
-              logger.info(`[Startup Sync] Uploaded. Notifying backend...`);
-              await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
-              state.images[filename] = { mtime, size, url: cloudinaryUrl };
-              stateChanged = true;
-            }
-          } catch (uploadErr: any) {
-            logger.error(`[Startup Sync] Failed to sync "${filename}": ${uploadErr.message}`);
+        // Subir o re-subir únicamente imágenes nuevas o modificadas
+        logger.info(`[Startup Sync] Uploading new or modified "${filename}" (SKU: "${sku}") to Cloudinary...`);
+        try {
+          const ext = path.extname(filename);
+          const publicId = path.basename(filename, ext).trim();
+          const cloudinaryUrl = await uploadToCloudinary(filePath, publicId);
+
+          if (cloudinaryUrl) {
+            await sendImageSyncNotification(sku, filename, cloudinaryUrl, isPrimary, sortOrder);
+            state.images[filename] = { mtime, size, url: cloudinaryUrl };
+            stateChanged = true;
+            newlyUploadedCount++;
+            // Pausa de 250ms para no saturar el canal de subida y evitar afectar videollamadas/webcam
+            await new Promise(r => setTimeout(r, 250));
+          } else {
+            failedCount++;
           }
+        } catch (uploadErr: any) {
+          logger.error(`[Startup Sync] Failed to sync "${filename}": ${uploadErr.message}`);
+          failedCount++;
         }
       }
 
       if (stateChanged) {
         saveSyncState(state);
       }
+      logger.info(`[Startup Sync] Initial scan completed: ${upToDateCount} images up to date, ${newlyUploadedCount} uploaded, ${failedCount} errors.`);
     }
   } catch (scanError: any) {
     logger.error('Error during initial image folder scan:', { error: scanError.message });
@@ -130,9 +139,11 @@ export async function startImageWatcher() {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true,
     ignoreInitial: true, // We already scanned initially
+    depth: 0,
+    usePolling: false,
     awaitWriteFinish: {
-      stabilityThreshold: 2000,
-      pollInterval: 100,
+      stabilityThreshold: 3000,
+      pollInterval: 500,
     },
   });
 
