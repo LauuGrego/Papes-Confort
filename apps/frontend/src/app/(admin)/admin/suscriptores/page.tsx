@@ -191,7 +191,7 @@ export default function AdminSuscriptoresPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('Base de datos exportada en formato CSV.');
+    showToast('Lista de suscriptores descargada.');
   };
 
   // Abrir modal de creación
@@ -1152,7 +1152,7 @@ export default function AdminSuscriptoresPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        URL de Destino
+                        Enlace de Destino
                       </label>
                       <input
                         type="text"

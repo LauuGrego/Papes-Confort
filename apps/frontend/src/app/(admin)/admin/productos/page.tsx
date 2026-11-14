@@ -153,7 +153,7 @@ export default function AdminProductosPage() {
           <div className="relative w-full sm:w-72">
             <input
               type="text"
-              placeholder="Buscar por SKU, nombre..."
+              placeholder="Buscar por código, nombre..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-100 bg-white text-sm text-brand-black outline-none focus:border-brand-red/30 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.01)]"
@@ -176,8 +176,8 @@ export default function AdminProductosPage() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 uppercase tracking-wider font-bold text-[10px] border-b border-slate-100">
-                    <th className="px-6 py-4">SKU</th>
-                    <th className="px-6 py-4">Nombre original (GesCom)</th>
+                    <th className="px-6 py-4">Código</th>
+                    <th className="px-6 py-4">Nombre de sistema</th>
                     <th className="px-6 py-4">Nombre visible</th>
                     <th className="px-6 py-4">Precio final</th>
                     <th className="px-6 py-4">Stock</th>
@@ -311,9 +311,9 @@ export default function AdminProductosPage() {
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div>
                 <h3 className="font-display text-lg font-extrabold text-brand-black">
-                  Enriquecer Producto
+                  Editar Producto
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">SKU: {editingProduct.sku}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Código: {editingProduct.sku}</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -334,7 +334,7 @@ export default function AdminProductosPage() {
               {/* Title & Category */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre (GesCom)</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Producto</label>
                   <input
                     type="text"
                     readOnly
@@ -343,7 +343,7 @@ export default function AdminProductosPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría (GesCom)</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría</label>
                   <input
                     type="text"
                     readOnly

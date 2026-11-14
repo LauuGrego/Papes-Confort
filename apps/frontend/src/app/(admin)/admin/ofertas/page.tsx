@@ -60,7 +60,7 @@ export default function AdminOffersPage() {
             Ofertas y Listas de Precios
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Supervisa las ofertas y listas de precios sincronizadas automáticamente desde el sistema de stock Gescom ERP.
+            Supervisa las ofertas y listas de precios vigentes.
           </p>
         </div>
 
@@ -86,14 +86,14 @@ export default function AdminOffersPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
           <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
-          <span className="text-xs font-bold text-slate-400">Consultando ofertas sincronizadas...</span>
+          <span className="text-xs font-bold text-slate-400">Cargando ofertas...</span>
         </div>
       ) : offers.length === 0 ? (
         <div className="p-12 border-2 border-dashed border-slate-200 rounded-3xl text-center bg-white space-y-3">
           <Tag className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-sm font-bold text-slate-700">No hay ofertas sincronizadas actualmente</p>
+          <p className="text-sm font-bold text-slate-700">No hay ofertas cargadas actualmente</p>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Cuando el middleware de Gescom sincronice productos con una lista de oferta (LDes) o envíe listas de precios, se listarán automáticamente en esta sección.
+            Cuando se carguen productos en oferta o listas de precios, se mostrarán automáticamente en esta sección.
           </p>
         </div>
       ) : (
@@ -168,7 +168,7 @@ export default function AdminOffersPage() {
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-red">
-                  Productos en Oferta (Gescom ERP)
+                  Productos en Oferta
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
                   {viewingOffer.name}
@@ -220,7 +220,7 @@ export default function AdminOffersPage() {
                           </div>
                           <div className="min-w-0 space-y-0.5">
                             <span className="text-[10px] font-black uppercase text-slate-400">
-                              SKU: {prod.sku}
+                              Código: {prod.sku}
                             </span>
                             <h4 className="text-xs font-bold text-slate-800 truncate">
                               {prod.name}

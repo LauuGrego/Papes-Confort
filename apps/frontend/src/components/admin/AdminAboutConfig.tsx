@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Save,
-  Upload,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -11,6 +10,9 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
+  RefreshCw,
+  Plus,
+  RotateCcw,
 } from 'lucide-react';
 import { HomeAboutDto, DEFAULT_ABOUT_SECTION } from '@papes-confort/shared';
 import { fetchApi } from '../../lib/api';
@@ -56,7 +58,7 @@ export default function AdminAboutConfig({
         if (res.success && res.data?.url) {
           handleChange('imageUrl', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -72,16 +74,21 @@ export default function AdminAboutConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeConfig: HomeAboutDto = {
+      ...config,
+      imageUrl: config.imageUrl?.trim() || DEFAULT_ABOUT_SECTION.imageUrl,
+    };
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_about: JSON.stringify(config),
+        home_about: JSON.stringify(safeConfig),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Información institucional guardada exitosamente en la base de datos.');
-      if (onSaved) onSaved(config);
+      setSuccessMsg('Información institucional guardada correctamente.');
+      if (onSaved) onSaved(safeConfig);
     } else {
       setErrorMsg(res.error || 'Error al guardar la sección institucional.');
     }
@@ -99,7 +106,7 @@ export default function AdminAboutConfig({
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Personalizá la historia de confianza, la fotografía del edificio de Basavilbaso en Cloudinary, los valores familiares y el mensaje de contacto.
+            Personalizá la historia de confianza, la fotografía del local de Basavilbaso, los valores familiares y el mensaje de contacto.
           </p>
         </div>
 
@@ -317,8 +324,8 @@ export default function AdminAboutConfig({
                 <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
               ) : (
                 <>
-                  <Upload className="h-5 w-5 mb-1" />
-                  <span>Subir foto a Cloudinary</span>
+                  <RefreshCw className="h-5 w-5 mb-1" />
+                  <span>Haga clic para reemplazar foto</span>
                 </>
               )}
               <input
@@ -332,6 +339,52 @@ export default function AdminAboutConfig({
                 }}
               />
             </label>
+          </div>
+
+          {/* Botones de acción: Reemplazar existente o Subir nueva foto */}
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <label className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-brand-red hover:bg-brand-red-dark text-white text-xs font-bold cursor-pointer transition-all shadow-xs">
+              {uploadingImage ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span>{config.imageUrl ? 'Reemplazar foto existente' : 'Cargar foto'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingImage}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                }}
+              />
+            </label>
+
+            <label className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-700">
+              <Plus className="h-4 w-4 text-brand-red" />
+              <span>Subir nueva foto</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingImage}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => handleChange('imageUrl', DEFAULT_ABOUT_SECTION.imageUrl)}
+              className="px-2.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 text-xs transition-colors cursor-pointer"
+              title="Restaurar foto original del local"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
           </div>
 
           <div>

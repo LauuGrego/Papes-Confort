@@ -23,7 +23,7 @@ import {
   CreditCard,
   MapPin,
   RotateCcw,
-  Upload,
+  RefreshCw,
   Sparkles,
   Clock,
 } from 'lucide-react';
@@ -350,6 +350,14 @@ function AdminConfiguracionContent() {
     setErrorMsg(null);
 
     const target = customBanner || heroBanner;
+    const currentImgs = (target.images || []).filter((img) => img && img.trim() !== '');
+    const mainImg = target.imageUrl?.trim() || currentImgs[0] || DEFAULT_HERO_BANNER.imageUrl;
+    const finalImgs = currentImgs.length > 0 ? currentImgs : [mainImg];
+    const safeTarget = {
+      ...target,
+      imageUrl: mainImg,
+      images: finalImgs,
+    };
 
     const body = {
       safety_stock: safetyStock,
@@ -357,7 +365,7 @@ function AdminConfiguracionContent() {
       business_hours: businessHours,
       home_flyers: JSON.stringify(flyers),
       home_payment_cards: JSON.stringify(paymentCards),
-      home_hero_banner: JSON.stringify(target),
+      home_hero_banner: JSON.stringify(safeTarget),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -416,9 +424,93 @@ function AdminConfiguracionContent() {
     }
   };
 
+  const handleReplaceMainHeroImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingHeroImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64Data }),
+        });
+
+        if (res.success && res.data?.url) {
+          const newUrl = res.data.url;
+          setHeroBanner((prev: HomeHeroBannerDto) => {
+            const oldMain = prev.imageUrl;
+            const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (oldMain ? [oldMain] : []);
+            const index = currentImgs.findIndex((img) => img === oldMain);
+            let updatedImgs: string[];
+            if (index >= 0) {
+              updatedImgs = currentImgs.map((img, i) => (i === index ? newUrl : img));
+            } else {
+              updatedImgs = [newUrl, ...currentImgs];
+            }
+            return {
+              ...prev,
+              imageUrl: newUrl,
+              images: updatedImgs,
+            };
+          });
+        } else {
+          alert(res.error || 'Error al reemplazar la imagen principal.');
+        }
+        setUploadingHeroImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error al reemplazar imagen principal del hero:', err);
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const handleReplaceHeroImage = async (indexToReplace: number, file: File) => {
+    setUploadingHeroImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64Data }),
+        });
+
+        if (res.success && res.data?.url) {
+          const newUrl = res.data.url;
+          setHeroBanner((prev: HomeHeroBannerDto) => {
+            const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (prev.imageUrl ? [prev.imageUrl] : []);
+            const oldUrl = currentImgs[indexToReplace];
+            const updatedImgs = currentImgs.map((img, i) => (i === indexToReplace ? newUrl : img));
+            const isMain = prev.imageUrl === oldUrl || (!prev.imageUrl && indexToReplace === 0);
+            return {
+              ...prev,
+              imageUrl: isMain ? newUrl : prev.imageUrl,
+              images: updatedImgs,
+            };
+          });
+        } else {
+          alert(res.error || 'Error al reemplazar la imagen.');
+        }
+        setUploadingHeroImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error al reemplazar imagen rotativa del hero:', err);
+      setUploadingHeroImage(false);
+    }
+  };
+
   const handleRemoveHeroImage = (indexToRemove: number) => {
     setHeroBanner((prev: HomeHeroBannerDto) => {
       const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (prev.imageUrl ? [prev.imageUrl] : []);
+      if (currentImgs.length <= 1) {
+        alert('Debe haber al menos una foto en la portada principal. Puedes utilizar la opción "Reemplazar" para cambiarla.');
+        return prev;
+      }
       const updatedImgs = currentImgs.filter((_, idx) => idx !== indexToRemove);
       const newMain = updatedImgs[0] || DEFAULT_HERO_BANNER.imageUrl;
       return {
@@ -476,6 +568,10 @@ function AdminConfiguracionContent() {
 
   const handleRemoveFlyerImage = (indexToRemove: number) => {
     setFlyerImages((prev) => {
+      if (prev.length <= 1) {
+        alert('El banner debe contener al menos una imagen. Puedes utilizar la opción "Reemplazar" para sustituirla.');
+        return prev;
+      }
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
       if (updated.length > 0) {
         setFlyerImageUrl(updated[0]);
@@ -484,6 +580,36 @@ function AdminConfiguracionContent() {
       }
       return updated;
     });
+  };
+
+  const handleReplaceFlyerImage = async (indexToReplace: number, file: File) => {
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64Data }),
+        });
+
+        if (res.success && res.data?.url) {
+          const newUrl = res.data.url;
+          const oldUrl = flyerImages[indexToReplace];
+          setFlyerImages((prev) => prev.map((img, i) => (i === indexToReplace ? newUrl : img)));
+          if (flyerImageUrl === oldUrl || !flyerImageUrl) {
+            setFlyerImageUrl(newUrl);
+          }
+        } else {
+          alert(res.error || 'Error al reemplazar la imagen del banner.');
+        }
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Error al reemplazar imagen del flyer:', err);
+      setUploadingImage(false);
+    }
   };
 
   // Flyer CRUD operations
@@ -535,6 +661,10 @@ function AdminConfiguracionContent() {
     let newFlyersList: HomeFlyerDto[] = [];
     const formattedPosition = `${flyerObjectPositionX}% ${flyerObjectPositionY}%`;
     const finalImages = flyerImages.filter((img) => img && img.trim() !== '');
+    if (finalImages.length === 0) {
+      alert('Debes incluir al menos una imagen para este banner promocional.');
+      return;
+    }
     const mainImageUrl = finalImages[0] || flyerImageUrl;
 
     if (editingFlyer) {
@@ -941,23 +1071,37 @@ function AdminConfiguracionContent() {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                     Foto Principal de Portada *
                   </label>
-                  <label className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
-                    {uploadingHeroImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    <span>{uploadingHeroImage ? 'Subiendo foto a Cloudinary...' : 'Subir Foto de Portada (Archivo)'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleHeroImageUpload}
-                      disabled={uploadingHeroImage}
-                      className="hidden"
-                    />
-                  </label>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
+                      {uploadingHeroImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span>{uploadingHeroImage ? 'Subiendo foto...' : (heroBanner.imageUrl ? 'Reemplazar Foto Existente' : 'Subir Foto Principal')}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReplaceMainHeroImage}
+                        disabled={uploadingHeroImage}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer">
+                      <Plus className="h-4 w-4 text-brand-red" />
+                      <span>Agregar Nueva Foto Rotativa</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeroImageUpload}
+                        disabled={uploadingHeroImage}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                   <p className="text-[11px] text-slate-400 mt-1.5">
-                    Las fotos se suben únicamente como archivo desde tu dispositivo (.webp, .jpg, .png).
+                    Puedes reemplazar la foto de portada actual o agregar nuevas imágenes para que roten automáticamente en el carrusel de inicio (.webp, .jpg, .png).
                   </p>
                 </div>
 
@@ -988,7 +1132,7 @@ function AdminConfiguracionContent() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                          <span className="text-xs font-bold text-slate-800">Ver completa</span>
                           {heroBanner.objectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                         </div>
                         <span className="text-[10px] text-slate-500">
@@ -1006,7 +1150,7 @@ function AdminConfiguracionContent() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">Llenar espacio (Cover)</span>
+                          <span className="text-xs font-bold text-slate-800">Llenar espacio</span>
                           {heroBanner.objectFit !== 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                         </div>
                         <span className="text-[10px] text-slate-500">
@@ -1046,21 +1190,36 @@ function AdminConfiguracionContent() {
                           alt={`Hero foto ${idx + 1}`}
                           className="w-full h-20 object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
                           <button
                             type="button"
                             onClick={() => setHeroBanner({ ...heroBanner, imageUrl: imgUrl })}
-                            className="px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer"
+                            className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
                           >
                             Principal
                           </button>
+                          <label className="w-full px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-lg hover:bg-slate-900 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center" title="Reemplazar esta foto">
+                            <RefreshCw className="h-2.5 w-2.5" />
+                            <span>Reemplazar</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={uploadingHeroImage}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleReplaceHeroImage(idx, file);
+                              }}
+                            />
+                          </label>
                           <button
                             type="button"
                             onClick={() => handleRemoveHeroImage(idx)}
-                            className="p-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer"
+                            className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
                             title="Eliminar del carrusel"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-2.5 w-2.5" />
+                            <span>Quitar</span>
                           </button>
                         </div>
                         {heroBanner.imageUrl === imgUrl && (
@@ -1800,7 +1959,7 @@ function AdminConfiguracionContent() {
               <div>
                 <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
                   <Clock className="h-5 w-5 text-brand-red" />
-                  <span>Días y Horarios de Atención (Footer y Casa Central)</span>
+                  <span>Días y Horarios de Atención (Pie de página y Casa Central)</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Personaliza los días y horarios que se muestran en el pie de página de la tienda y la información de contacto de la sucursal.
@@ -1866,7 +2025,7 @@ function AdminConfiguracionContent() {
               <div className="p-4.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Vista previa de cómo se ve en el Footer
+                    Vista previa en el pie de página
                   </span>
                   <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">
                     Pie de página
@@ -2151,21 +2310,36 @@ function AdminConfiguracionContent() {
                           alt={`Flyer foto ${idx + 1}`}
                           className="w-full h-20 object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
                           <button
                             type="button"
                             onClick={() => setFlyerImageUrl(imgUrl)}
-                            className="px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer"
+                            className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
                           >
                             Principal
                           </button>
+                          <label className="w-full px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-lg hover:bg-slate-900 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center" title="Reemplazar esta imagen">
+                            <RefreshCw className="h-2.5 w-2.5" />
+                            <span>Reemplazar</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={uploadingImage}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleReplaceFlyerImage(idx, file);
+                              }}
+                            />
+                          </label>
                           <button
                             type="button"
                             onClick={() => handleRemoveFlyerImage(idx)}
-                            className="p-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer"
+                            className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
                             title="Quitar foto"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-2.5 w-2.5" />
+                            <span>Quitar</span>
                           </button>
                         </div>
                         {flyerImageUrl === imgUrl && (
@@ -2182,14 +2356,14 @@ function AdminConfiguracionContent() {
                   {uploadingImage ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-2">
                       <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
-                      <span className="text-xs font-bold text-slate-600">Subiendo imagen a Cloudinary...</span>
+                      <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
                     </div>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
                       <ImageIcon className="h-7 w-7 text-slate-400 group-hover:text-brand-red transition-colors" />
                       <div className="space-y-1">
                         <span className="text-xs font-bold text-brand-red hover:underline block">
-                          + Adjuntar foto a este carrusel (Subida instantánea a Cloudinary)
+                          + Agregar nueva imagen a este banner
                         </span>
                         <span className="text-[10px] text-slate-400 block">
                           Podés subir múltiples imágenes para que roten automáticamente en el carrusel de este banner
@@ -2336,7 +2510,7 @@ function AdminConfiguracionContent() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">Cubrir banner (Cover)</span>
+                      <span className="text-xs font-bold text-slate-800">Cubrir banner</span>
                       {flyerObjectFit === 'cover' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                     </div>
                     <span className="text-[10px] text-slate-500">
@@ -2354,11 +2528,11 @@ function AdminConfiguracionContent() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                      <span className="text-xs font-bold text-slate-800">Ver completa</span>
                       {flyerObjectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                     </div>
                     <span className="text-[10px] text-slate-500">
-                      Muestra toda la foto sin cortar nada. Ideal para flyers con textos, cuotas, bancos o promociones.
+                      Muestra toda la foto sin cortar nada. Ideal para imágenes con textos, cuotas, bancos o promociones.
                     </span>
                   </button>
                 </div>

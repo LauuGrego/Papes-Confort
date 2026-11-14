@@ -74,8 +74,8 @@ CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
 
 # 5. Ajustes de Sincronización
-# Expresión cron para la frecuencia. */1 * * * * significa cada 1 minuto.
-PRODUCTS_SYNC_CRON=*/1 * * * *
+# Expresión cron para la frecuencia. */15 * * * * significa cada 15 minutos (recomendado para no sobrecargar la PC ni la red).
+PRODUCTS_SYNC_CRON=*/15 * * * *
 # Cantidad de stock que se descuenta para seguridad en el backend.
 # Si el producto tiene stock 2 en GesCom y SAFETY_STOCK=1, el e-commerce mostrará stock 1.
 SAFETY_STOCK=0
@@ -88,12 +88,13 @@ SAFETY_STOCK=0
 
 ## 🚀 Paso 4: Ejecución mediante `start.bat`
 
-El archivo `start.bat` simplifica la instalación e inicio del servicio en Windows.
+El archivo `start.bat` simplifica la instalación e inicio del servicio en Windows de manera optimizada:
 
 - Está ubicado en: `apps/middleware/start.bat`
 - **¿Qué hace?**
-  1. Instala automáticamente las dependencias de Node.js la primera vez que se ejecuta (mediante `npm install`).
-  2. Inicia el servidor de sincronización (`npm start`), el cual conecta a la BD de GesCom, realiza la primera sincronización de productos, y se queda escuchando cambios de imágenes en tiempo real.
+  1. Instala automáticamente las dependencias de Node.js la primera vez que se ejecuta (si `node_modules` no existe).
+  2. Compila el código a JavaScript nativo (`dist/index.js`) si no está compilado.
+  3. Inicia el servicio de sincronización con Node.js en modo nativo de bajo consumo de CPU y memoria (`npm start`), ejecutando la sincronización de productos cada 15 minutos y manteniendo el observador de imágenes en segundo plano.
 
 Para probar que todo funciona, simplemente **haz doble clic en `start.bat`**. Deberías ver una ventana negra mostrando registros indicando que la conexión a la base de datos GesCom fue exitosa.
 

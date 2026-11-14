@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Save,
-  Upload,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -13,6 +12,9 @@ import {
   MessageSquare,
   Tag,
   ArrowRight,
+  RefreshCw,
+  Plus,
+  RotateCcw,
 } from 'lucide-react';
 import { HomeOutletDto, DEFAULT_OUTLET_SECTION } from '@papes-confort/shared';
 import { fetchApi } from '../../lib/api';
@@ -59,7 +61,7 @@ export default function AdminOutletConfig({
         if (res.success && res.data?.url) {
           handleChange('imageUrl', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -75,16 +77,21 @@ export default function AdminOutletConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeConfig: HomeOutletDto = {
+      ...config,
+      imageUrl: config.imageUrl?.trim() || DEFAULT_OUTLET_SECTION.imageUrl,
+    };
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_outlet_section: JSON.stringify(config),
+        home_outlet_section: JSON.stringify(safeConfig),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Sección Outlet de la landing guardada exitosamente.');
-      if (onSaved) onSaved(config);
+      setSuccessMsg('Sección Outlet guardada correctamente.');
+      if (onSaved) onSaved(safeConfig);
     } else {
       setErrorMsg(res.error || 'Error al guardar la sección Outlet.');
     }
@@ -259,7 +266,7 @@ export default function AdminOutletConfig({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Código o Nombre de Rubro en GesCom (Ej: 09)
+                Código o Nombre de Rubro (Ej: 09)
               </label>
               <input
                 type="text"
@@ -397,14 +404,14 @@ export default function AdminOutletConfig({
                 <span className="text-[10px] text-slate-500">Ocupa todo el espacio de portada</span>
               </button>
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
+            <div className="flex flex-col sm:flex-row gap-2 mb-2">
+              <label className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer">
                 {uploadingImage ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
                 ) : (
-                  <Upload className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                 )}
-                <span>{uploadingImage ? 'Subiendo a Cloudinary...' : 'Subir Imagen'}</span>
+                <span>{uploadingImage ? 'Subiendo...' : (config.imageUrl ? 'Reemplazar imagen existente' : 'Cargar Imagen')}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -414,12 +421,35 @@ export default function AdminOutletConfig({
                 />
               </label>
 
+              <label className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all shadow-xs cursor-pointer">
+                <Plus className="h-4 w-4 text-amber-400" />
+                <span>Subir nueva imagen</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                  disabled={uploadingImage}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => handleChange('imageUrl', DEFAULT_OUTLET_SECTION.imageUrl)}
+                className="px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 text-xs transition-colors cursor-pointer"
+                title="Restaurar imagen por defecto del outlet"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
               <input
                 type="text"
-                placeholder="O pegar URL directa de Cloudinary"
+                placeholder="O pegar enlace directo de imagen"
                 value={config.imageUrl}
                 onChange={(e) => handleChange('imageUrl', e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 outline-none focus:border-amber-500"
               />
             </div>
           </div>
@@ -462,7 +492,7 @@ export default function AdminOutletConfig({
 
               <div className="space-y-1.5 text-left text-[11px]">
                 <div className="flex items-center justify-between text-slate-300">
-                  <span className="text-slate-400">Rubro GesCom:</span>
+                  <span className="text-slate-400">Rubro:</span>
                   <span className="font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                     {config.rubroGescom}
                   </span>

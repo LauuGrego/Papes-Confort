@@ -27,9 +27,13 @@ export const logger = winston.createLogger({
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/middleware-error.log'),
       level: 'error',
+      maxsize: 5 * 1024 * 1024, // 5 MB
+      maxFiles: 3,
     }),
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/middleware-combined.log'),
+      maxsize: 5 * 1024 * 1024, // 5 MB
+      maxFiles: 3,
     }),
   ],
 });

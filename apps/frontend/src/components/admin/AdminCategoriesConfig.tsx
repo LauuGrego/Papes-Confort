@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   Save,
-  Upload,
   Loader2,
   CheckCircle,
   AlertCircle,
   Eye,
   EyeOff,
+  Plus,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { HomeCategoryCardDto, DEFAULT_CATEGORY_CARDS } from '@papes-confort/shared';
 import { fetchApi } from '../../lib/api';
@@ -58,7 +60,7 @@ export default function AdminCategoriesConfig({
         if (res.success && res.data?.url) {
           handleCardChange(index, 'image', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingIdx(null);
       };
@@ -69,21 +71,49 @@ export default function AdminCategoriesConfig({
     }
   };
 
+  const handleAddNewCard = () => {
+    const newId = `cat-${Date.now()}`;
+    const newCard: HomeCategoryCardDto = {
+      id: newId,
+      name: 'Nuevo Rubro',
+      description: 'Productos destacados para el hogar',
+      image: 'https://res.cloudinary.com/dotxvd5dc/image/upload/v1789184610/papes-confort/landing/cat_heladeras.jpg',
+      href: '/catalogo',
+      isActive: true,
+      sortOrder: cards.length + 1,
+      objectFit: 'cover',
+    };
+    setCards((prev) => [...prev, newCard]);
+  };
+
+  const handleRemoveCard = (index: number) => {
+    if (cards.length <= 1) {
+      alert('Debe haber al menos una categoría en la portada.');
+      return;
+    }
+    setCards((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleSave = async () => {
     setSaveLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeCards = (cards.length > 0 ? cards : DEFAULT_CATEGORY_CARDS).map((card, i) => ({
+      ...card,
+      image: card.image?.trim() || DEFAULT_CATEGORY_CARDS[i % DEFAULT_CATEGORY_CARDS.length].image,
+    }));
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_category_cards: JSON.stringify(cards),
+        home_category_cards: JSON.stringify(safeCards),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Tarjetas de categorías guardadas exitosamente en la base de datos.');
-      if (onSaved) onSaved(cards);
+      setSuccessMsg('Tarjetas de categorías guardadas correctamente.');
+      if (onSaved) onSaved(safeCards);
     } else {
       setErrorMsg(res.error || 'Error al guardar tarjetas de categorías.');
     }
@@ -98,28 +128,39 @@ export default function AdminCategoriesConfig({
             Cards de Categorías de la Portada
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Personalizá los 8 rubros destacados que se muestran en la landing con sus fotos en Cloudinary, títulos, descripciones y enlaces al catálogo.
+            Personalizá los rubros destacados que se muestran en la portada con sus fotos, títulos, descripciones y enlaces al catálogo.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saveLoading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-md shadow-brand-red/20 disabled:opacity-60 cursor-pointer shrink-0"
-        >
-          {saveLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Guardando...</span>
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              <span>Guardar Categorías</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleAddNewCard}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4 text-brand-red" />
+            <span>Agregar Categoría</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saveLoading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all shadow-md shadow-brand-red/20 disabled:opacity-60 cursor-pointer shrink-0"
+          >
+            {saveLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>Guardar Categorías</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {successMsg && (
@@ -193,13 +234,13 @@ export default function AdminCategoriesConfig({
                   (e.target as HTMLImageElement).src = '/images/hero_home_ambience.jpg';
                 }}
               />
-              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer p-2 text-center">
+              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer p-2 text-center z-20">
                 {uploadingIdx === idx ? (
                   <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
                 ) : (
                   <>
-                    <Upload className="h-5 w-5 mb-1" />
-                    <span>Subir foto a Cloudinary</span>
+                    <RefreshCw className="h-5 w-5 mb-1" />
+                    <span>Haga clic para reemplazar</span>
                   </>
                 )}
                 <input
@@ -213,6 +254,39 @@ export default function AdminCategoriesConfig({
                   }}
                 />
               </label>
+            </div>
+
+            {/* Barra de acción: Reemplazar foto o Quitar tarjeta */}
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <label className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold cursor-pointer transition-all shadow-xs">
+                {uploadingIdx === idx ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-brand-red" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                <span>Reemplazar foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingIdx === idx}
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(idx, file);
+                  }}
+                />
+              </label>
+
+              {cards.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCard(idx)}
+                  className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                  title="Eliminar este rubro"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Modo de ajuste de imagen */}
