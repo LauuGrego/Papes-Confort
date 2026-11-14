@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   Save,
-  Upload,
   Loader2,
   CheckCircle,
   AlertCircle,
   Eye,
   EyeOff,
   Tag,
+  RefreshCw,
+  Plus,
+  RotateCcw,
 } from 'lucide-react';
 import { HomeWeeklyOfferDto, DEFAULT_WEEKLY_OFFER } from '@papes-confort/shared';
 import { fetchApi } from '../../lib/api';
@@ -324,8 +326,8 @@ export default function AdminWeeklyOfferConfig({
                 <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
               ) : (
                 <>
-                  <Upload className="h-5 w-5 mb-1" />
-                  <span>Subir imagen a Cloudinary</span>
+                  <RefreshCw className="h-5 w-5 mb-1" />
+                  <span>Haga clic para reemplazar imagen</span>
                 </>
               )}
               <input
@@ -339,6 +341,52 @@ export default function AdminWeeklyOfferConfig({
                 }}
               />
             </label>
+          </div>
+
+          {/* Botones de acción: Reemplazar existente o Agregar nueva */}
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <label className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-brand-red hover:bg-brand-red-dark text-white text-xs font-bold cursor-pointer transition-all shadow-xs">
+              {uploadingImage ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span>{config.imageUrl ? 'Reemplazar imagen existente' : 'Cargar imagen'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingImage}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                }}
+              />
+            </label>
+
+            <label className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-700">
+              <Plus className="h-4 w-4 text-brand-red" />
+              <span>Subir nueva imagen</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingImage}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => handleChange('imageUrl', DEFAULT_WEEKLY_OFFER.imageUrl)}
+              className="px-2.5 py-2 rounded-xl border border-slate-800 bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs transition-colors cursor-pointer"
+              title="Restaurar imagen por defecto"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
           </div>
 
           <div>
