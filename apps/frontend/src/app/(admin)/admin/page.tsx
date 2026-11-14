@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
             <RefreshCw className="h-6 w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">GesCom Sync</p>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Sincronización</p>
             <h2 className="text-sm font-bold text-slate-800 truncate">
               {lastSync?.status === 'SUCCESS' ? 'Sincronizado' : 'Pendiente'}
             </h2>
@@ -212,10 +212,10 @@ export default function AdminDashboardPage() {
                 <ImageIcon className="h-5 w-5" />
               </div>
               <h3 className="text-base font-extrabold text-slate-800 group-hover:text-brand-red transition-colors">
-                Banners de Portada (Flyers)
+                Banners de Portada
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Cargá y administrá los banners promocionales rotativos cargados a Cloudinary que se muestran en el sitio.
+                Subí y administrá los banners promocionales que se muestran en la tienda.
               </p>
             </div>
             <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-brand-red group-hover:translate-x-1 transition-all shrink-0 mt-2" />
@@ -233,7 +233,7 @@ export default function AdminDashboardPage() {
                 Catálogo de Productos
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Revisá el listado completo de productos sincronizados desde GesCom, precios de lista y características.
+                Revisá el listado completo de productos sincronizados, precios y características.
               </p>
             </div>
             <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-brand-navy group-hover:translate-x-1 transition-all shrink-0 mt-2" />

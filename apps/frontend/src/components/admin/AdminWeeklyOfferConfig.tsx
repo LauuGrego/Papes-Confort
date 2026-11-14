@@ -57,7 +57,7 @@ export default function AdminWeeklyOfferConfig({
         if (res.success && res.data?.url) {
           handleChange('imageUrl', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -73,16 +73,21 @@ export default function AdminWeeklyOfferConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeConfig: HomeWeeklyOfferDto = {
+      ...config,
+      imageUrl: config.imageUrl?.trim() || DEFAULT_WEEKLY_OFFER.imageUrl,
+    };
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_weekly_offer: JSON.stringify(config),
+        home_weekly_offer: JSON.stringify(safeConfig),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Oferta de la semana guardada exitosamente en la base de datos.');
-      if (onSaved) onSaved(config);
+      setSuccessMsg('Oferta de la semana guardada correctamente.');
+      if (onSaved) onSaved(safeConfig);
     } else {
       setErrorMsg(res.error || 'Error al guardar la oferta de la semana.');
     }
@@ -100,7 +105,7 @@ export default function AdminWeeklyOfferConfig({
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Personalizá el bloque destacado en gradiente oscuro, la tarjeta spotlight con su foto en Cloudinary, cuotas y enlaces comerciales.
+            Personalizá el bloque destacado, la tarjeta del producto con su foto, cuotas y enlaces comerciales.
           </p>
         </div>
 
@@ -264,7 +269,7 @@ export default function AdminWeeklyOfferConfig({
         <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wider text-red-400">
-              Tarjeta Spotlight de Producto
+              Producto Destacado
             </span>
             <span className="text-[10px] font-bold text-red-300 bg-red-950/80 px-2.5 py-0.5 rounded-full border border-red-500/30">
               Recomendado: 800 x 600 px (4:3)

@@ -58,7 +58,7 @@ export default function AdminAboutConfig({
         if (res.success && res.data?.url) {
           handleChange('imageUrl', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -74,16 +74,21 @@ export default function AdminAboutConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeConfig: HomeAboutDto = {
+      ...config,
+      imageUrl: config.imageUrl?.trim() || DEFAULT_ABOUT_SECTION.imageUrl,
+    };
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_about: JSON.stringify(config),
+        home_about: JSON.stringify(safeConfig),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Información institucional guardada exitosamente en la base de datos.');
-      if (onSaved) onSaved(config);
+      setSuccessMsg('Información institucional guardada correctamente.');
+      if (onSaved) onSaved(safeConfig);
     } else {
       setErrorMsg(res.error || 'Error al guardar la sección institucional.');
     }
@@ -101,7 +106,7 @@ export default function AdminAboutConfig({
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Personalizá la historia de confianza, la fotografía del edificio de Basavilbaso en Cloudinary, los valores familiares y el mensaje de contacto.
+            Personalizá la historia de confianza, la fotografía del local de Basavilbaso, los valores familiares y el mensaje de contacto.
           </p>
         </div>
 

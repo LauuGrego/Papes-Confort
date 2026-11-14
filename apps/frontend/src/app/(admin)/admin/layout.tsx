@@ -134,7 +134,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const systemNav = [
     { href: '/admin/configuracion?tab=general', label: 'WhatsApp y Atención', icon: MessageSquare },
     { href: '/admin/configuracion?tab=security', label: 'Seguridad Admin', icon: Lock },
-    { href: '/admin/sync-logs', label: 'Logs de Sincronización', icon: RefreshCw },
+    { href: '/admin/sync-logs', label: 'Historial de Sincronización', icon: RefreshCw },
   ];
 
   return (

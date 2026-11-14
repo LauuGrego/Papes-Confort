@@ -49,7 +49,7 @@ export default function AdminSyncLogsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <Loader2 className="h-8 w-8 text-brand-red animate-spin" />
-        <span className="text-sm font-semibold text-slate-400">Cargando logs...</span>
+        <span className="text-sm font-semibold text-slate-400">Cargando historial...</span>
       </div>
     );
   }
@@ -59,10 +59,10 @@ export default function AdminSyncLogsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-extrabold text-brand-black">
-            Logs de Sincronización
+            Historial de Sincronización
           </h1>
           <p className="text-sm text-slate-400">
-            Historial de sincronización automática de stock y precios desde GesCom local.
+            Historial de actualización automática de stock y precios.
           </p>
         </div>
         <button
@@ -89,7 +89,7 @@ export default function AdminSyncLogsPage() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 uppercase tracking-wider font-bold text-[10px] border-b border-slate-100">
-                  <th className="px-6 py-4">ID de Corrida</th>
+                  <th className="px-6 py-4">Referencia</th>
                   <th className="px-6 py-4">Fecha de Inicio</th>
                   <th className="px-6 py-4">Duración</th>
                   <th className="px-6 py-4 text-center">Nuevos</th>
@@ -109,7 +109,7 @@ export default function AdminSyncLogsPage() {
                     <td className="px-6 py-4 text-center font-semibold text-slate-700">{log.productsCreated}</td>
                     <td className="px-6 py-4 text-center font-semibold text-slate-700">{log.productsUpdated}</td>
                     <td className="px-6 py-4 text-center text-slate-500 font-mono">
-                      Sub: {log.imagesUploaded} | Om: {log.imagesSkipped}
+                      Subidas: {log.imagesUploaded} | Omitidas: {log.imagesSkipped}
                     </td>
                     <td className="px-6 py-4">
                       {log.status === 'SUCCESS' ? (
@@ -138,12 +138,12 @@ export default function AdminSyncLogsPage() {
             totalPages={logsData.totalPages}
             onPageChange={setPage}
             totalItems={logsData.total}
-            itemLabel="Corridas"
+            itemLabel="Registros"
           />
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 shadow-[0_5px_20px_rgba(0,0,0,0.01)]">
-          <p>No se registran logs de sincronización todavía.</p>
+          <p>Todavía no se registraron sincronizaciones.</p>
         </div>
       )}
     </div>

@@ -60,7 +60,7 @@ export default function AdminCategoriesConfig({
         if (res.success && res.data?.url) {
           handleCardChange(index, 'image', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingIdx(null);
       };
@@ -99,16 +99,21 @@ export default function AdminCategoriesConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeCards = (cards.length > 0 ? cards : DEFAULT_CATEGORY_CARDS).map((card, i) => ({
+      ...card,
+      image: card.image?.trim() || DEFAULT_CATEGORY_CARDS[i % DEFAULT_CATEGORY_CARDS.length].image,
+    }));
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_category_cards: JSON.stringify(cards),
+        home_category_cards: JSON.stringify(safeCards),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Tarjetas de categorías guardadas exitosamente en la base de datos.');
-      if (onSaved) onSaved(cards);
+      setSuccessMsg('Tarjetas de categorías guardadas correctamente.');
+      if (onSaved) onSaved(safeCards);
     } else {
       setErrorMsg(res.error || 'Error al guardar tarjetas de categorías.');
     }
@@ -123,7 +128,7 @@ export default function AdminCategoriesConfig({
             Cards de Categorías de la Portada
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Personalizá los 8 rubros destacados que se muestran en la landing con sus fotos en Cloudinary, títulos, descripciones y enlaces al catálogo.
+            Personalizá los rubros destacados que se muestran en la portada con sus fotos, títulos, descripciones y enlaces al catálogo.
           </p>
         </div>
 

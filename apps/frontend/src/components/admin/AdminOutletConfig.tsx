@@ -61,7 +61,7 @@ export default function AdminOutletConfig({
         if (res.success && res.data?.url) {
           handleChange('imageUrl', res.data.url);
         } else {
-          alert(res.error || 'Error al subir la imagen a Cloudinary.');
+          alert(res.error || 'Error al subir la imagen.');
         }
         setUploadingImage(false);
       };
@@ -77,16 +77,21 @@ export default function AdminOutletConfig({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const safeConfig: HomeOutletDto = {
+      ...config,
+      imageUrl: config.imageUrl?.trim() || DEFAULT_OUTLET_SECTION.imageUrl,
+    };
+
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
       method: 'PUT',
       body: JSON.stringify({
-        home_outlet_section: JSON.stringify(config),
+        home_outlet_section: JSON.stringify(safeConfig),
       }),
     });
 
     if (res.success) {
-      setSuccessMsg('Sección Outlet de la landing guardada exitosamente.');
-      if (onSaved) onSaved(config);
+      setSuccessMsg('Sección Outlet guardada correctamente.');
+      if (onSaved) onSaved(safeConfig);
     } else {
       setErrorMsg(res.error || 'Error al guardar la sección Outlet.');
     }
@@ -261,7 +266,7 @@ export default function AdminOutletConfig({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Código o Nombre de Rubro en GesCom (Ej: 09)
+                Código o Nombre de Rubro (Ej: 09)
               </label>
               <input
                 type="text"
@@ -441,7 +446,7 @@ export default function AdminOutletConfig({
             <div className="flex items-center gap-2 mb-2">
               <input
                 type="text"
-                placeholder="O pegar URL directa de Cloudinary"
+                placeholder="O pegar enlace directo de imagen"
                 value={config.imageUrl}
                 onChange={(e) => handleChange('imageUrl', e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 outline-none focus:border-amber-500"
@@ -487,7 +492,7 @@ export default function AdminOutletConfig({
 
               <div className="space-y-1.5 text-left text-[11px]">
                 <div className="flex items-center justify-between text-slate-300">
-                  <span className="text-slate-400">Rubro GesCom:</span>
+                  <span className="text-slate-400">Rubro:</span>
                   <span className="font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                     {config.rubroGescom}
                   </span>

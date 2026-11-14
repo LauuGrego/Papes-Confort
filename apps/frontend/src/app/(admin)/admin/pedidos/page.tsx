@@ -815,7 +815,7 @@ export default function AdminPedidosPage() {
                             {item.productName}
                           </p>
                           <p className="text-[10px] text-slate-400">
-                            SKU: {item.sku} | Cantidad: <strong className="text-slate-700">{item.quantity}</strong>
+                            Código: {item.sku} | Cantidad: <strong className="text-slate-700">{item.quantity}</strong>
                           </p>
                         </div>
                       </div>
@@ -962,7 +962,7 @@ export default function AdminPedidosPage() {
                 </label>
                 {bankAccounts.length === 0 ? (
                   <p className="text-xs text-rose-500">
-                    No hay cuentas bancarias activas registradas en la base de datos.
+                    No hay cuentas bancarias activas cargadas.
                   </p>
                 ) : (
                   <select

@@ -56,7 +56,7 @@ export default function AdminTrustBarConfig({
     });
 
     if (res.success) {
-      setSuccessMsg('Barra de beneficios guardada exitosamente en la base de datos.');
+      setSuccessMsg('Barra de beneficios guardada correctamente.');
       if (onSaved) onSaved(items);
     } else {
       setErrorMsg(res.error || 'Error al guardar la barra de beneficios.');

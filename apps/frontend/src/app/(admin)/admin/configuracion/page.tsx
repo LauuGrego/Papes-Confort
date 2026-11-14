@@ -350,6 +350,14 @@ function AdminConfiguracionContent() {
     setErrorMsg(null);
 
     const target = customBanner || heroBanner;
+    const currentImgs = (target.images || []).filter((img) => img && img.trim() !== '');
+    const mainImg = target.imageUrl?.trim() || currentImgs[0] || DEFAULT_HERO_BANNER.imageUrl;
+    const finalImgs = currentImgs.length > 0 ? currentImgs : [mainImg];
+    const safeTarget = {
+      ...target,
+      imageUrl: mainImg,
+      images: finalImgs,
+    };
 
     const body = {
       safety_stock: safetyStock,
@@ -357,7 +365,7 @@ function AdminConfiguracionContent() {
       business_hours: businessHours,
       home_flyers: JSON.stringify(flyers),
       home_payment_cards: JSON.stringify(paymentCards),
-      home_hero_banner: JSON.stringify(target),
+      home_hero_banner: JSON.stringify(safeTarget),
     };
 
     const res = await fetchApi<Record<string, string>>('/api/admin/settings', {
@@ -499,6 +507,10 @@ function AdminConfiguracionContent() {
   const handleRemoveHeroImage = (indexToRemove: number) => {
     setHeroBanner((prev: HomeHeroBannerDto) => {
       const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (prev.imageUrl ? [prev.imageUrl] : []);
+      if (currentImgs.length <= 1) {
+        alert('Debe haber al menos una foto en la portada principal. Puedes utilizar la opción "Reemplazar" para cambiarla.');
+        return prev;
+      }
       const updatedImgs = currentImgs.filter((_, idx) => idx !== indexToRemove);
       const newMain = updatedImgs[0] || DEFAULT_HERO_BANNER.imageUrl;
       return {
@@ -556,6 +568,10 @@ function AdminConfiguracionContent() {
 
   const handleRemoveFlyerImage = (indexToRemove: number) => {
     setFlyerImages((prev) => {
+      if (prev.length <= 1) {
+        alert('El banner debe contener al menos una imagen. Puedes utilizar la opción "Reemplazar" para sustituirla.');
+        return prev;
+      }
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
       if (updated.length > 0) {
         setFlyerImageUrl(updated[0]);
@@ -645,6 +661,10 @@ function AdminConfiguracionContent() {
     let newFlyersList: HomeFlyerDto[] = [];
     const formattedPosition = `${flyerObjectPositionX}% ${flyerObjectPositionY}%`;
     const finalImages = flyerImages.filter((img) => img && img.trim() !== '');
+    if (finalImages.length === 0) {
+      alert('Debes incluir al menos una imagen para este banner promocional.');
+      return;
+    }
     const mainImageUrl = finalImages[0] || flyerImageUrl;
 
     if (editingFlyer) {
@@ -1058,7 +1078,7 @@ function AdminConfiguracionContent() {
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
-                      <span>{uploadingHeroImage ? 'Subiendo foto a Cloudinary...' : (heroBanner.imageUrl ? 'Reemplazar Foto Existente' : 'Subir Foto Principal')}</span>
+                      <span>{uploadingHeroImage ? 'Subiendo foto...' : (heroBanner.imageUrl ? 'Reemplazar Foto Existente' : 'Subir Foto Principal')}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1112,7 +1132,7 @@ function AdminConfiguracionContent() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                          <span className="text-xs font-bold text-slate-800">Ver completa</span>
                           {heroBanner.objectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                         </div>
                         <span className="text-[10px] text-slate-500">
@@ -1130,7 +1150,7 @@ function AdminConfiguracionContent() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">Llenar espacio (Cover)</span>
+                          <span className="text-xs font-bold text-slate-800">Llenar espacio</span>
                           {heroBanner.objectFit !== 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                         </div>
                         <span className="text-[10px] text-slate-500">
@@ -1939,7 +1959,7 @@ function AdminConfiguracionContent() {
               <div>
                 <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
                   <Clock className="h-5 w-5 text-brand-red" />
-                  <span>Días y Horarios de Atención (Footer y Casa Central)</span>
+                  <span>Días y Horarios de Atención (Pie de página y Casa Central)</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Personaliza los días y horarios que se muestran en el pie de página de la tienda y la información de contacto de la sucursal.
@@ -2005,7 +2025,7 @@ function AdminConfiguracionContent() {
               <div className="p-4.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Vista previa de cómo se ve en el Footer
+                    Vista previa en el pie de página
                   </span>
                   <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">
                     Pie de página
@@ -2336,14 +2356,14 @@ function AdminConfiguracionContent() {
                   {uploadingImage ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-2">
                       <Loader2 className="h-6 w-6 text-brand-red animate-spin" />
-                      <span className="text-xs font-bold text-slate-600">Subiendo imagen a Cloudinary...</span>
+                      <span className="text-xs font-bold text-slate-600">Subiendo imagen...</span>
                     </div>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
                       <ImageIcon className="h-7 w-7 text-slate-400 group-hover:text-brand-red transition-colors" />
                       <div className="space-y-1">
                         <span className="text-xs font-bold text-brand-red hover:underline block">
-                          + Agregar nueva imagen a este banner (Subida instantánea a Cloudinary)
+                          + Agregar nueva imagen a este banner
                         </span>
                         <span className="text-[10px] text-slate-400 block">
                           Podés subir múltiples imágenes para que roten automáticamente en el carrusel de este banner
@@ -2490,7 +2510,7 @@ function AdminConfiguracionContent() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">Cubrir banner (Cover)</span>
+                      <span className="text-xs font-bold text-slate-800">Cubrir banner</span>
                       {flyerObjectFit === 'cover' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                     </div>
                     <span className="text-[10px] text-slate-500">
@@ -2508,11 +2528,11 @@ function AdminConfiguracionContent() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">Ver completa (Contain)</span>
+                      <span className="text-xs font-bold text-slate-800">Ver completa</span>
                       {flyerObjectFit === 'contain' && <CheckCircle className="h-3.5 w-3.5 text-brand-red" />}
                     </div>
                     <span className="text-[10px] text-slate-500">
-                      Muestra toda la foto sin cortar nada. Ideal para flyers con textos, cuotas, bancos o promociones.
+                      Muestra toda la foto sin cortar nada. Ideal para imágenes con textos, cuotas, bancos o promociones.
                     </span>
                   </button>
                 </div>
