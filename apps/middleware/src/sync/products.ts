@@ -165,19 +165,10 @@ export async function syncProductsFromGescom() {
 
       const costof = Number(row.ACostof) || 0;
       const venta = Number(row.AVenta) || 0;
-      const aiva = row.AIVA !== null && row.AIVA !== undefined ? Number(row.AIVA) : 0;
-      const isExentoIva = Number(row.AEXENTOIVA) === 1;
       const listaLpor = row.ListaLpor !== null && row.ListaLpor !== undefined ? Number(row.ListaLpor) : 25;
 
-      // Para OUTLET: En GesCom (pantalla de cálculo de precios), el usuario ingresa el "Precio Final" (con IVA incluido).
-      // GesCom almacena en AVenta el valor neto sin IVA (AVenta = Precio Final / (1 + IVA / 100)).
-      // Para que en la tienda tome el Precio Final real al consumidor configurado por el operador:
-      const outletPrecioFinal = (!isExentoIva && aiva > 0)
-        ? Math.round(venta * (1 + aiva / 100))
-        : venta;
-
-      // PARA OUTLET: Se toma el Precio Final con IVA. PARA NORMAL: Mantener precio original del articulo (basePrice = venta)
-      let basePrice = isOutletRubro ? outletPrecioFinal : venta;
+      // Todos los artículos (incluyendo Outlet) toman AVenta directo como precio de contado y LPOR para precio de lista
+      let basePrice = venta;
       const listPrice = Math.round(basePrice * (1 + listaLpor / 100) * 100) / 100;
       let discountPercent = 0;
       let productType: 'NORMAL' | 'OUTLET' | 'OFFER' = isOutletRubro ? 'OUTLET' : 'NORMAL';

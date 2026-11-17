@@ -38,6 +38,6 @@ export const config = {
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
   },
   imagesPath: process.env.IMAGES_PATH || '',
-  cronSchedule: process.env.PRODUCTS_SYNC_CRON || '*/15 * * * *',
+  cronSchedule: process.env.PRODUCTS_SYNC_CRON || '*/5 * * * *',
 };
 
