@@ -13,7 +13,6 @@ import {
   Tag,
   ArrowRight,
   RefreshCw,
-  Plus,
   RotateCcw,
 } from 'lucide-react';
 import { HomeOutletDto, DEFAULT_OUTLET_SECTION } from '@papes-confort/shared';
@@ -411,19 +410,7 @@ export default function AdminOutletConfig({
                 ) : (
                   <RefreshCw className="h-4 w-4" />
                 )}
-                <span>{uploadingImage ? 'Subiendo...' : (config.imageUrl ? 'Reemplazar imagen existente' : 'Cargar Imagen')}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
-                  disabled={uploadingImage}
-                  className="hidden"
-                />
-              </label>
-
-              <label className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all shadow-xs cursor-pointer">
-                <Plus className="h-4 w-4 text-amber-400" />
-                <span>Subir nueva imagen</span>
+                <span>{uploadingImage ? 'Subiendo...' : (config.imageUrl ? 'Reemplazar imagen' : 'Subir imagen')}</span>
                 <input
                   type="file"
                   accept="image/*"

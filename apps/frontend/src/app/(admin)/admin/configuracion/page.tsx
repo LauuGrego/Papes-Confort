@@ -424,50 +424,6 @@ function AdminConfiguracionContent() {
     }
   };
 
-  const handleReplaceMainHeroImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingHeroImage(true);
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        const res = await fetchApi<{ url: string }>('/api/admin/settings/upload-flyer', {
-          method: 'POST',
-          body: JSON.stringify({ image: base64Data }),
-        });
-
-        if (res.success && res.data?.url) {
-          const newUrl = res.data.url;
-          setHeroBanner((prev: HomeHeroBannerDto) => {
-            const oldMain = prev.imageUrl;
-            const currentImgs = prev.images && prev.images.length > 0 ? prev.images : (oldMain ? [oldMain] : []);
-            const index = currentImgs.findIndex((img) => img === oldMain);
-            let updatedImgs: string[];
-            if (index >= 0) {
-              updatedImgs = currentImgs.map((img, i) => (i === index ? newUrl : img));
-            } else {
-              updatedImgs = [newUrl, ...currentImgs];
-            }
-            return {
-              ...prev,
-              imageUrl: newUrl,
-              images: updatedImgs,
-            };
-          });
-        } else {
-          alert(res.error || 'Error al reemplazar la imagen principal.');
-        }
-        setUploadingHeroImage(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err: any) {
-      console.error('Error al reemplazar imagen principal del hero:', err);
-      setUploadingHeroImage(false);
-    }
-  };
-
   const handleReplaceHeroImage = async (indexToReplace: number, file: File) => {
     setUploadingHeroImage(true);
     try {
@@ -1066,31 +1022,92 @@ function AdminConfiguracionContent() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Form Controls */}
               <div className="lg:col-span-7 space-y-5">
-                {/* Image Upload File */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Foto Principal de Portada *
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer">
+                {/* Galería / Carrusel Multi-Imagen de Portada */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block">
+                      Fotos de Portada (Carrusel) *
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {(heroBanner.images && heroBanner.images.length > 0 ? heroBanner.images : [heroBanner.imageUrl || DEFAULT_HERO_BANNER.imageUrl]).length} foto(s) configurada(s)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {(() => {
+                      const heroImages =
+                        heroBanner.images && heroBanner.images.length > 0
+                          ? heroBanner.images
+                          : [heroBanner.imageUrl || DEFAULT_HERO_BANNER.imageUrl];
+                      return heroImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className={`relative group rounded-2xl overflow-hidden border-2 transition-all ${
+                            heroBanner.imageUrl === imgUrl
+                              ? 'border-brand-red ring-2 ring-brand-red/20 shadow-xs'
+                              : 'border-slate-200 bg-slate-50'
+                          }`}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Hero foto ${idx + 1}`}
+                            className="w-full h-20 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                            {heroBanner.imageUrl !== imgUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setHeroBanner({ ...heroBanner, imageUrl: imgUrl })}
+                                className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
+                              >
+                                Principal
+                              </button>
+                            )}
+                            <label className="w-full px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-lg hover:bg-slate-900 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center" title="Reemplazar esta foto">
+                              <RefreshCw className="h-2.5 w-2.5" />
+                              <span>Reemplazar</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={uploadingHeroImage}
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleReplaceHeroImage(idx, file);
+                                }}
+                              />
+                            </label>
+                            {heroImages.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveHeroImage(idx)}
+                                className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
+                                title="Eliminar del carrusel"
+                              >
+                                <Trash2 className="h-2.5 w-2.5" />
+                                <span>Quitar</span>
+                              </button>
+                            )}
+                          </div>
+                          {heroBanner.imageUrl === imgUrl && (
+                            <span className="absolute top-1 left-1 bg-brand-red text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                      ));
+                    })()}
+
+                    {/* Botón único para subir nueva foto al Hero */}
+                    <label className="border-2 border-dashed border-slate-200 hover:border-brand-red/60 rounded-2xl h-20 flex flex-col items-center justify-center gap-1 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-all text-slate-400 hover:text-brand-red">
                       {uploadingHeroImage ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
                       ) : (
-                        <RefreshCw className="h-4 w-4" />
+                        <>
+                          <Plus className="h-4 w-4" />
+                          <span className="text-[10px] font-bold">Agregar foto</span>
+                        </>
                       )}
-                      <span>{uploadingHeroImage ? 'Subiendo foto...' : (heroBanner.imageUrl ? 'Reemplazar Foto Existente' : 'Subir Foto Principal')}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleReplaceMainHeroImage}
-                        disabled={uploadingHeroImage}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer">
-                      <Plus className="h-4 w-4 text-brand-red" />
-                      <span>Agregar Nueva Foto Rotativa</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1100,8 +1117,8 @@ function AdminConfiguracionContent() {
                       />
                     </label>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">
-                    Puedes reemplazar la foto de portada actual o agregar nuevas imágenes para que roten automáticamente en el carrusel de inicio (.webp, .jpg, .png).
+                  <p className="text-[11px] text-slate-400">
+                    Pasá el mouse sobre cualquier foto para reemplazarla, elegir la principal o quitarla (siempre debe quedar al menos una). Formatos: .webp, .jpg, .png.
                   </p>
                 </div>
 
@@ -1158,96 +1175,6 @@ function AdminConfiguracionContent() {
                         </span>
                       </button>
                     </div>
-                  </div>
-                </div>
-
-                {/* Galería / Carrusel Multi-Imagen del Hero Banner */}
-                <div className="space-y-2 pt-1 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block">
-                      Fotos Adicionales de Portada (Rotativas)
-                    </label>
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      {(heroBanner.images || []).length} foto(s) configurada(s)
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {(heroBanner.images && heroBanner.images.length > 0
-                      ? heroBanner.images
-                      : [heroBanner.imageUrl || DEFAULT_HERO_BANNER.imageUrl]
-                    ).map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className={`relative group rounded-2xl overflow-hidden border-2 transition-all ${
-                          heroBanner.imageUrl === imgUrl
-                            ? 'border-brand-red ring-2 ring-brand-red/20 shadow-xs'
-                            : 'border-slate-200 bg-slate-50'
-                        }`}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Hero foto ${idx + 1}`}
-                          className="w-full h-20 object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
-                          <button
-                            type="button"
-                            onClick={() => setHeroBanner({ ...heroBanner, imageUrl: imgUrl })}
-                            className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
-                          >
-                            Principal
-                          </button>
-                          <label className="w-full px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-lg hover:bg-slate-900 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center" title="Reemplazar esta foto">
-                            <RefreshCw className="h-2.5 w-2.5" />
-                            <span>Reemplazar</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              disabled={uploadingHeroImage}
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleReplaceHeroImage(idx, file);
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveHeroImage(idx)}
-                            className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
-                            title="Eliminar del carrusel"
-                          >
-                            <Trash2 className="h-2.5 w-2.5" />
-                            <span>Quitar</span>
-                          </button>
-                        </div>
-                        {heroBanner.imageUrl === imgUrl && (
-                          <span className="absolute top-1 left-1 bg-brand-red text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs">
-                            Principal
-                          </span>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Botón para subir nueva foto al Hero */}
-                    <label className="border-2 border-dashed border-slate-200 hover:border-brand-red/60 rounded-2xl h-20 flex flex-col items-center justify-center gap-1 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-all text-slate-400 hover:text-brand-red">
-                      {uploadingHeroImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4" />
-                          <span className="text-[10px] font-bold">+ Agregar foto</span>
-                        </>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleHeroImageUpload}
-                        disabled={uploadingHeroImage}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
                 </div>
 
@@ -2311,13 +2238,15 @@ function AdminConfiguracionContent() {
                           className="w-full h-20 object-cover"
                         />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
-                          <button
-                            type="button"
-                            onClick={() => setFlyerImageUrl(imgUrl)}
-                            className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
-                          >
-                            Principal
-                          </button>
+                          {flyerImageUrl !== imgUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setFlyerImageUrl(imgUrl)}
+                              className="w-full px-2 py-0.5 bg-white text-slate-900 text-[10px] font-bold rounded-lg hover:bg-slate-100 shadow-xs cursor-pointer text-center"
+                            >
+                              Principal
+                            </button>
+                          )}
                           <label className="w-full px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-lg hover:bg-slate-900 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center" title="Reemplazar esta imagen">
                             <RefreshCw className="h-2.5 w-2.5" />
                             <span>Reemplazar</span>
@@ -2332,15 +2261,17 @@ function AdminConfiguracionContent() {
                               }}
                             />
                           </label>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFlyerImage(idx)}
-                            className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
-                            title="Quitar foto"
-                          >
-                            <Trash2 className="h-2.5 w-2.5" />
-                            <span>Quitar</span>
-                          </button>
+                          {flyerImages.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFlyerImage(idx)}
+                              className="w-full px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer flex items-center justify-center gap-1 text-center"
+                              title="Quitar foto"
+                            >
+                              <Trash2 className="h-2.5 w-2.5" />
+                              <span>Quitar</span>
+                            </button>
+                          )}
                         </div>
                         {flyerImageUrl === imgUrl && (
                           <span className="absolute top-1 left-1 bg-brand-red text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shadow-xs">

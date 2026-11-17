@@ -11,7 +11,6 @@ import {
   EyeOff,
   MessageSquare,
   RefreshCw,
-  Plus,
   RotateCcw,
 } from 'lucide-react';
 import { HomeAboutDto, DEFAULT_ABOUT_SECTION } from '@papes-confort/shared';
@@ -302,7 +301,7 @@ export default function AdminAboutConfig({
             </button>
           </div>
 
-          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 group flex items-center justify-center">
+          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 flex items-center justify-center">
             {config.objectFit === 'contain' && (
               <div
                 className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
@@ -319,29 +318,9 @@ export default function AdminAboutConfig({
                 (e.target as HTMLImageElement).src = '/images/edificio.webp';
               }}
             />
-            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer p-2 text-center">
-              {uploadingImage ? (
-                <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
-              ) : (
-                <>
-                  <RefreshCw className="h-5 w-5 mb-1" />
-                  <span>Haga clic para reemplazar foto</span>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploadingImage}
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                }}
-              />
-            </label>
           </div>
 
-          {/* Botones de acción: Reemplazar existente o Subir nueva foto */}
+          {/* Botones de acción: Reemplazar o restaurar foto */}
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <label className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-brand-red hover:bg-brand-red-dark text-white text-xs font-bold cursor-pointer transition-all shadow-xs">
               {uploadingImage ? (
@@ -349,22 +328,7 @@ export default function AdminAboutConfig({
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              <span>{config.imageUrl ? 'Reemplazar foto existente' : 'Cargar foto'}</span>
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploadingImage}
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                }}
-              />
-            </label>
-
-            <label className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-700">
-              <Plus className="h-4 w-4 text-brand-red" />
-              <span>Subir nueva foto</span>
+              <span>{uploadingImage ? 'Subiendo...' : (config.imageUrl ? 'Reemplazar imagen' : 'Subir imagen')}</span>
               <input
                 type="file"
                 accept="image/*"

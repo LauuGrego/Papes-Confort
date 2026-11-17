@@ -216,8 +216,8 @@ export default function AdminCategoriesConfig({
               </button>
             </div>
 
-            {/* Imagen Preview con botón de subida a Cloudinary */}
-            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 mb-3 group">
+            {/* Previsualización de imagen */}
+            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-200/80 mb-3">
               {card.objectFit === 'contain' && (
                 <div
                   className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-35 scale-110 pointer-events-none"
@@ -234,26 +234,6 @@ export default function AdminCategoriesConfig({
                   (e.target as HTMLImageElement).src = '/images/hero_home_ambience.jpg';
                 }}
               />
-              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer p-2 text-center z-20">
-                {uploadingIdx === idx ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
-                ) : (
-                  <>
-                    <RefreshCw className="h-5 w-5 mb-1" />
-                    <span>Haga clic para reemplazar</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={uploadingIdx === idx}
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(idx, file);
-                  }}
-                />
-              </label>
             </div>
 
             {/* Barra de acción: Reemplazar foto o Quitar tarjeta */}
@@ -264,7 +244,7 @@ export default function AdminCategoriesConfig({
                 ) : (
                   <RefreshCw className="h-3 w-3" />
                 )}
-                <span>Reemplazar foto</span>
+                <span>{uploadingIdx === idx ? 'Subiendo...' : (card.image ? 'Reemplazar imagen' : 'Subir imagen')}</span>
                 <input
                   type="file"
                   accept="image/*"
